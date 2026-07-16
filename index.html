@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Headshot Studio — Summy Garden Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --grad-brand: linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
+  --grad-attn: linear-gradient(120deg,#4ade80,#22d3ee,#38bdf8);
+  --accent:#0284c7; --accent-bright:#38bdf8; --mid:#22d3ee; --rose:#4ade80;
+  --bg-deep:#062c45; --panel:#0a3a5c; --panel-deep:#07304d;
+  --on-dark:#ffffff; --on-dark-muted:#9cc6e0;
+  --gold:#d97706; --gold-bright:#fbbf24; --success:#0f6e56;
+  --ink:#0c1c26; --muted:#54707e; --body-bg:#f3fafe;
+  --card-shadow: 0 1px 2px rgba(7,44,69,.05), 0 8px 20px rgba(7,44,69,.07), inset 0 0 0 1px rgba(7,44,69,.05);
+  --card-shadow-hi: 0 1px 2px rgba(7,44,69,.05), 0 12px 28px rgba(7,44,69,.09), inset 0 0 0 1px rgba(7,44,69,.05);
+  --brand-glow: 0 8px 22px rgba(14,165,233,.38);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--body-bg);color:var(--ink);line-height:1.6}
+h1,h2,h3{letter-spacing:-0.025em}
+button{font-family:inherit;border:none;cursor:pointer}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:50;background:rgba(6,44,69,.85);backdrop-filter:blur(14px);padding:14px 0}
+.nav-inner{display:flex;align-items:center;gap:22px}
+.logo{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:17px;letter-spacing:-.02em;text-decoration:none;flex-shrink:0}
+.logo-mark{width:32px;height:32px;border-radius:10px;background:var(--grad-brand);box-shadow:var(--brand-glow);display:grid;place-items:center;color:#fff;font-size:15px}
+.nav-links{display:flex;gap:22px;flex:1;justify-content:center}
+.nav-links a{color:rgba(255,255,255,.72);text-decoration:none;font-size:14.5px;font-weight:500;white-space:nowrap}
+.nav-links a:hover{color:#fff}
+.credit-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);border-radius:999px;padding:7px 14px;color:#fff;font-size:13px;font-weight:600;flex-shrink:0}
+.credit-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 8px rgba(251,191,36,.8)}
+.nav-cta{background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:999px;padding:9px 18px;box-shadow:var(--brand-glow);flex-shrink:0;transition:.2s}
+.nav-cta:hover{transform:translateY(-1px)}
+.lang-sel{background:rgba(255,255,255,.08);color:#fff;border:none;border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font-family:inherit;cursor:pointer;flex-shrink:0}
+.lang-sel option{color:#111827}
+.cat-sel{width:100%;background:rgba(255,255,255,.07);color:#fff;border:none;border-radius:12px;padding:11px 14px;font-family:inherit;font-size:13px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);cursor:pointer;margin-bottom:2px}
+.cat-sel option{color:#111827}
+header.hero{position:relative;overflow:hidden;background:var(--bg-deep);color:#fff;padding:84px 0 96px;text-align:center}
+.aurora{position:absolute;inset:0;pointer-events:none}
+.aurora span{position:absolute;border-radius:50%;filter:blur(70px)}
+.aurora .a1{width:520px;height:520px;background:rgba(56,189,248,.30);top:-180px;left:8%}
+.aurora .a2{width:420px;height:420px;background:rgba(251,191,36,.22);top:-60px;right:-80px}
+.aurora .a3{width:460px;height:460px;background:rgba(74,222,128,.22);bottom:-220px;left:-100px}
+.eyebrow{display:inline-block;font-weight:800;font-size:13px;letter-spacing:.14em;text-transform:uppercase;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:18px}
+.hero h1{font-size:clamp(34px,5.4vw,58px);font-weight:900;letter-spacing:-0.035em;line-height:1.08;max-width:860px;margin:0 auto 20px;position:relative}
+.hero h1 em{font-style:normal;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--on-dark-muted);font-size:18px;max-width:660px;margin:0 auto 34px;position:relative}
+.btn-primary{display:inline-flex;align-items:center;gap:10px;background:var(--grad-brand);color:#fff;font-weight:700;font-size:16px;padding:15px 30px;border-radius:14px;box-shadow:var(--brand-glow);transition:.2s;text-decoration:none;border:none;cursor:pointer;font-family:inherit}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(2,132,199,.5)}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.85);font-weight:600;font-size:15px;padding:15px 26px;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);text-decoration:none;transition:.2s}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.hero-stats{display:flex;gap:44px;justify-content:center;margin-top:52px;position:relative;flex-wrap:wrap}
+.hero-stats .stat b{display:block;font-size:27px;font-weight:800;letter-spacing:-.02em}
+.hero-stats .stat span{color:var(--on-dark-muted);font-size:13.5px}
+.free-badge{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(120deg,#fbbf24,#f97316);color:#fff;font-weight:700;font-size:13px;border-radius:999px;padding:8px 16px;box-shadow:0 4px 14px rgba(249,115,22,.4);margin-bottom:22px;position:relative}
+section{padding:72px 0}
+.sec-head{text-align:center;max-width:680px;margin:0 auto 44px}
+.sec-head .eyebrow{margin-bottom:10px}
+.sec-head h2{font-size:clamp(26px,3.4vw,38px);font-weight:800;margin-bottom:12px}
+.sec-head p{color:var(--muted);font-size:16.5px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
+.step{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);padding:28px;transition:.2s}
+.step:hover{transform:translateY(-3px);box-shadow:var(--card-shadow-hi)}
+.icon-tile{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;color:#fff;font-size:20px;margin-bottom:16px}
+.tile-teal{background:linear-gradient(135deg,#7dd3fc,#0284c7);box-shadow:0 6px 16px rgba(56,189,248,.4)}
+.tile-sky{background:linear-gradient(135deg,#67e8f9,#06b6d4);box-shadow:0 6px 16px rgba(34,211,238,.38)}
+.tile-gold{background:linear-gradient(135deg,#fbbf24,#f97316);box-shadow:0 6px 16px rgba(251,191,36,.36)}
+.tile-green{background:linear-gradient(135deg,#34d399,#0f6e56);box-shadow:0 6px 16px rgba(52,211,153,.36)}
+.step h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.step p{color:var(--muted);font-size:14.5px}
+#studio .studio-card{background:linear-gradient(135deg,#083048,#0a4160,#0c5273);border-radius:20px;box-shadow:0 20px 50px rgba(6,44,69,.35), inset 0 0 0 1px rgba(255,255,255,.07);padding:36px;color:#fff}
+.studio-grid{display:grid;grid-template-columns:360px 1fr;gap:34px}
+@media(max-width:880px){.studio-grid{grid-template-columns:1fr}}
+.upload-zone{border-radius:16px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.45);min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px;transition:.2s}
+.upload-zone.clickable{cursor:pointer}
+.upload-zone.clickable:hover{background:rgba(255,255,255,.08)}
+.upload-zone .up-icon{width:54px;height:54px;border-radius:16px;background:var(--grad-brand);display:grid;place-items:center;font-size:24px;box-shadow:var(--brand-glow)}
+.upload-zone p{color:rgba(255,255,255,.75);font-size:14px}
+.upload-zone small{color:rgba(255,255,255,.45);font-size:12px}
+#cropCanvas{border-radius:14px;cursor:grab;touch-action:none;max-width:100%;background:#0a2233}
+.crop-hint{font-size:11px;color:rgba(255,255,255,.5)}
+.zoom-row{display:flex;align-items:center;gap:10px;width:100%;max-width:240px;color:rgba(255,255,255,.6);font-size:13px}
+.zoom-row input[type=range]{flex:1;accent-color:#38bdf8}
+.change-photo{background:none;color:#7dd3fc;font-size:12px;text-decoration:underline}
+.studio-label{font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:22px 0 10px}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:rgba(255,255,255,.8);border-radius:999px;padding:8px 15px;font-size:13px;font-weight:600;transition:.15s}
+.chip.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
+.cat-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.cat-strip::-webkit-scrollbar{display:none}
+.cat-strip .chip{white-space:nowrap;flex-shrink:0;font-size:12px;padding:7px 13px}
+.swatch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:10px}
+.swatch{aspect-ratio:1/1;border-radius:12px;cursor:pointer;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:.15s;background-size:cover;background-position:center}
+.swatch:hover{transform:translateY(-2px)}
+.swatch.active{box-shadow:0 0 0 2.5px var(--accent-bright), 0 6px 14px rgba(56,189,248,.4)}
+.swatch.active::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.sel-bg-info{margin-top:12px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;font-size:12.5px;color:rgba(255,255,255,.75)}
+.sel-bg-info b{color:#fff}
+.gen-btn{width:100%;margin-top:26px;background:var(--grad-attn);color:#fff;font-weight:800;font-size:16px;padding:16px;border-radius:14px;box-shadow:var(--brand-glow);animation:cvpulse 2.4s infinite;transition:.2s}
+.gen-btn:hover{transform:translateY(-2px)}
+@keyframes cvpulse{0%,100%{box-shadow:0 8px 22px rgba(14,165,233,.4)}50%{box-shadow:0 8px 30px rgba(251,191,36,.55)}}
+.result-zone{border-radius:16px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);min-height:420px;padding:24px;display:flex;flex-direction:column}
+.result-empty{flex:1;display:grid;place-items:center;color:rgba(255,255,255,.4);font-size:14.5px;text-align:center;padding:20px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+.headshot-frame{position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.headshot-frame img.comp{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.headshot-frame .tag{position:absolute;top:8px;left:8px;background:rgba(6,44,69,.72);backdrop-filter:blur(6px);color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;padding:4px 9px}
+.headshot-frame .dl{position:absolute;bottom:8px;right:8px;background:var(--grad-brand);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:5px 11px;box-shadow:var(--brand-glow);cursor:pointer;text-decoration:none}
+.progress-wrap{margin:14px 0}
+.progress-track{height:10px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;width:0%;background:var(--grad-brand);border-radius:999px;box-shadow:0 0 12px rgba(56,189,248,.6);transition:width .4s cubic-bezier(.2,.8,.2,1)}
+.progress-label{font-size:13px;color:rgba(255,255,255,.6);margin-top:8px}
+.sim-note{margin-top:14px;font-size:12px;color:rgba(255,255,255,.4)}
+.gallery-controls{display:flex;flex-direction:column;gap:16px;margin-bottom:26px}
+.search-bar{display:flex;justify-content:center}
+.search-bar input{width:min(440px,100%);padding:13px 20px;border:none;border-radius:999px;background:#fff;box-shadow:var(--card-shadow);font-family:inherit;font-size:14.5px;color:var(--ink);outline:none}
+.search-bar input:focus{box-shadow:0 1px 2px rgba(7,44,69,.05), 0 8px 20px rgba(7,44,69,.07), inset 0 0 0 1.5px rgba(56,189,248,.65)}
+.cat-pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.cat-pill{background:#e3f4fd;color:var(--accent);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(2,132,199,.12);transition:.15s}
+.cat-pill.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
+.gallery-count{text-align:center;font-size:13px;color:var(--muted);margin-bottom:20px}
+.marquee{overflow:hidden;position:relative;padding:6px 0 18px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.marquee-track{display:flex;gap:20px;width:max-content;animation:scrollL linear infinite}
+.marquee:hover .marquee-track{animation-play-state:paused}
+@keyframes scrollL{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.bg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+.bg-card{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);overflow:hidden;cursor:pointer;transition:.2s;position:relative}
+.marquee .bg-card{width:248px;flex-shrink:0}
+.bg-card:hover{transform:translateY(-4px);box-shadow:var(--card-shadow-hi)}
+.bg-card.selected{box-shadow:0 12px 28px rgba(56,189,248,.35), inset 0 0 0 2px var(--accent-bright)}
+.bg-preview{height:300px;position:relative;background-size:cover;background-position:center;overflow:hidden}
+.sample-bubble{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:104px;height:104px;border-radius:50%;background-size:cover;background-position:center;box-shadow:0 0 0 3px rgba(255,255,255,.92), 0 10px 22px rgba(0,0,0,.32)}
+.bg-preview img.ai-sample{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bg-preview .cat-tag{position:absolute;top:10px;left:10px;background:rgba(6,44,69,.65);backdrop-filter:blur(6px);color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;padding:4px 10px}
+.bg-preview .sample-tag{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.75);backdrop-filter:blur(6px);color:#456;font-size:9.5px;font-weight:700;border-radius:999px;padding:3px 8px}
+.bg-body{padding:15px 18px 17px}
+.bg-body h3{font-size:14.5px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bg-body p{font-size:12.5px;color:var(--muted);margin-bottom:9px;min-height:36px}
+.best-for{display:inline-block;background:#e3f4fd;color:var(--accent);font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px}
+.check-badge{width:20px;height:20px;border-radius:50%;background:var(--grad-brand);color:#fff;display:none;place-items:center;font-size:11px;box-shadow:var(--brand-glow);flex-shrink:0}
+.bg-card.selected .check-badge{display:grid}
+.showcase-note{text-align:center;font-size:12.5px;color:var(--muted);margin-top:6px}
+#pricing{background:var(--bg-deep);color:#fff;position:relative;overflow:hidden}
+.currency-toggle{display:inline-flex;background:rgba(255,255,255,.07);border-radius:999px;padding:4px;gap:2px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);margin-bottom:36px}
+.currency-toggle button{background:transparent;color:rgba(255,255,255,.65);font-weight:700;font-size:13px;border-radius:999px;padding:8px 18px;transition:.15s}
+.currency-toggle button.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
+.price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px;position:relative}
+.price-card{background:rgba(255,255,255,.05);border-radius:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);padding:30px 26px;text-align:left;position:relative;transition:.2s}
+.price-card:hover{transform:translateY(-4px)}
+.price-card.featured{background:linear-gradient(160deg,rgba(56,189,248,.16),rgba(74,222,128,.12));box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.5), 0 16px 40px rgba(56,189,248,.22)}
+.price-card .plan{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-bright);margin-bottom:12px}
+.price-card .amount{font-size:34px;font-weight:900;letter-spacing:-.03em;margin-bottom:4px}
+.price-card .per{color:var(--on-dark-muted);font-size:13px;margin-bottom:18px}
+.price-card ul{list-style:none;margin-bottom:24px}
+.price-card li{font-size:14px;color:rgba(255,255,255,.8);padding:5px 0 5px 26px;position:relative}
+.price-card li::before{content:'✓';position:absolute;left:0;color:var(--gold-bright);font-weight:800}
+.price-btn{width:100%;padding:13px;border-radius:12px;font-weight:700;font-size:14.5px;background:rgba(255,255,255,.08);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);transition:.2s}
+.featured .price-btn,.price-btn.grad{background:var(--grad-brand);box-shadow:var(--brand-glow)}
+.price-btn:hover{transform:translateY(-2px)}
+.popular-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(120deg,#fbbf24,#f97316);color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;border-radius:999px;padding:6px 14px;box-shadow:0 4px 14px rgba(249,115,22,.45);white-space:nowrap}
+.referral-strip{margin-top:40px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);border-radius:16px;padding:22px 26px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;text-align:left}
+.referral-strip .icon-tile{margin:0}
+.referral-strip b{color:#fff}
+.referral-strip span{color:var(--on-dark-muted);font-size:14px}
+.eco-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+.eco-card{background:#fff;border-radius:16px;box-shadow:var(--card-shadow);padding:26px}
+.eco-card h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.eco-card p{font-size:14px;color:var(--muted)}
+.eco-flow{margin-top:34px;background:#fff;border-radius:16px;box-shadow:var(--card-shadow-hi);padding:30px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.eco-node{text-align:center;flex:1;min-width:120px}
+.eco-node .n{width:52px;height:52px;border-radius:15px;margin:0 auto 10px;display:grid;place-items:center;color:#fff;font-size:22px}
+.eco-node b{font-size:13.5px;display:block}
+.eco-node span{font-size:12px;color:var(--muted)}
+.eco-arrow{color:#c6dfee;font-size:20px;flex-shrink:0}
+.modal-backdrop{position:fixed;inset:0;background:rgba(6,44,69,.7);backdrop-filter:blur(6px);display:none;place-items:center;z-index:100;padding:20px}
+.modal-backdrop.open{display:grid}
+.modal{background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.4);max-width:480px;width:100%;padding:36px;text-align:center;position:relative;max-height:88vh;overflow-y:auto}
+.modal.wide{max-width:620px;text-align:left}
+.modal .icon-tile{margin:0 auto 18px}
+.modal h3{font-size:22px;font-weight:800;margin-bottom:10px}
+.modal p{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+.modal .close-x{position:absolute;top:14px;right:18px;background:none;font-size:22px;color:#8fb6cc}
+.modal input[type=text],.modal input[type=email]{width:100%;padding:12px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14px;margin-bottom:12px;outline:none;color:var(--ink)}
+.modal input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
+.gift-banner{background:linear-gradient(120deg,#fbbf24,#f97316);color:#fff;font-size:13px;font-weight:700;border-radius:12px;padding:10px 14px;margin-bottom:16px}
+.dash-stats{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.dash-stat{flex:1;min-width:140px;background:#f0f8fd;border-radius:14px;padding:16px 18px;box-shadow:inset 0 0 0 1px rgba(7,44,69,.06)}
+.dash-stat b{display:block;font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.dash-stat span{font-size:12px;color:var(--muted)}
+.ref-box{display:flex;gap:8px;margin:8px 0 4px}
+.ref-box input{flex:1;padding:11px 14px;border:none;border-radius:10px;background:#eef6fb;box-shadow:inset 0 0 0 1px rgba(7,44,69,.08);font-size:12px;color:var(--ink);font-family:inherit;outline:none}
+.copy-btn{background:var(--grad-brand);color:#fff;font-weight:700;font-size:12.5px;border-radius:10px;padding:0 16px;box-shadow:var(--brand-glow)}
+.dash-label{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+.dash-history{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.dash-frame{aspect-ratio:4/5;border-radius:10px;overflow:hidden;position:relative;background-size:cover;background-position:center;box-shadow:var(--card-shadow)}
+.dash-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dash-frame small{position:absolute;bottom:4px;left:6px;right:6px;color:#fff;font-size:8.5px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-empty{font-size:13px;color:var(--muted);background:#f4f9fc;border-radius:12px;padding:18px;text-align:center}
+.signout{background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;margin-top:16px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);color:#fff;font-size:14px;font-weight:600;border-radius:999px;padding:13px 24px;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:.35s cubic-bezier(.2,.8,.2,1);z-index:120}
+.toast.show{transform:translateX(-50%) translateY(0)}
+footer{background:var(--bg-deep);color:var(--on-dark-muted);padding:44px 0;font-size:13.5px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="#"><span class="logo-mark">◆</span>Summy&nbsp;Garden&nbsp;Studio</a>
+    <div class="nav-links">
+      <a href="#studio">Headshot Studio</a>
+      <a href="#backgrounds">Backgrounds</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <select id="langSel" class="lang-sel" title="Language"></select>
+    <span class="credit-pill"><span class="dot"></span><span id="creditLabel">1 credit</span></span>
+    <button class="nav-cta" id="accountBtn" onclick="accountClick()">Join free</button>
+  </div>
+</nav>
+<header class="hero">
+  <div class="aurora"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+  <div class="wrap">
+    <span class="free-badge" id="heroBadge">✦ Join free — get your first headshot on us</span>
+    <div><span class="eyebrow">AI Headshot Studio</span></div>
+    <h1>Studio-quality headshots, <em>from one selfie</em></h1>
+    <p>Frame your head and shoulders, pick a high-end scene — office, business park, lakeside, tennis club and more — and download enhanced, recruiter-ready headshots in minutes.</p>
+    <a class="btn-primary" href="#studio">Create my free headshot →</a>
+    <a class="btn-ghost" href="#backgrounds" style="margin-left:12px">See the scenes</a>
+    <div class="hero-stats">
+      <div class="stat"><b>21×</b><span>more profile views with a professional photo</span></div>
+      <div class="stat"><b>100</b><span>designed scenes in 10 themed collections</span></div>
+      <div class="stat"><b>+2 free</b><span>headshots when a friend refers you</span></div>
+      <div class="stat"><b>UK · HK · US</b><span>localised pricing</span></div>
+    </div>
+  </div>
+</header>
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Three steps to a recruiter-ready photo</h2>
+      <p>No studio, no scheduling, no awkward posing. Your first headshot is free with your account — referred friends start with two.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="icon-tile tile-teal">📷</div><h3>1 · Upload & frame yourself</h3><p>Upload a selfie, then drag and zoom until your head and shoulders fill the guide.</p></div>
+      <div class="step"><div class="icon-tile tile-sky">🎨</div><h3>2 · Pick scene & look</h3><p>100 scenes across 10 themed collections, plus colour-graded looks from business-crisp to creative.</p></div>
+      <div class="step"><div class="icon-tile tile-gold">✨</div><h3>3 · Enhance, save & download</h3><p>Skin and tone enhancement applied automatically. Download any variant as a PNG.</p></div>
+    </div>
+  </div>
+</section>
+<section id="studio" style="padding-top:20px">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">The Studio</span>
+      <h2>Try it now</h2>
+      <p>Your first generation is free. After that, top up with a credit pack — see <a href="#pricing" style="color:var(--accent);font-weight:600;text-decoration:none">pricing</a>.</p>
+    </div>
+    <div class="studio-card">
+      <div class="studio-grid">
+        <div>
+          <div class="studio-label">Your photo</div>
+          <div class="upload-zone clickable" id="uploadZone" onclick="pickFile(event)">
+            <div class="up-icon">⇪</div>
+            <p><b>Click to upload a selfie</b></p>
+            <small>JPG or PNG · face clearly visible · min 512×512</small>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+          <div class="studio-label">Scene collection</div>
+          <select id="catSel" class="cat-sel"></select>
+          <div class="swatch-grid" id="swatchGrid"></div>
+          <div class="sel-bg-info" id="selBgInfo"></div>
+          <div class="studio-label">Look & grading</div>
+          <div class="chip-row" id="attireChips">
+            <button class="chip active" data-attire="Business formal">Business formal</button>
+            <button class="chip" data-attire="Smart casual">Smart casual</button>
+            <button class="chip" data-attire="Creative">Creative</button>
+            <button class="chip" data-attire="Tech casual">Tech casual</button>
+            <button class="chip" data-attire="Sportswear">Sportswear</button>
+            <button class="chip" data-attire="Uniform">Uniform</button>
+          </div>
+          <button class="gen-btn" id="genBtn">✨ Generate my headshots</button>
+        </div>
+        <div>
+          <div class="studio-label">Results</div>
+          <div class="result-zone" id="resultZone">
+            <div class="result-empty" id="resultEmpty">Your 4 headshot variants will appear here.<br>Upload a photo and hit Generate.</div>
+          </div>
+          <p class="sim-note">⚙ On-device AI: you are cut out of your photo and placed into the scene with skin & tone enhancement — nothing is uploaded to a server. The production API adds photoreal outfit transfer and studio lighting.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="backgrounds" style="background:#fff">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Scene library</span>
+      <h2>100 scenes, 10 themed collections</h2>
+      <p>Office, business park, city street, park, lakeside, tennis club, café, campus and more. The reel scrolls continuously — hover to pause, click any card to use that scene.</p>
+    </div>
+    <div class="gallery-controls">
+      <div class="search-bar"><input id="bgSearch" type="text" placeholder="Search scenes — e.g. lake, boardroom, tennis…"></div>
+      <div class="cat-pills" id="catPills"></div>
+    </div>
+    <div class="gallery-count" id="galleryCount"></div>
+    <div id="showcase">
+      <div class="marquee"><div class="marquee-track" id="trackA"></div></div>
+      <div class="marquee"><div class="marquee-track" id="trackB"></div></div>
+    </div>
+    <div class="bg-grid" id="bgGrid" style="display:none"></div>
+    <p class="showcase-note">Sample sitters are AI-generated people — they are not real, and your own photo replaces them. Images render on demand, so give a card a second to load.</p>
+  </div>
+</section>
+<section id="pricing">
+  <div class="aurora"><span class="a1"></span><span class="a3"></span></div>
+  <div class="wrap" style="text-align:center;position:relative">
+    <div class="sec-head" style="color:#fff">
+      <span class="eyebrow">Pricing</span>
+      <h2 style="color:#fff">First headshot free. Then simple credit packs.</h2>
+      <p style="color:var(--on-dark-muted)">Localised pricing for the UK, Hong Kong and the US. Credits accumulate and never expire while your account is active.</p>
+    </div>
+    <div class="currency-toggle" id="currencyToggle">
+      <button class="active" data-cur="USD">🇺🇸 USD</button>
+      <button data-cur="GBP">🇬🇧 GBP</button>
+      <button data-cur="HKD">🇭🇰 HKD</button>
+    </div>
+    <div class="price-grid">
+      <div class="price-card">
+        <div class="plan">Free</div>
+        <div class="amount" data-usd="$0" data-gbp="£0" data-hkd="HK$0">$0</div>
+        <div class="per">1 credit on sign-up · 2 via referral</div>
+        <ul><li>All 100 scenes</li><li>Standard resolution</li><li>Saved to your dashboard</li><li>PNG download</li></ul>
+        <button class="price-btn" onclick="scrollToStudio()">Use my free credit</button>
+      </div>
+      <div class="price-card featured">
+        <span class="popular-tag">MOST POPULAR</span>
+        <div class="plan">Starter</div>
+        <div class="amount" data-usd="$9.99" data-gbp="£7.99" data-hkd="HK$78">$9.99</div>
+        <div class="per">5 generations · 20 variants</div>
+        <ul><li>All scenes & styles</li><li>High resolution (2K)</li><li>Scene re-rolls</li><li>Priority queue</li></ul>
+        <button class="price-btn" onclick="buyPack('Starter')">Buy Starter pack</button>
+      </div>
+      <div class="price-card">
+        <div class="plan">Pro</div>
+        <div class="amount" data-usd="$19.99" data-gbp="£15.99" data-hkd="HK$156">$19.99</div>
+        <div class="per">15 generations · 60 variants</div>
+        <ul><li>Everything in Starter</li><li>4K resolution</li><li>Outfit & lighting controls</li><li>LinkedIn-ready crops</li></ul>
+        <button class="price-btn" onclick="buyPack('Pro')">Buy Pro pack</button>
+      </div>
+      <div class="price-card">
+        <div class="plan">Career+</div>
+        <div class="amount" data-usd="$34.99" data-gbp="£27.99" data-hkd="HK$273">$34.99</div>
+        <div class="per">40 generations · 160 variants</div>
+        <ul><li>Everything in Pro</li><li>Human retouch on 1 photo</li><li>Team/referral sharing</li><li>Bundled CV template pack</li></ul>
+        <button class="price-btn grad" onclick="buyPack('Career+')">Buy Career+ pack</button>
+      </div>
+    </div>
+    <div class="referral-strip">
+      <div class="icon-tile tile-gold" style="margin-bottom:0">🎁</div>
+      <div><b>Refer a friend, both of you win.</b><br><span>Your friend starts with <b>2 free headshots</b> instead of 1 — and you earn <b>+1 credit</b> when they join. Credits accumulate with no limit.</span></div>
+      <button class="btn-primary" style="padding:12px 22px;font-size:14px" onclick="accountClick()">Get my referral link</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Summy Garden Studio · AI Headshot Studio</span>
+    <span><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Biometric data policy</a><a href="#">Support</a></span>
+  </div>
+</footer>
+<div class="modal-backdrop" id="register">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('register')">×</button>
+    <div class="icon-tile tile-teal">🌿</div>
+    <h3>Join Summy Garden Studio</h3>
+    <div class="gift-banner" id="refBanner" style="display:none">🎁 Referral applied — you'll start with 2 free headshots!</div>
+    <p>Free membership: your credits accumulate, and every headshot you generate is saved to your dashboard.</p>
+    <input type="text" id="regName" placeholder="Your name">
+    <input type="email" id="regEmail" placeholder="Email address">
+    <button class="btn-primary" style="width:100%;justify-content:center" onclick="registerAccount()">Create my free account</button>
+    <p style="font-size:11.5px;margin-top:14px;margin-bottom:0;color:#8fa6b3">Demo build: no password needed — your studio is saved in this browser. Production uses email verification.</p>
+  </div>
+</div>
+<div class="modal-backdrop" id="dashboard">
+  <div class="modal wide">
+    <button class="close-x" onclick="closeModal('dashboard')">×</button>
+    <h3 id="dashHello">My Studio</h3>
+    <p id="dashEmail" style="margin-bottom:18px"></p>
+    <div class="dash-stats">
+      <div class="dash-stat"><b id="dashCredits">0</b><span>credits available</span></div>
+      <div class="dash-stat"><b id="dashShots">0</b><span>headshots generated</span></div>
+      <div class="dash-stat"><b id="dashRefs">0</b><span>friends referred</span></div>
+    </div>
+    <div class="dash-label">Your referral link — friends get 2 free headshots, you get +1 credit</div>
+    <div class="ref-box"><input type="text" id="refLink" readonly><button class="copy-btn" onclick="copyRefLink()">Copy</button></div>
+    <div class="dash-label">Your referral code — share it anywhere</div>
+    <div class="ref-box"><input type="text" id="refCode" readonly style="font-weight:800;letter-spacing:.12em;font-size:15px"><button class="copy-btn" onclick="copyRefCode()">Copy</button></div>
+    <div class="dash-label">My headshots</div>
+    <div class="dash-history" id="dashHistory"></div>
+    <div class="dash-empty" id="dashEmpty">No headshots yet — generate your first one in the Studio!</div>
+    <button class="signout" onclick="signOut()">Sign out on this device</button>
+  </div>
+</div>
+<div class="modal-backdrop" id="paywall">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('paywall')">×</button>
+    <div class="icon-tile tile-gold">💳</div>
+    <h3>You're out of credits</h3>
+    <p>Top up with a credit pack from <b id="modalPrice">$9.99</b> — or share your referral link: your friend gets 2 free headshots and you earn +1 credit.</p>
+    <button class="btn-primary" style="width:100%;justify-content:center" onclick="closeModal('paywall');document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">See credit packs</button>
+  </div>
+</div>
+<div class="modal-backdrop" id="checkout">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('checkout')">×</button>
+    <div class="icon-tile tile-teal">🔒</div>
+    <h3 id="checkoutTitle">Checkout</h3>
+    <p>Demo checkout — in production this opens Stripe (cards, Apple Pay, FPS for HK). Click below to simulate a successful purchase.</p>
+    <button class="btn-primary" style="width:100%;justify-content:center" onclick="completePurchase()">Simulate payment ✓</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+<script>
+/* ================= Scene engine: 10 themes x 10 variants ================= */
+const enc = s => 'data:image/svg+xml;utf8,' + encodeURIComponent(s);
+const SVG = inner => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">${inner}</svg>`;
+const LG = (id,c1,c2,vert=1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${vert?0:1}" y2="${vert?1:0}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
+const SCENES = {
+office:(p)=>SVG(`<defs>${LG('g',p[0],p[1])}</defs><rect width="400" height="300" fill="url(#g)"/><g fill="rgba(255,255,255,.32)"><rect x="60" width="7" height="215"/><rect x="165" width="7" height="215"/><rect x="270" width="7" height="215"/><rect x="360" width="7" height="215"/></g><rect y="212" width="400" height="88" fill="${p[2]}"/><rect x="24" y="176" width="130" height="40" rx="9" fill="${p[3]}" opacity=".55"/><rect x="252" y="166" width="118" height="50" rx="9" fill="${p[3]}" opacity=".45"/><circle cx="370" cy="150" r="26" fill="#5f8f5f" opacity=".55"/><rect x="366" y="172" width="8" height="44" rx="3" fill="#7a5a3a" opacity=".5"/>`),
+bizpark:(p)=>SVG(`<defs>${LG('g',p[0],p[1])}</defs><rect width="400" height="300" fill="url(#g)"/><g opacity=".9"><rect x="18" y="78" width="88" height="152" rx="4" fill="${p[2]}"/><rect x="126" y="46" width="72" height="184" rx="4" fill="${p[2]}" opacity=".8"/><rect x="218" y="96" width="84" height="134" rx="4" fill="${p[2]}" opacity=".65"/><rect x="318" y="66" width="66" height="164" rx="4" fill="${p[2]}" opacity=".75"/></g><g fill="rgba(255,255,255,.28)"><rect x="30" y="92" width="10" height="130"/><rect x="52" y="92" width="10" height="130"/><rect x="74" y="92" width="10" height="130"/><rect x="138" y="60" width="9" height="160"/><rect x="158" y="60" width="9" height="160"/><rect x="178" y="60" width="9" height="160"/><rect x="230" y="108" width="9" height="112"/><rect x="250" y="108" width="9" height="112"/><rect x="270" y="108" width="9" height="112"/><rect x="330" y="80" width="8" height="140"/><rect x="348" y="80" width="8" height="140"/><rect x="366" y="80" width="8" height="140"/></g><g fill="${p[3]}"><circle cx="46" cy="238" r="26"/><circle cx="128" cy="244" r="22"/><circle cx="286" cy="240" r="27"/><circle cx="368" cy="246" r="21"/></g><rect y="252" width="400" height="48" fill="${p[3]}" opacity=".55"/>`),
+street:(p)=>SVG(`<defs>${LG('g',p[0],p[1])}</defs><rect width="400" height="300" fill="url(#g)"/><rect x="0" y="56" width="118" height="188" fill="${p[2]}"/><rect x="292" y="42" width="108" height="202" fill="${p[2]}" opacity=".82"/><g fill="rgba(255,240,200,.5)"><rect x="14" y="72" width="16" height="20"/><rect x="44" y="72" width="16" height="20"/><rect x="74" y="72" width="16" height="20"/><rect x="14" y="110" width="16" height="20"/><rect x="44" y="110" width="16" height="20"/><rect x="74" y="110" width="16" height="20"/><rect x="308" y="60" width="15" height="18"/><rect x="336" y="60" width="15" height="18"/><rect x="364" y="60" width="15" height="18"/><rect x="308" y="96" width="15" height="18"/><rect x="336" y="96" width="15" height="18"/><rect x="364" y="96" width="15" height="18"/></g><path d="M100,300 L182,148 L218,148 L300,300 Z" fill="${p[3]}"/><g fill="rgba(255,255,255,.7)"><rect x="196" y="168" width="8" height="18" rx="2"/><rect x="196" y="204" width="8" height="24" rx="2"/><rect x="196" y="248" width="8" height="30" rx="2"/></g><rect x="128" y="128" width="5" height="96" fill="#3d3d46"/><circle cx="130" cy="122" r="9" fill="#ffe9a8"/><circle cx="130" cy="122" r="17" fill="#ffe9a8" opacity=".3"/><rect x="268" y="128" width="5" height="96" fill="#3d3d46"/><circle cx="270" cy="122" r="9" fill="#ffe9a8"/><circle cx="270" cy="122" r="17" fill="#ffe9a8" opacity=".3"/>`),
+park:(p)=>SVG(`<defs>${LG('g',p[0],p[1])}</defs><rect width="400" height="300" fill="url(#g)"/><g fill="${p[2]}" opacity=".85"><circle cx="52" cy="118" r="52"/><circle cx="150" cy="96" r="60"/><circle cx="262" cy="112" r="56"/><circle cx="356" cy="100" r="50"/></g><g fill="#6b4a2e" opacity=".7"><rect x="144" y="140" width="11" height="70" rx="4"/><rect x="256" y="152" width="10" height="62" rx="4"/></g><g fill="${p[3]}"><circle cx="40" cy="232" r="24"/><circle cx="196" cy="240" r="27"/><circle cx="352" cy="236" r="24"/></g><rect y="252" width="400" height="48" fill="${p[3]}" opacity=".7"/><g><circle cx="82" cy="262" r="4" fill="#ff8fb0"/><circle cx="130" cy="272" r="4" fill="#ffd166"/><circle cx="248" cy="266" r="4" fill="#ff8fb0"/><circle cx="300" cy="274" r="4" fill="#ffd166"/><circle cx="368" cy="268" r="4" fill="#ff8fb0"/></g>`),
+lake:(p)=>SVG(`<defs>${LG('g',p[0],p[1])}${LG('w',p[2],p[1])}</defs><rect width="400" height="300" fill="url(#g)"/><circle cx="300" cy="82" r="26" fill="${p[3]}"/><circle cx="300" cy="82" r="44" fill="${p[3]}" opacity=".25"/><path d="M0,150 Q70,116 140,148 Q210,178 400,142 L400,168 L0,168 Z" fill="${p[2]}" opacity=".55"/><rect y="162" width="400" height="138" fill="url(#w)"/><rect x="282" y="170" width="36" height="110" fill="${p[3]}" opacity=".22"/><g stroke="rgba(255,255,255,.5)" stroke-width="3" stroke-linecap="round"><path d="M40,196 L96,196"/><path d="M150,214 L230,214"/><path d="M280,196 L326,196"/><path d="M90,246 L170,246"/><path d="M250,258 L330,258"/></g>`),
+tennis:(p)=>SVG(`<rect width="400" height="64" fill="${p[0]}"/><rect y="58" width="400" height="66" fill="${p[1]}"/><g stroke="rgba(255,255,255,.25)" stroke-width="3">${[0,1,2,3,4,5,6,7,8,9].map(i=>`<line x1="${20+i*40}" y1="58" x2="${20+i*40}" y2="124"/>`).join('')}</g><rect y="120" width="400" height="180" fill="${p[2]}"/><g stroke="#ffffff" stroke-width="4" fill="none" opacity=".9"><rect x="30" y="150" width="340" height="200"/><line x1="30" y1="216" x2="370" y2="216"/><line x1="200" y1="150" x2="200" y2="216"/></g><rect x="20" y="118" width="360" height="30" fill="rgba(20,30,40,.55)"/><g stroke="rgba(255,255,255,.5)" stroke-width="1.4">${[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>`<line x1="${20+i*30}" y1="118" x2="${20+i*30}" y2="148"/>`).join('')}<line x1="20" y1="128" x2="380" y2="128"/><line x1="20" y1="138" x2="380" y2="138"/></g><rect x="16" y="112" width="8" height="40" rx="3" fill="#2c3440"/><rect x="376" y="112" width="8" height="40" rx="3" fill="#2c3440"/>`),
+cafe:(p)=>SVG(`<defs>${LG('g',p[0],p[1])}</defs><rect width="400" height="300" fill="url(#g)"/><rect x="296" y="26" width="86" height="148" rx="8" fill="${p[3]}" opacity=".65"/><g stroke="rgba(255,255,255,.5)" stroke-width="4"><line x1="339" y1="26" x2="339" y2="174"/><line x1="296" y1="100" x2="382" y2="100"/></g><g stroke="#3a3a44" stroke-width="3"><line x1="80" y1="0" x2="80" y2="64"/><line x1="190" y1="0" x2="190" y2="50"/></g><circle cx="80" cy="76" r="11" fill="#ffdf8e"/><circle cx="80" cy="76" r="22" fill="#ffdf8e" opacity=".3"/><circle cx="190" cy="62" r="11" fill="#ffdf8e"/><circle cx="190" cy="62" r="22" fill="#ffdf8e" opacity=".3"/><rect y="196" width="400" height="46" rx="6" fill="${p[2]}"/><g fill="${p[2]}" opacity=".75"><rect x="40" y="252" width="70" height="12" rx="6"/><rect x="66" y="264" width="10" height="30"/><rect x="230" y="252" width="70" height="12" rx="6"/><rect x="256" y="264" width="10" height="30"/></g><rect y="242" width="400" height="58" fill="rgba(60,40,25,.18)"/>`),
+campus:(p)=>SVG(`<defs>${LG('g',p[0],p[1])}</defs><rect width="400" height="300" fill="url(#g)"/><path d="M70,96 L200,42 L330,96 Z" fill="${p[2]}"/><rect x="86" y="96" width="228" height="10" fill="${p[2]}" opacity=".85"/><g fill="${p[2]}" opacity=".9"><rect x="100" y="106" width="18" height="104"/><rect x="146" y="106" width="18" height="104"/><rect x="192" y="106" width="18" height="104"/><rect x="238" y="106" width="18" height="104"/><rect x="284" y="106" width="18" height="104"/></g><rect x="80" y="210" width="240" height="12" fill="${p[2]}"/><rect x="66" y="222" width="268" height="12" fill="${p[2]}" opacity=".8"/><rect x="52" y="234" width="296" height="12" fill="${p[2]}" opacity=".6"/><rect y="246" width="400" height="54" fill="${p[3]}"/><g fill="${p[3]}" opacity=".9"><circle cx="34" cy="236" r="22"/><circle cx="372" cy="240" r="24"/></g>`),
+studio:(p)=>SVG(`<defs><radialGradient id="r" cx=".5" cy=".32" r=".85"><stop offset="0" stop-color="${p[0]}"/><stop offset="1" stop-color="${p[1]}"/></radialGradient></defs><rect width="400" height="300" fill="url(#r)"/><ellipse cx="200" cy="296" rx="190" ry="26" fill="${p[2]}" opacity=".35"/>`),
+signature:(p)=>SVG(`<defs>${LG('g',p[0],p[1],0)}</defs><rect width="400" height="300" fill="url(#g)"/><rect width="400" height="300" fill="${p[2]}" opacity=".18"/><g fill="rgba(255,255,255,.14)"><circle cx="60" cy="70" r="34"/><circle cx="330" cy="60" r="24"/><circle cx="368" cy="190" r="40"/><circle cx="120" cy="240" r="20"/></g>`),
+};
+const THEMES = [
+{cat:'Office & Boardroom', fn:'office', items:[
+ ['Morning Boardroom','Dawn light through glass walls of a quiet boardroom.','Finance · Consulting',['#dbe9f4','#b8cfe2','#7e93a8','#5c7185']],
+ ['Executive Corner Office','Warm window light over a softly blurred corner office.','Management · Banking',['#f0e6d4','#dcc9a8','#a08a68','#7c6a4e']],
+ ['Glass Meeting Room','Cool frosted glass and steel, precise and corporate.','Consulting · Legal',['#e2ecf2','#c0d2de','#8ba3b4','#66808f']],
+ ['Open-Plan Daylight','Bright open workspace with soft depth of field.','Operations · HR',['#eef0ec','#d5d6cd','#a3a498','#82837a']],
+ ['Dusk Boardroom','Blue-hour glass office with city glow beyond.','Executives · Board roles',['#4a5d7d','#2e405e','#1d2c44','#152238']],
+ ['Mahogany Suite','Wood-panelled warmth, classic senior-partner presence.','Law · Private banking',['#c9a87c','#a5875e','#6e5340','#503a2a']],
+ ['Reception Lounge','Bright marble lobby with a premium first impression.','Client-facing roles',['#f4efe7','#e0d6c6','#b3a690','#8f8471']],
+ ['Skyline Meeting Deck','High-floor room with a hazy skyline through glass.','Fintech · Sales',['#cddbec','#a3b9d2','#71879f','#556a80']],
+ ['Creative Studio Office','Soft neutral studio office with plants and daylight.','Design · Media',['#ece9e2','#d3cec2','#9d9689','#7b756a']],
+ ['Navy Panel Office','Deep navy panelling with a confident key light.','Legal · C-suite',['#54648c','#39476b','#232e4c','#182240']],
+]},
+{cat:'Business Park', fn:'bizpark', items:[
+ ['Business Park Morning','Fresh morning light over landscaped office towers.','Corporate · Tech',['#dff0fa','#b9dcef','#9db3c4','#5f9a67']],
+ ['Campus at Noon','Bright glass campus blocks with clipped green rows.','Big tech · Product',['#e8f4fb','#cfe6f4','#a9becd','#63a06b']],
+ ['Golden Hour Park','Amber sun across the office park facades.','Sales · BD',['#fbe1b6','#f3c184','#b98f66','#6e9a5e']],
+ ['Innovation District','Cool blue towers, young trees, startup energy.','Startups · Founders',['#d9e8f5','#aecde6','#8299b3','#5c9a70']],
+ ['Riverside Offices','Soft water-cooled light over the business quarter.','Banking · Analytics',['#dcebf0','#b6d4de','#8aa6b5','#5e9573']],
+ ['Dusk Business Park','Warm windows lighting up at blue hour.','Executives · Consulting',['#54628a','#38466b','#28324e','#3d6a4a']],
+ ['Rainy-Day Campus','Muted grey-green calm after summer rain.','Public sector · ESG',['#dfe6e3','#bcc9c4','#93a19c','#4f7d59']],
+ ['Tech Quarter','Steel-and-glass blocks with a cyan reflection.','Engineering · Data',['#dceef2','#b3d7e0','#7fa2ae','#579a6f']],
+ ['Garden Atrium Walk','Planted walkway between low glass pavilions.','HR · Wellness',['#e7f3e9','#c9e4cf','#9cb8a4','#4f9a5e']],
+ ['Harbourfront Offices','Sea-light towers on the waterfront boulevard.','HK corporate · Trading',['#d8e9f4','#aacbe4','#7e97ad','#5a9573']],
+]},
+{cat:'City Street', fn:'street', items:[
+ ['Downtown Morning','Soft-focus main street in early light.','Media · Retail',['#e8eff5','#c8d7e2','#9fb0be','#8b95a0']],
+ ['Golden Hour Avenue','Warm evening sun down the avenue.','Founders · Creators',['#f7dfb8','#eec089','#b08d64','#9a8a74']],
+ ['Blue Hour Crossing','Blue dusk with warm windows and lamp glow.','Finance · Night owls',['#4d5d80','#333f5e','#232b42','#3c4458']],
+ ['Old Town Lane','Heritage facades in gentle stone tones.','Law · Boutique firms',['#ece4d4','#d6c8ae','#a89a80','#9a8f7d']],
+ ['Neon District','Muted neon bokeh, urban creative energy.','Gaming · Creative tech',['#3c3054','#2a2140','#1d1830','#4a3a66']],
+ ['Financial Mile','Steel canyon of banks and towers, direct and sharp.','Banking · Consulting',['#dbe2ea','#b9c4d1','#8b98a8','#7e8896']],
+ ['Rainy Reflections','Wet asphalt reflecting soft city light.','Film · Photography',['#c9d2da','#a3aeba','#77828f','#5e6873']],
+ ['Market Street','Lively low-rise street with awning colours.','Hospitality · Retail',['#f3e8d8','#e2ccab','#b09a7c','#96887a']],
+ ['Tram Line Morning','Hong Kong-style tram street waking up.','HK candidates · Media',['#e4ecef','#c2d2d8','#93a5ad','#83919c']],
+ ['Bridge Approach','First light on the bridge into the city.','Logistics · Strategy',['#dae4ee','#b4c6d8','#8399ad','#75849a']],
+]},
+{cat:'Park & Garden', fn:'park', items:[
+ ['Summer Garden','Full-bloom greens with flower dots — the studio signature scene.','All-rounder',['#e3f2fb','#c3e4f4','#5f9a5f','#7fb96e']],
+ ['Rose Garden','Soft pink-touched foliage in warm light.','PR · People roles',['#f7e9ec','#ecd0d8','#6f9a68','#8fbf7d']],
+ ['Morning Park Path','Dappled path light through fresh leaves.','Education · Coaching',['#eaf5ea','#cfe8cf','#568f56','#79b26b']],
+ ['Botanic Conservatory','Lush deep greens with glasshouse light.','Science · Wellness',['#e2efe6','#c2ddca','#3e7d4e','#5f9a68']],
+ ['Autumn Arboretum','Amber and rust foliage, seasoned and warm.','Consulting · Advisory',['#f6e8d2','#ecd0a4','#b07840','#c99a58']],
+ ['Lavender Walk','Purple-touched borders in soft evening sun.','Creative · Marketing',['#ece7f4','#d6cbe8','#6f6a9a','#9a8fc0']],
+ ['Meadow Light','Open meadow greens under a big bright sky.','Graduates · NGO',['#e6f4fb','#c8e6f2','#6aa561','#8cc478']],
+ ['Zen Courtyard','Still, minimal greens with quiet balance.','Architecture · Design',['#eaf0ec','#d2ddd5','#5a7d62','#7d9a80']],
+ ['Rain-Fresh Green','Post-rain leaves with a cool clean sheen.','ESG · Public sector',['#dfeae6','#bfd6cd','#4d8a63','#6fa578']],
+ ['Evening Garden Party','Warm string-light glow over dusk foliage.','Events · Hospitality',['#f3d9b0','#e0b47e','#4f7d4a','#6f9a5e']],
+]},
+{cat:'Lakeside', fn:'lake', items:[
+ ['Lake Sunrise','First gold over still summer water.','Leadership · Coaching',['#fbe3bc','#f3c48c','#d9a35e','#ffd47e']],
+ ['Blue Noon Lake','Bright blue water under a clear sky.','Tech · Product',['#d7ecfa','#a9d4f0','#5fa7d6','#ffe9a8']],
+ ['Misty Morning Water','Soft grey-blue mist over the shoreline.','Research · Strategy',['#e3eaf0','#c4d2dd','#93aebf','#e8eef2']],
+ ['Golden Hour Pier','Warm low sun stretching across the water.','Founders · Speakers',['#f6d7a8','#e8b478','#c08a52','#ffce7a']],
+ ['Alpine Lake','Cool mountain blues, steady and far-sighted.','Outdoors · Engineering',['#dce8f2','#b5cde2','#6f97b8','#dff0fa']],
+ ['Harbour View','Sea-light blues with a bright horizon.','HK finance · Shipping',['#d8e9f4','#a9cbe4','#5f8fb4','#f2f7fa']],
+ ['Dusk Reflection','Violet-blue dusk mirrored on calm water.','Executives · Authors',['#8d86b8','#665f94','#454070','#d8b4fe']],
+ ['Reed Bank Morning','Gentle green-blue shore with soft reeds.','Wellness · NGO',['#e2f0e9','#c2e0d2','#78ab96','#eaf6ef']],
+ ['Summer Regatta','Crisp regatta blues with white light.','Sales · Sport brands',['#d3eafa','#a2d0f0','#4f9ed3','#ffffff']],
+ ['Moonlit Water','Deep night blues with a silver moon path.','Portfolio · Film',['#31406b','#1f2c50','#131d3a','#e8ecf6']],
+]},
+{cat:'Sports & Tennis', fn:'tennis', items:[
+ ['Centre Court Blue','Classic hard-court blue with crisp white lines.','Sales · Competitive roles',['#cfe7f7','#5f8f5f','#2f6fb4','']],
+ ['Grass Court Club','Lawn-court green, heritage and polish.','Law · Club networks',['#dff0fa','#4f8a4f','#3e7d3e','']],
+ ['Clay Court Session','Terracotta clay with warm summer light.','Consulting · Europe roles',['#fbe9d4','#6f9a5e','#b4673c','']],
+ ['Morning Practice','Cool early-light court before the heat.','Discipline · Finance',['#e4eef5','#5f8f6f','#4a7fa5','']],
+ ['Padel Club','Modern teal court, social and fast-growing.','Startups · Community',['#d8f0f0','#4f8f7d','#0f766e','']],
+ ['Sunset Match','Golden sky over a dusk-lit court.','BD · Founders',['#f6d7a8','#6f8f5e','#8a5a9a','']],
+ ['Indoor Arena','Even indoor light on a pro surface.','Engineering · Esports',['#e2e6ee','#4a5568','#3b5bd6','']],
+ ['Country Club Green','Deep green court framed by hedges.','Private banking · Golf set',['#e8f2e4','#3e6e3e','#2e5d3e','']],
+ ['Beach Tennis','Sandy court with holiday brightness.','Travel · Lifestyle',['#d9edfa','#e8cf9a','#d4a856','']],
+ ['Championship Purple','Tour-style purple court, bold and pro.','Media · Sport brands',['#dcd7f2','#5a4f8f','#5b3fa8','']],
+]},
+{cat:'Café & Canteen', fn:'cafe', items:[
+ ['Sunlit Café Corner','Warm café wall with pendant glow and window light.','Freelance · Content',['#f2e3cd','#e2c9a4','#a5825c','#f7d9a4']],
+ ['Modern Staff Canteen','Clean bright canteen with long tables.','Operations · HR',['#eef1ec','#d7dcd2','#9aa08f','#dff0fa']],
+ ['Espresso Bar','Deep coffee tones with warm brass light.','Media · Founders',['#d9bd9a','#b49472','#6e4e34','#f2cf9a']],
+ ['Garden Terrace Café','Airy terrace greens beside the counter.','Wellness · Retail',['#e9f2e6','#cfe3cc','#7d9a72','#f2fbe8']],
+ ['Harbour Café','Sea-light café with big open windows.','HK lifestyle · Travel',['#ddedf4','#b9d7e4','#7d9aa5','#eef8fc']],
+ ['Bookshop Coffee Nook','Cosy shelves-and-coffee warmth.','Academia · Writers',['#e6d8c2','#d2ba98','#8a6a48','#f2dfb8']],
+ ['Brunch House','Blush-and-cream weekend brightness.','Marketing · Social',['#f7e7de','#ecc9bc','#b08a7a','#fbeee4']],
+ ['Night Café','Low amber light for after-hours character.','Creators · Music',['#5e4a3c','#42322a','#2c211c','#e8b46a']],
+ ['Juice & Salad Bar','Fresh green-and-citrus counter energy.','Health tech · Fitness',['#e9f5df','#d0eabc','#8aa55e','#f4fbdc']],
+ ['Tea House','Calm jade-and-wood tea room serenity.','Advisory · Culture',['#e2ede4','#c4dcc9','#6e8f74','#eef7ee']],
+]},
+{cat:'Campus & Library', fn:'campus', items:[
+ ['University Main Hall','Classical columns in honey stone.','Academia · Policy',['#e8f0f7','#cbdcea','#c4ad84','#6aa561']],
+ ['Graduation Lawn','Bright quad ready for the big day.','Graduates · Admissions',['#dff0fa','#bfe0f2','#d2c2a0','#5f9a5f']],
+ ['Heritage Library Front','Stately facade in warm afternoon light.','Law · Publishing',['#f2e6d2','#e0cca8','#a8946e','#7d9a68']],
+ ['Modern Faculty','Concrete-and-glass faculty building, crisp lines.','Engineering · Research',['#e6ebf0','#c9d3dc','#9aa5b0','#6f9a74']],
+ ['Autumn Campus','Amber trees framing the old hall.','Professors · Alumni',['#f6e4c4','#ecc994','#b09468','#c98d4e']],
+ ['Museum Steps','Grand gallery entrance, cultured and calm.','Arts · Curation',['#eceae4','#d5d1c6','#b3ab98','#8a9a80']],
+ ['Observatory Hill','Dusk blues over the science dome.','Science · Astronomy',['#66739a','#48547c','#8f97b3','#3e5d4a']],
+ ['Law School Portico','Dark stone authority with measured light.','Barristers · Partners',['#d9d4cc','#b8b1a5','#6e6656','#5f7d5e']],
+ ['Boarding School Green','Collegiate red-brick warmth on the green.','Education · UK roles',['#e8ddd2','#d4bfa8','#9a5f4a','#5f8f5a']],
+ ['Exam Hall Calm','Quiet neutral stone, focused and steady.','Certifications · Finance',['#ebeae6','#d6d4cc','#a8a396','#7d8f74']],
+]},
+{cat:'Studio Classics', fn:'studio', items:[
+ ['Classic Studio Grey','Timeless neutral sweep — the safest choice anywhere.','Finance · Law',['#c8ccd4','#8d93a0','#3a3f4a','']],
+ ['Pearl White','Clean bright white with gentle falloff.','Corporate · Medical',['#ffffff','#dcdfe3','#b8bcc2','']],
+ ['Charcoal Editorial','Matte charcoal spotlight, magazine-grade.','Design · C-suite',['#4a505c','#1c1f26','#0e1014','']],
+ ['Warm Stone','Neutral stone with a friendly warm cast.','HR · Accounting',['#ded6c8','#a1957f','#6e6350','']],
+ ['Deep Navy Studio','Rich navy vignette with quiet gravitas.','Executive · Legal',['#3a4468','#12162a','#0a0d1c','']],
+ ['Soft Beige Portrait','Gentle cream flattering to all skin tones.','Marketing · Education',['#f3ece2','#cbb99e','#a5947a','']],
+ ['Sage Studio','Muted sage green, balanced and natural.','Wellness · HR',['#dce6dc','#aec4ab','#84a081','']],
+ ['Powder Blue Studio','Calm powder blue diffusion, trustworthy.','Healthcare · Finance',['#e0ecf5','#a2c0d6','#7da2bd','']],
+ ['Blush Studio','Soft rose warmth, personable and polished.','PR · People roles',['#f4e2e0','#d4a7a2','#b8878a','']],
+ ['Jet Black Studio','True black with a controlled rim glow.','Speakers · Executives',['#33363c','#0b0c0f','#050608','']],
+]},
+{cat:'Signature Gradients', fn:'signature', items:[
+ ['Summy Signature','The Summy Garden Studio brand gradient — sky to leaf.','Creators · Startups',['#38bdf8','#4ade80','#22d3ee','']],
+ ['Sky to Sun','Morning blue melting into sunshine gold.','Optimists · Sales',['#7dd3fc','#fde68a','#fbbf24','']],
+ ['Ocean Noon','Clean two-stop sea blues, bright and technical.','Tech · Product',['#38bdf8','#0369a1','#22d3ee','']],
+ ['Garden Dawn','Leaf green into soft dawn cream.','Wellness · ESG',['#86efac','#fef3c7','#4ade80','']],
+ ['Sunset Petal','Gold into petal pink, warm achievement energy.','Awards · Events',['#fbbf24','#fb7185','#f97316','']],
+ ['Deep Sea Slate','Slate-teal depths, serious and unhurried.','Legal tech · Strategy',['#2c5457','#16323a','#3f7276','']],
+ ['Champagne Fade','Champagne into bronze, celebratory and refined.','Luxury · Events',['#f3e8d2','#c8a978','#e0c9a0','']],
+ ['Midsummer Night','Deep blue-green dusk with firefly glow.','Engineers · Authors',['#0a4a40','#062c45','#14532d','']],
+ ['Lemonade','Zesty citrus freshness for early careers.','Graduates · Social',['#fef9c3','#bef264','#facc15','']],
+ ['Sky Ceiling','Open blue-sky wash — limitless and upward.','Aviation · Careers pages',['#bfe0f2','#5ba7d1','#8fc6e6','']],
+]},
+];
+const BACKGROUNDS = [];
+THEMES.forEach((t,ti)=>{ t.items.forEach((it,idx)=>{ BACKGROUNDS.push({ id:'bg-'+ti+'-'+idx, cat:t.cat, name:it[0], desc:it[1], best:it[2], image: enc(SCENES[t.fn](it[3])) }); }); });
+const CATEGORIES = THEMES.map(t=>t.cat);
+const bgById = id => BACKGROUNDS.find(b=>b.id===id);
+const bgIndex = id => BACKGROUNDS.findIndex(b=>b.id===id);
+
+/* ---------- AI-generated sample portraits (on-demand, not real people) ---------- */
+function samplePhoto(i){
+  const gender = i%2 ? 'women' : 'men';
+  return 'https://randomuser.me/api/portraits/'+gender+'/'+((i*7+3)%99)+'.jpg';
+}
+function aiSceneURL(bg,i){
+  return '/.netlify/functions/sample?kind=b&i='+i;
+}
+const sceneCache={};
+function timeoutP(p,ms){ return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]); }
+async function getSceneImg(bg){
+  if(sceneCache[bg.id]) return sceneCache[bg.id];
+  try{ sceneCache[bg.id]=await timeoutP(loadImg(aiSceneURL(bg,bgIndex(bg.id))),25000); }
+  catch(e){ sceneCache[bg.id]=await loadImg(bg.image); }
+  return sceneCache[bg.id];
+}
+function aiSampleURL(bg,i){
+  return '/.netlify/functions/sample?kind=p&i='+i;
+}
+
+/* ---------- Storage & membership ---------- */
+let store; try{ store = window.localStorage; }catch(e){ const m={}; store={getItem:k=>(k in m?m[k]:null),setItem:(k,v)=>m[k]=String(v)}; }
+let user = null; try{ user = JSON.parse(store.getItem('sgsUser')||'null'); }catch(e){}
+let guestCredits = store.getItem('hsCredits')!==null ? parseInt(store.getItem('hsCredits'),10) : 1;
+const refParam = new URLSearchParams(location.search).get('ref');
+function getCredits(){ return user ? user.credits : guestCredits; }
+function setCredits(n){ if(user){ user.credits=n; saveUser(); } else { guestCredits=n; store.setItem('hsCredits',n); } updateCreditLabel(); }
+function saveUser(){ store.setItem('sgsUser', JSON.stringify(user)); }
+function makeCode(email){ let h=0; for(const ch of email) h=(h*31+ch.charCodeAt(0))>>>0; return 'SGS'+h.toString(36).toUpperCase().slice(0,6); }
+function accountClick(){ if(user){ renderDashboard(); openModal('dashboard'); } else { if(refParam) document.getElementById('refBanner').style.display='block'; openModal('register'); } }
+function registerAccount(){
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
+  if(!name){ toast('Please enter your name'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast('Please enter a valid email'); return; }
+  const bonus = refParam ? 2 : 1;
+  user = { email, name, code:makeCode(email), credits: bonus + Math.max(guestCredits-1,0), history: [], referredBy: refParam||null, refCount: 0, joined: new Date().toISOString().slice(0,10) };
+  saveUser();
+  closeModal('register'); updateCreditLabel(); updateAccountBtn();
+  toast(refParam ? ('🎁 Welcome '+name+'! 2 free headshots added via referral') : ('🌿 Welcome '+name+'! Your free headshot credit is ready'));
+}
+function signOut(){ user=null; store.setItem('sgsUser','null'); closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out on this device'); }
+function updateAccountBtn(){ document.getElementById('accountBtn').textContent = user ? ('🌿 '+user.name.split(' ')[0]) : LT().join; }
+function renderDashboard(){
+  document.getElementById('dashHello').textContent = 'My Studio — '+user.name;
+  document.getElementById('dashEmail').textContent = user.email+' · member since '+user.joined;
+  document.getElementById('dashCredits').textContent = user.credits;
+  document.getElementById('dashShots').textContent = user.history.length;
+  document.getElementById('dashRefs').textContent = user.refCount||0;
+  document.getElementById('refLink').value = location.origin+location.pathname+'?ref='+user.code;
+  document.getElementById('refCode').value = user.code;
+  const h=document.getElementById('dashHistory'); h.innerHTML='';
+  document.getElementById('dashEmpty').style.display = user.history.length ? 'none' : 'block';
+  user.history.slice().reverse().forEach(it=>{
+    const bg=bgById(it.bg);
+    const d=document.createElement('div'); d.className='dash-frame';
+    d.innerHTML=(it.thumb?`<img src="${it.thumb}" alt="">`:'')+`<small>${bg?bg.name:''} · ${it.date}</small>`;
+    h.appendChild(d);
+  });
+}
+function copyRefLink(){
+  const inp=document.getElementById('refLink'); inp.select();
+  try{ navigator.clipboard.writeText(inp.value); }catch(e){ document.execCommand('copy'); }
+  toast('Referral link copied — share it anywhere!');
+}
+function copyRefCode(){
+  const inp=document.getElementById('refCode'); inp.select();
+  try{ navigator.clipboard.writeText(inp.value); }catch(e){ document.execCommand('copy'); }
+  toast('Referral code copied!');
+}
+
+/* ---------- State ---------- */
+let selectedBg = BACKGROUNDS[30].id;
+let selectedLook='Business formal', currency='USD';
+let studioCat = 'Park & Garden', galleryCat = 'All', searchTerm='';
+const LOOKS = {'Business formal':'contrast(1.07) saturate(.96)','Smart casual':'brightness(1.05) saturate(1.06)','Creative':'saturate(1.16) contrast(1.05)','Tech casual':'brightness(1.06) saturate(1.0)','Sportswear':'saturate(1.12) brightness(1.05)','Uniform':'contrast(1.06) saturate(.98)'};
+const PACKS = {Starter:{credits:5,usd:'$9.99',gbp:'£7.99',hkd:'HK$78'},Pro:{credits:15,usd:'$19.99',gbp:'£15.99',hkd:'HK$156'},'Career+':{credits:40,usd:'$34.99',gbp:'£27.99',hkd:'HK$273'}};
+let pendingPack=null;
+
+/* ---------- Portrait capture (drag + zoom, head & shoulders) ---------- */
+let cropImg=null, cropScale=1, cropMin=1, cropOX=0, cropOY=0, dragging=false, lastX=0, lastY=0;
+const CW=240, CH=300;
+function pickFile(e){ if(e&&e.target&&e.target.closest&&e.target.closest('#cropCanvas'))return; document.getElementById('fileInput').click(); }
+document.getElementById('fileInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{ const img=new Image(); img.onload=()=>{ cropImg=img; setupCropper(); }; img.src=ev.target.result; };
+  r.readAsDataURL(f);
+});
+function setupCropper(){
+  const zone=document.getElementById('uploadZone');
+  zone.classList.remove('clickable'); zone.onclick=null;
+  zone.innerHTML=`<canvas id="cropCanvas" width="${CW}" height="${CH}"></canvas>
+   <div class="zoom-row">🔍<input type="range" id="zoomSlider" min="100" max="320" value="100"></div>
+   <div class="crop-hint">Drag to frame your head & shoulders · slide to zoom</div>
+   <button class="change-photo" onclick="document.getElementById('fileInput').click()">Change photo</button>`;
+  cropMin=Math.max(CW/cropImg.width, CH/cropImg.height); cropScale=cropMin;
+  cropOX=(CW-cropImg.width*cropScale)/2; cropOY=(CH-cropImg.height*cropScale)/2;
+  const cv=document.getElementById('cropCanvas');
+  cv.addEventListener('pointerdown',ev=>{dragging=true;lastX=ev.clientX;lastY=ev.clientY;cv.setPointerCapture(ev.pointerId);});
+  cv.addEventListener('pointermove',ev=>{if(!dragging)return; cropOX+=ev.clientX-lastX; cropOY+=ev.clientY-lastY; lastX=ev.clientX; lastY=ev.clientY; clampCrop(); drawCrop();});
+  cv.addEventListener('pointerup',()=>dragging=false);
+  cv.addEventListener('wheel',ev=>{ev.preventDefault(); zoomCrop(cropScale*(ev.deltaY<0?1.06:0.94));},{passive:false});
+  document.getElementById('zoomSlider').addEventListener('input',ev=>{ zoomCrop(cropMin*ev.target.value/100); });
+  drawCrop();
+}
+function zoomCrop(ns){
+  ns=Math.min(Math.max(ns, cropMin), cropMin*3.2);
+  const cx=CW/2, cy=CH/2;
+  cropOX = cx-(cx-cropOX)*(ns/cropScale); cropOY = cy-(cy-cropOY)*(ns/cropScale);
+  cropScale=ns; clampCrop(); drawCrop();
+  const sl=document.getElementById('zoomSlider'); if(sl) sl.value=Math.round(cropScale/cropMin*100);
+}
+function clampCrop(){
+  cropOX=Math.min(0,Math.max(CW-cropImg.width*cropScale,cropOX));
+  cropOY=Math.min(0,Math.max(CH-cropImg.height*cropScale,cropOY));
+}
+function drawCrop(){
+  const cv=document.getElementById('cropCanvas'); if(!cv)return;
+  const x=cv.getContext('2d');
+  x.clearRect(0,0,CW,CH);
+  x.drawImage(cropImg,cropOX,cropOY,cropImg.width*cropScale,cropImg.height*cropScale);
+  x.beginPath(); x.ellipse(CW/2,CH*.34,CW*.27,CH*.27,0,0,Math.PI*2);
+  x.strokeStyle='rgba(125,211,252,.95)'; x.lineWidth=2.5; x.stroke();
+  x.strokeStyle='rgba(125,211,252,.45)'; x.strokeRect(1,1,CW-2,CH-2);
+}
+function getPortraitCanvas(){
+  const out=document.createElement('canvas'); out.width=480; out.height=600;
+  const x=out.getContext('2d'); const k=480/CW;
+  x.drawImage(cropImg, cropOX*k, cropOY*k, cropImg.width*cropScale*k, cropImg.height*cropScale*k);
+  return out;
+}
+
+/* ---------- On-device person segmentation (MediaPipe) ---------- */
+let segmenter=null, segFailed=false;
+function getSegmenter(){
+  if(segmenter||segFailed) return segmenter;
+  try{
+    segmenter = new SelfieSegmentation({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/'+f});
+    segmenter.setOptions({modelSelection:1});
+  }catch(e){ segFailed=true; segmenter=null; }
+  return segmenter;
+}
+function segmentPortrait(pc){
+  return new Promise(resolve=>{
+    const seg=getSegmenter();
+    if(!seg){ resolve(null); return; }
+    let done=false;
+    const t=setTimeout(()=>{ if(!done){done=true; resolve(null);} },9000);
+    seg.onResults(r=>{
+      if(done) return; done=true; clearTimeout(t);
+      const m=document.createElement('canvas'); m.width=pc.width; m.height=pc.height;
+      const mx=m.getContext('2d');
+      mx.filter='blur(2px)';
+      mx.drawImage(r.segmentationMask,0,0,pc.width,pc.height);
+      resolve(m);
+    });
+    try{ seg.send({image:pc}); }catch(e){ if(!done){done=true; clearTimeout(t); resolve(null);} }
+  });
+}
+
+/* ---------- Compose: scene + cut-out person + enhancement ---------- */
+function loadImg(src){ return new Promise((res,rej)=>{ const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
+function personLayer(pc, mask){
+  const c=document.createElement('canvas'); c.width=pc.width; c.height=pc.height;
+  const x=c.getContext('2d');
+  x.drawImage(pc,0,0);
+  if(mask){
+    x.globalCompositeOperation='destination-in';
+    x.drawImage(mask,0,0);
+  } else {
+    /* fallback: soft radial vignette blend */
+    const g=x.createRadialGradient(240,260,120,240,300,330);
+    g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(.75,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    x.globalCompositeOperation='destination-in';
+    x.fillStyle=g; x.fillRect(0,0,c.width,c.height);
+  }
+  return c;
+}
+async function composeVariant(bg, person, extra){
+  const W=480,H=600;
+  const draw=(sceneImg)=>{
+    const c=document.createElement('canvas'); c.width=W; c.height=H;
+    const x=c.getContext('2d');
+    const sc=Math.max(W/sceneImg.width,H/sceneImg.height);
+    x.drawImage(sceneImg,(W-sceneImg.width*sc)/2,(H-sceneImg.height*sc)/2,sceneImg.width*sc,sceneImg.height*sc);
+    const FX=LOOKS[selectedLook]+' brightness(1.04) '+extra;
+    x.save();
+    x.filter=FX;
+    x.drawImage(person,0,0);
+    x.globalAlpha=.28; x.filter='blur(2.5px) '+FX;
+    x.drawImage(person,0,0);
+    x.restore(); x.globalAlpha=1; x.filter='none';
+    return c;
+  };
+  const sceneImg=await getSceneImg(bg);
+  try{ return draw(sceneImg).toDataURL('image/png'); }
+  catch(e){ /* cross-origin taint fallback */ const svg=await loadImg(bg.image); return draw(svg).toDataURL('image/png'); }
+}
+
+/* ---------- Studio picker ---------- */
+const catSel=document.getElementById('catSel');
+CATEGORIES.forEach(cat=>{const o=document.createElement('option');o.value=cat;o.textContent=cat;catSel.appendChild(o);});
+catSel.value=studioCat;
+catSel.onchange=()=>{studioCat=catSel.value; renderSwatches();};
+function renderCatStrip(){catSel.value=studioCat;}
+function renderSwatches(){
+  const grid=document.getElementById('swatchGrid'); grid.innerHTML='';
+  BACKGROUNDS.filter(b=>b.cat===studioCat).forEach(b=>{
+    const sw=document.createElement('div');
+    sw.className='swatch'+(b.id===selectedBg?' active':'');
+    sw.style.backgroundImage=`url("${aiSampleURL(b,bgIndex(b.id))}"), url("${b.image}")`; sw.title=b.name;
+    sw.onclick=()=>selectBg(b.id,{fromStudio:true});
+    grid.appendChild(sw);
+  });
+  renderSelInfo();
+}
+function renderSelInfo(){
+  const b=bgById(selectedBg);
+  document.getElementById('selBgInfo').innerHTML=`<b>${b.name}</b> · ${b.cat}<br><span style="opacity:.8">${b.desc}</span>`;
+}
+
+/* ---------- Showcase ---------- */
+const pills=document.getElementById('catPills');
+['All',...CATEGORIES].forEach(cat=>{
+  const p=document.createElement('button');
+  p.className='cat-pill'+(cat===galleryCat?' active':''); p.textContent=cat; p.dataset.cat=cat;
+  p.onclick=()=>{galleryCat=cat; renderPills(); renderShowcase();};
+  pills.appendChild(p);
+});
+function renderPills(){document.querySelectorAll('.cat-pill').forEach(p=>p.classList.toggle('active',p.dataset.cat===galleryCat));}
+document.getElementById('bgSearch').addEventListener('input',e=>{searchTerm=e.target.value.trim().toLowerCase(); renderShowcase();});
+function retryImg(el){
+  const n=(+el.dataset.r||0)+1; el.dataset.r=n;
+  if(n>3){ el.remove(); return; }
+  const src=el.src; el.removeAttribute('src');
+  setTimeout(()=>{ el.src=src; }, 5000*n);
+}
+function makeCard(bg){
+  const card=document.createElement('div');
+  card.className='bg-card'+(bg.id===selectedBg?' selected':'');
+  card.dataset.id=bg.id;
+  const gi=bgIndex(bg.id);
+  card.innerHTML=`<div class="bg-preview" style="background-image:url(&quot;${bg.image}&quot;)"><img class="ai-sample" loading="lazy" src="${aiSampleURL(bg,gi)}" onerror="retryImg(this)" alt=""><span class="cat-tag">${bg.cat}</span></div>
+    <div class="bg-body"><h3>${bg.name}<span class="check-badge">✓</span></h3><p>${bg.desc}</p><span class="best-for">Best for: ${bg.best}</span></div>`;
+  card.onclick=()=>selectBg(bg.id,{scroll:true});
+  return card;
+}
+function fillTrack(track, list, secsPerCard){
+  track.innerHTML='';
+  [...list,...list].forEach(bg=>track.appendChild(makeCard(bg)));
+  track.style.animationDuration=(Math.max(list.length,4)*secsPerCard)+'s';
+}
+function renderShowcase(){
+  const filtered=BACKGROUNDS.filter(b=>
+    (galleryCat==='All'||b.cat===galleryCat) &&
+    (!searchTerm || (b.name+' '+b.desc+' '+b.best+' '+b.cat).toLowerCase().includes(searchTerm))
+  );
+  const showcase=document.getElementById('showcase'), grid=document.getElementById('bgGrid');
+  if(searchTerm){
+    showcase.style.display='none'; grid.style.display='grid'; grid.innerHTML='';
+    filtered.forEach(bg=>grid.appendChild(makeCard(bg)));
+    document.getElementById('galleryCount').textContent=filtered.length+' scene'+(filtered.length===1?'':'s')+' match your search';
+  } else {
+    showcase.style.display='block'; grid.style.display='none';
+    const half=Math.ceil(filtered.length/2);
+    fillTrack(document.getElementById('trackA'), filtered.slice(0,half), 3.2);
+    fillTrack(document.getElementById('trackB'), filtered.slice(half).length?filtered.slice(half):filtered.slice(0,half), 4.1);
+    document.getElementById('galleryCount').textContent=filtered.length+' of '+BACKGROUNDS.length+' scenes · scrolling showcase — hover to pause, click to select';
+  }
+}
+function selectBg(id,opts={}){
+  selectedBg=id;
+  const b=bgById(id);
+  if(!opts.fromStudio){ studioCat=b.cat; renderCatStrip(); }
+  renderSwatches();
+  document.querySelectorAll('.bg-card').forEach(c=>c.classList.toggle('selected',c.dataset.id===id));
+  if(opts.scroll){document.getElementById('studio').scrollIntoView({behavior:'smooth'});toast('Scene selected: '+b.name);}
+}
+document.querySelectorAll('#attireChips .chip').forEach(c=>c.onclick=()=>{
+  selectedLook=c.dataset.attire;
+  document.querySelectorAll('#attireChips .chip').forEach(x=>x.classList.toggle('active',x===c));
+});
+
+/* ---------- Server generation (identity-preserving, when API key is configured) ---------- */
+async function tryServerGenerate(bg){
+  const pc=getPortraitCanvas();
+  const selfie=pc.toDataURL('image/jpeg',.85);
+  const one=async(vi)=>{
+    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
+    const res=await fetch('/.netlify/functions/generate',{method:'POST',signal:ctrl.signal,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, look:selectedLook, variant:vi})});
+    clearTimeout(t);
+    if(!res.ok) throw new Error('server '+res.status);
+    const d=await res.json();
+    if(!d.image) throw new Error('no image');
+    return d.image;
+  };
+  const results=await Promise.allSettled([one(0),one(1),one(2),one(3)]);
+  const ok=results.filter(r=>r.status==='fulfilled').map(r=>r.value);
+  if(!ok.length) throw new Error('all variants failed');
+  while(ok.length<4) ok.push(ok[ok.length-1]);
+  return ok.slice(0,4);
+}
+
+/* ---------- Generate ---------- */
+document.getElementById('genBtn').onclick=()=>{
+  if(!cropImg){toast('Please upload a selfie first 📷');return;}
+  if(getCredits()<=0){openModal('paywall');return;}
+  runGeneration();
+};
+function runGeneration(){
+  const zone=document.getElementById('resultZone');
+  zone.innerHTML=`<div class="result-empty" style="display:block;padding-top:60px">
+    <div class="progress-wrap"><div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
+    <div class="progress-label" id="plabel">Detecting you in the photo…</div></div></div>`;
+  const steps=[['Detecting you in the photo…',16],['Cutting you out of the background…',38],['Enhancing skin & tone…',60],['Matching scene lighting…',82],['Rendering 4 variants…',96]];
+  let i=0;
+  const tick=setInterval(()=>{
+    if(i>=steps.length){clearInterval(tick);return;}
+    document.getElementById('plabel').textContent=steps[i][0];
+    document.getElementById('pfill').style.width=steps[i][1]+'%';
+    i++;
+  },650);
+  showResults(tick);
+}
+async function showResults(tick){
+  const bg=bgById(selectedBg);
+  const defs=[['A',''],['B','brightness(1.03)'],['C','contrast(1.05) saturate(.96)'],['D','sepia(.07) brightness(1.02)']];
+  let urls=null, mode='local', usedAI=true;
+  try{ urls=await tryServerGenerate(bg); mode='server'; }catch(e){}
+  if(!urls){
+    try{
+      const pc=getPortraitCanvas();
+      const mask=await segmentPortrait(pc);
+      if(!mask) usedAI=false;
+      const person=personLayer(pc,mask);
+      urls = await Promise.all(defs.map(d=>composeVariant(bg,person,d[1])));
+    }catch(e){ clearInterval(tick); toast('Something went wrong — try re-uploading your photo'); return; }
+  }
+  clearInterval(tick);
+  setCredits(getCredits()-1);
+  if(user){
+    try{
+      const t=document.createElement('canvas'); t.width=120; t.height=150;
+      const ti=await loadImg(urls[0]); t.getContext('2d').drawImage(ti,0,0,120,150);
+      user.history.push({bg:bg.id, attire:selectedLook, date:new Date().toISOString().slice(5,10), thumb:t.toDataURL('image/jpeg',.72)});
+      if(user.history.length>18) user.history.shift();
+      saveUser();
+    }catch(e){}
+  }
+  const zone=document.getElementById('resultZone');
+  const joinCta = user ? '' : ' · <a href="#" onclick="accountClick();return false" style="color:#7dd3fc">Join free to save your headshots →</a>';
+  const aiNote = mode==='server' ? 'studio AI render — identity preserved' : (usedAI ? 'AI cut-out + skin & tone enhanced' : 'soft-blend mode + tone enhanced');
+  zone.innerHTML='<div class="result-grid">'+defs.map((d,i)=>
+    `<div class="headshot-frame"><img class="comp" src="${urls[i]}" alt="Headshot variant ${d[0]}">
+     <span class="tag">Variant ${d[0]}</span><a class="dl" download="summy-garden-headshot-${d[0]}.png" href="${urls[i]}">⤓ PNG</a></div>`).join('')+
+    `</div><p class="sim-note" style="margin-top:18px">Scene: <b style="color:#fff">${bg.name}</b> · Look: <b style="color:#fff">${selectedLook}</b> · ${aiNote} · ${getCredits()} credit${getCredits()===1?'':'s'} left${user?' · saved to My Studio':''}${joinCta}</p>`;
+  if(getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
+  else toast('Headshots ready! Click ⤓ PNG to download'+(user?' · saved to your dashboard':''));
+}
+
+/* ---------- Credits / paywall / checkout ---------- */
+function updateCreditLabel(){
+  const n=getCredits();
+  document.getElementById('creditLabel').textContent = n+' '+(n===1?LT().credit:LT().credits);
+}
+function buyPack(name){pendingPack=name;
+  document.getElementById('checkoutTitle').textContent=name+' pack — '+PACKS[name][currency.toLowerCase()];
+  openModal('checkout');}
+function completePurchase(){
+  setCredits(getCredits()+PACKS[pendingPack].credits); store.setItem('hsPurchased','1');
+  closeModal('checkout');
+  toast('✓ '+pendingPack+' pack added — '+getCredits()+' credits available');
+  document.getElementById('studio').scrollIntoView({behavior:'smooth'});}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function scrollToStudio(){document.getElementById('studio').scrollIntoView({behavior:'smooth'})}
+document.querySelectorAll('#currencyToggle button').forEach(b=>b.onclick=()=>{
+  currency=b.dataset.cur;
+  document.querySelectorAll('#currencyToggle button').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.amount').forEach(a=>a.textContent=a.dataset[currency.toLowerCase()]);
+  document.getElementById('modalPrice').textContent=PACKS.Starter[currency.toLowerCase()];
+});
+let toastTimer;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);}
+
+
+/* ---------- Internationalisation (same 11-language set as the Interview Coach app) ---------- */
+const LANG_LIST=[["en","English"],["zh","中文 (简体)"],["zh-TW","中文 (繁體)"],["es","Español"],["hi","हिन्दी"],["ar","العربية"],["fr","Français"],["pt","Português"],["ru","Русский"],["ja","日本語"],["de","Deutsch"]];
+const I18N={
+en:{nav1:"Headshot Studio",nav2:"Backgrounds",nav3:"Pricing",join:"Join free",badge:"✦ Join free — get your first headshot on us",badge_ref:"🎁 You were referred — join free and get 2 headshots on us",h1a:"Studio-quality headshots,",h1b:"from one selfie",hero_p:"Frame your head and shoulders, pick a high-end scene — office, business park, lakeside, tennis club and more — and download enhanced, recruiter-ready headshots in minutes.",cta1:"Create my free headshot →",cta2:"See the scenes",st1:"more profile views with a professional photo",st2:"designed scenes in 10 themed collections",st3:"headshots when a friend refers you",st4:"localised pricing",how_h2:"Three steps to a recruiter-ready photo",how_p:"No studio, no scheduling, no awkward posing. Your first headshot is free with your account — referred friends start with two.",s1t:"1 · Upload & frame yourself",s1d:"Upload a selfie, then drag and zoom until your head and shoulders fill the guide.",s2t:"2 · Pick scene & look",s2d:"100 scenes across 10 themed collections, plus colour-graded looks from business-crisp to creative.",s3t:"3 · Enhance, save & download",s3d:"Skin and tone enhancement applied automatically. Download any variant as a PNG.",try_h2:"Try it now",lbl_photo:"Your photo",lbl_scene:"Scene collection",lbl_look:"Look & grading",lbl_results:"Results",up_b:"Click to upload a selfie",gen:"✨ Generate my headshots",empty:"Your 4 headshot variants will appear here.<br>Upload a photo and hit Generate.",sc_h2:"100 scenes, 10 themed collections",sc_p:"Office, business park, city street, park, lakeside, tennis club, café, campus and more. The reel scrolls continuously — hover to pause, click any card to use that scene.",sc_search:"Search scenes — e.g. lake, boardroom, tennis…",sc_note:"Sample sitters are AI-generated people — they are not real, and your own photo replaces them.",pr_h2:"First headshot free. Then simple credit packs.",pr_p:"Localised pricing for the UK, Hong Kong and the US. Credits accumulate and never expire while your account is active.",btn_free:"Use my free credit",buy1:"Buy Starter pack",buy2:"Buy Pro pack",buy3:"Buy Career+ pack",rs_b:"Refer a friend, both of you win.",rs_t:"Your friend starts with <b>2 free headshots</b> instead of 1 — and you earn <b>+1 credit</b> when they join. Credits accumulate with no limit.",rs_btn:"Get my referral link",reg_h:"Join Summy Garden Studio",reg_p:"Free membership: your credits accumulate, and every headshot you generate is saved to your dashboard.",ph_name:"Your name",ph_email:"Email address",reg_btn:"Create my free account",d_credits:"credits available",d_shots:"headshots generated",d_refs:"friends referred",d_link:"Your referral link — friends get 2 free headshots, you get +1 credit",d_code:"Your referral code — share it anywhere",d_photos:"My headshots",d_empty:"No headshots yet — generate your first one in the Studio!",d_out:"Sign out on this device",copy:"Copy",pw_h:"You're out of credits",pw_btn:"See credit packs",credit:"credit",credits:"credits"},
+zh:{nav1:"头像工作室",nav2:"背景场景",nav3:"价格",join:"免费加入",badge:"✦ 免费加入 — 首张职业头像由我们请客",badge_ref:"🎁 好友推荐 — 免费加入即获 2 张头像",h1a:"影棚级职业头像，",h1b:"一张自拍即可",hero_p:"框选头肩，挑选高级场景 — 办公室、商务园区、湖畔、网球俱乐部等 — 几分钟内下载增强后的求职头像。",cta1:"创建我的免费头像 →",cta2:"浏览场景",st1:"专业照片带来更多主页浏览",st2:"个精心设计的场景，10 大主题",st3:"好友推荐可获免费头像",st4:"本地化定价",how_h2:"三步获得求职头像",how_p:"无需影棚、无需预约。注册即送首张头像 — 受邀好友可获两张。",s1t:"1 · 上传并框选",s1d:"上传自拍，拖动缩放，让头肩填满取景框。",s2t:"2 · 选择场景与风格",s2d:"10 大主题共 100 个场景，从商务到创意的多种调色风格。",s3t:"3 · 增强、保存并下载",s3d:"自动进行肤色与色调增强，任意版本可下载 PNG。",try_h2:"立即体验",lbl_photo:"你的照片",lbl_scene:"场景系列",lbl_look:"风格与调色",lbl_results:"生成结果",up_b:"点击上传自拍",gen:"✨ 生成我的头像",empty:"你的 4 个头像版本将显示在这里。<br>上传照片并点击生成。",sc_h2:"100 个场景，10 大主题",sc_p:"办公室、商务园区、街道、公园、湖畔、网球俱乐部、咖啡馆、校园等。持续滚动展示 — 悬停暂停，点击选用。",sc_search:"搜索场景 — 如 湖、会议室、网球…",sc_note:"示例人物由 AI 生成，并非真人；生成时将替换为你的照片。",pr_h2:"首张头像免费，之后按次充值。",pr_p:"面向英国、香港与美国的本地化定价。积分累计且账户有效期内永不过期。",btn_free:"使用免费额度",buy1:"购买入门包",buy2:"购买专业包",buy3:"购买进阶包",rs_b:"推荐好友，双方获益。",rs_t:"好友注册即获 <b>2 张免费头像</b>，你也将获得 <b>+1 积分</b>。积分无上限累计。",rs_btn:"获取我的推荐链接",reg_h:"加入 Summy Garden Studio",reg_p:"免费会员：积分累计，生成的每张头像都保存在你的面板中。",ph_name:"你的姓名",ph_email:"电子邮箱",reg_btn:"创建免费账户",d_credits:"可用积分",d_shots:"已生成头像",d_refs:"已推荐好友",d_link:"你的推荐链接 — 好友获 2 张免费头像，你获 +1 积分",d_code:"你的推荐码 — 随处分享",d_photos:"我的头像",d_empty:"暂无头像 — 去工作室生成第一张吧！",d_out:"在此设备退出登录",copy:"复制",pw_h:"积分已用完",pw_btn:"查看充值包",credit:"积分",credits:"积分"},
+"zh-TW":{nav1:"頭像工作室",nav2:"背景場景",nav3:"價格",join:"免費加入",badge:"✦ 免費加入 — 首張職業頭像由我們請客",badge_ref:"🎁 好友推薦 — 免費加入即獲 2 張頭像",h1a:"攝影棚級職業頭像，",h1b:"一張自拍即可",hero_p:"框選頭肩，挑選高級場景 — 辦公室、商務園區、湖畔、網球俱樂部等 — 幾分鐘內下載增強後的求職頭像。",cta1:"建立我的免費頭像 →",cta2:"瀏覽場景",st1:"專業照片帶來更多檔案瀏覽",st2:"個精心設計場景，10 大主題",st3:"好友推薦可獲免費頭像",st4:"在地化定價",how_h2:"三步獲得求職頭像",how_p:"無需攝影棚、無需預約。註冊即送首張頭像 — 受邀好友可獲兩張。",s1t:"1 · 上傳並框選",s1d:"上傳自拍，拖曳縮放，讓頭肩填滿取景框。",s2t:"2 · 選擇場景與風格",s2d:"10 大主題共 100 個場景，從商務到創意的多種調色風格。",s3t:"3 · 增強、儲存並下載",s3d:"自動進行膚色與色調增強，任一版本可下載 PNG。",try_h2:"立即體驗",lbl_photo:"你的照片",lbl_scene:"場景系列",lbl_look:"風格與調色",lbl_results:"生成結果",up_b:"點擊上傳自拍",gen:"✨ 生成我的頭像",empty:"你的 4 個頭像版本將顯示在這裡。<br>上傳照片並點擊生成。",sc_h2:"100 個場景，10 大主題",sc_p:"辦公室、商務園區、街道、公園、湖畔、網球俱樂部、咖啡館、校園等。持續捲動展示 — 懸停暫停，點擊選用。",sc_search:"搜尋場景 — 如 湖、會議室、網球…",sc_note:"示例人物由 AI 生成，並非真人；生成時將替換為你的照片。",pr_h2:"首張頭像免費，之後按次儲值。",pr_p:"面向英國、香港與美國的在地化定價。點數累計且帳戶有效期內永不過期。",btn_free:"使用免費額度",buy1:"購買入門包",buy2:"購買專業包",buy3:"購買進階包",rs_b:"推薦好友，雙方獲益。",rs_t:"好友註冊即獲 <b>2 張免費頭像</b>，你也將獲得 <b>+1 點數</b>。點數無上限累計。",rs_btn:"取得我的推薦連結",reg_h:"加入 Summy Garden Studio",reg_p:"免費會員：點數累計，生成的每張頭像都儲存在你的面板中。",ph_name:"你的姓名",ph_email:"電子郵件",reg_btn:"建立免費帳戶",d_credits:"可用點數",d_shots:"已生成頭像",d_refs:"已推薦好友",d_link:"你的推薦連結 — 好友獲 2 張免費頭像，你獲 +1 點數",d_code:"你的推薦碼 — 隨處分享",d_photos:"我的頭像",d_empty:"尚無頭像 — 去工作室生成第一張吧！",d_out:"在此裝置登出",copy:"複製",pw_h:"點數已用完",pw_btn:"查看儲值包",credit:"點數",credits:"點數"},
+es:{nav1:"Estudio de retratos",nav2:"Escenarios",nav3:"Precios",join:"Únete gratis",badge:"✦ Únete gratis — tu primer retrato corre de nuestra cuenta",badge_ref:"🎁 Te han invitado — únete gratis y recibe 2 retratos",h1a:"Retratos de calidad de estudio,",h1b:"desde un selfie",hero_p:"Encuadra tu rostro, elige un escenario premium — oficina, parque empresarial, lago, club de tenis y más — y descarga retratos profesionales en minutos.",cta1:"Crear mi retrato gratis →",cta2:"Ver escenarios",st1:"más visitas al perfil con una foto profesional",st2:"escenarios en 10 colecciones temáticas",st3:"retratos si un amigo te invita",st4:"precios localizados",how_h2:"Tres pasos hacia tu foto profesional",how_p:"Sin estudio ni citas. Tu primer retrato es gratis con tu cuenta — los invitados empiezan con dos.",s1t:"1 · Sube y encuadra",s1d:"Sube un selfie y ajusta hasta que tu rostro y hombros llenen la guía.",s2t:"2 · Elige escenario y estilo",s2d:"100 escenarios en 10 colecciones, con estilos de color de lo formal a lo creativo.",s3t:"3 · Mejora, guarda y descarga",s3d:"Mejora automática de piel y tono. Descarga cualquier variante en PNG.",try_h2:"Pruébalo ahora",lbl_photo:"Tu foto",lbl_scene:"Colección de escenarios",lbl_look:"Estilo y color",lbl_results:"Resultados",up_b:"Haz clic para subir un selfie",gen:"✨ Generar mis retratos",empty:"Tus 4 variantes aparecerán aquí.<br>Sube una foto y pulsa Generar.",sc_h2:"100 escenarios, 10 colecciones",sc_p:"Oficina, parque empresarial, calle, parque, lago, club de tenis, café, campus y más. La cinta se desplaza sola — pausa al pasar el cursor, clic para elegir.",sc_search:"Buscar escenarios — p. ej. lago, sala, tenis…",sc_note:"Los modelos de muestra son generados por IA — no son personas reales; tu foto los reemplaza.",pr_h2:"Primer retrato gratis. Luego packs de créditos.",pr_p:"Precios localizados para Reino Unido, Hong Kong y EE. UU. Los créditos se acumulan y no caducan.",btn_free:"Usar mi crédito gratis",buy1:"Comprar pack Starter",buy2:"Comprar pack Pro",buy3:"Comprar pack Career+",rs_b:"Invita a un amigo, ambos ganan.",rs_t:"Tu amigo empieza con <b>2 retratos gratis</b> — y tú ganas <b>+1 crédito</b> cuando se une. Sin límite de acumulación.",rs_btn:"Obtener mi enlace",reg_h:"Únete a Summy Garden Studio",reg_p:"Membresía gratuita: tus créditos se acumulan y cada retrato se guarda en tu panel.",ph_name:"Tu nombre",ph_email:"Correo electrónico",reg_btn:"Crear mi cuenta gratis",d_credits:"créditos disponibles",d_shots:"retratos generados",d_refs:"amigos invitados",d_link:"Tu enlace de invitación — 2 retratos gratis para ellos, +1 crédito para ti",d_code:"Tu código de invitación — compártelo donde quieras",d_photos:"Mis retratos",d_empty:"Aún no hay retratos — ¡genera el primero en el estudio!",d_out:"Cerrar sesión en este dispositivo",copy:"Copiar",pw_h:"Sin créditos",pw_btn:"Ver packs",credit:"crédito",credits:"créditos"},
+hi:{nav1:"हेडशॉट स्टूडियो",nav2:"बैकग्राउंड",nav3:"कीमतें",join:"मुफ़्त जुड़ें",badge:"✦ मुफ़्त जुड़ें — पहला हेडशॉट हमारी ओर से",badge_ref:"🎁 आपको आमंत्रित किया गया है — जुड़ें और 2 हेडशॉट पाएं",h1a:"स्टूडियो-गुणवत्ता हेडशॉट,",h1b:"एक सेल्फ़ी से",hero_p:"अपना चेहरा फ़्रेम करें, प्रीमियम दृश्य चुनें — ऑफ़िस, बिज़नेस पार्क, झील, टेनिस क्लब और बहुत कुछ — और मिनटों में प्रोफ़ेशनल हेडशॉट डाउनलोड करें।",cta1:"मेरा मुफ़्त हेडशॉट बनाएं →",cta2:"दृश्य देखें",st1:"प्रोफ़ेशनल फ़ोटो से अधिक प्रोफ़ाइल व्यू",st2:"दृश्य, 10 थीम संग्रह",st3:"मित्र के रेफ़रल पर मुफ़्त हेडशॉट",st4:"स्थानीय मूल्य",how_h2:"प्रोफ़ेशनल फ़ोटो के तीन चरण",how_p:"न स्टूडियो, न अपॉइंटमेंट। खाते के साथ पहला हेडशॉट मुफ़्त — आमंत्रित मित्रों को दो।",s1t:"1 · अपलोड करें और फ़्रेम करें",s1d:"सेल्फ़ी अपलोड करें, खींचें और ज़ूम करें ताकि चेहरा-कंधे गाइड में आएं।",s2t:"2 · दृश्य और लुक चुनें",s2d:"10 थीम में 100 दृश्य, बिज़नेस से क्रिएटिव तक कलर लुक।",s3t:"3 · निखारें, सहेजें, डाउनलोड करें",s3d:"त्वचा और टोन स्वतः निखरती है। कोई भी वैरिएंट PNG में डाउनलोड करें।",try_h2:"अभी आज़माएँ",lbl_photo:"आपकी फ़ोटो",lbl_scene:"दृश्य संग्रह",lbl_look:"लुक और ग्रेडिंग",lbl_results:"परिणाम",up_b:"सेल्फ़ी अपलोड करने हेतु क्लिक करें",gen:"✨ मेरे हेडशॉट बनाएं",empty:"आपके 4 वैरिएंट यहाँ दिखेंगे।<br>फ़ोटो अपलोड कर जनरेट दबाएँ।",sc_h2:"100 दृश्य, 10 थीम संग्रह",sc_p:"ऑफ़िस, बिज़नेस पार्क, सड़क, पार्क, झील, टेनिस क्लब, कैफ़े, कैंपस और भी। पट्टी लगातार चलती है — रोकने हेतु होवर, चुनने हेतु क्लिक।",sc_search:"दृश्य खोजें — जैसे झील, बोर्डरूम, टेनिस…",sc_note:"नमूना चेहरे AI-निर्मित हैं — असली नहीं; आपकी फ़ोटो उनकी जगह लेती है।",pr_h2:"पहला हेडशॉट मुफ़्त। फिर सरल क्रेडिट पैक।",pr_p:"यूके, हांगकांग और यूएस हेतु स्थानीय मूल्य। क्रेडिट जुड़ते रहते हैं, समाप्त नहीं होते।",btn_free:"मुफ़्त क्रेडिट उपयोग करें",buy1:"Starter पैक खरीदें",buy2:"Pro पैक खरीदें",buy3:"Career+ पैक खरीदें",rs_b:"मित्र को रेफ़र करें, दोनों जीतें।",rs_t:"आपके मित्र को <b>2 मुफ़्त हेडशॉट</b> मिलते हैं — और जुड़ने पर आपको <b>+1 क्रेडिट</b>। असीमित संचय।",rs_btn:"मेरा रेफ़रल लिंक पाएं",reg_h:"Summy Garden Studio से जुड़ें",reg_p:"मुफ़्त सदस्यता: क्रेडिट जुड़ते हैं और हर हेडशॉट डैशबोर्ड में सहेजा जाता है।",ph_name:"आपका नाम",ph_email:"ईमेल पता",reg_btn:"मुफ़्त खाता बनाएं",d_credits:"उपलब्ध क्रेडिट",d_shots:"बनाए गए हेडशॉट",d_refs:"रेफ़र किए मित्र",d_link:"आपका रेफ़रल लिंक — मित्रों को 2 मुफ़्त हेडशॉट, आपको +1 क्रेडिट",d_code:"आपका रेफ़रल कोड — कहीं भी साझा करें",d_photos:"मेरे हेडशॉट",d_empty:"अभी कोई हेडशॉट नहीं — स्टूडियो में पहला बनाएं!",d_out:"इस डिवाइस से साइन आउट",copy:"कॉपी",pw_h:"क्रेडिट समाप्त",pw_btn:"क्रेडिट पैक देखें",credit:"क्रेडिट",credits:"क्रेडिट"},
+ar:{nav1:"استوديو الصور",nav2:"الخلفيات",nav3:"الأسعار",join:"انضم مجانًا",badge:"✦ انضم مجانًا — أول صورة على حسابنا",badge_ref:"🎁 تمت دعوتك — انضم مجانًا واحصل على صورتين",h1a:"صور احترافية بجودة الاستوديو،",h1b:"من سيلفي واحدة",hero_p:"حدّد إطار وجهك وكتفيك، واختر مشهدًا راقيًا — مكتب، مجمع أعمال، بحيرة، نادي تنس والمزيد — وحمّل صورًا احترافية خلال دقائق.",cta1:"أنشئ صورتي المجانية ←",cta2:"استعرض المشاهد",st1:"مشاهدات أكثر لملفك مع صورة احترافية",st2:"مشهدًا في 10 مجموعات",st3:"صورتان عند دعوة صديق لك",st4:"أسعار محلية",how_h2:"ثلاث خطوات لصورة احترافية",how_p:"بلا استوديو ولا مواعيد. أول صورة مجانية مع حسابك — والمدعوون يبدأون بصورتين.",s1t:"1 · ارفع الصورة وحدد الإطار",s1d:"ارفع سيلفي ثم اسحب وكبّر حتى يملأ وجهك وكتفاك الإطار.",s2t:"2 · اختر المشهد والأسلوب",s2d:"100 مشهد في 10 مجموعات، بأساليب لونية من الرسمي إلى الإبداعي.",s3t:"3 · حسّن واحفظ وحمّل",s3d:"تحسين تلقائي للبشرة والألوان. حمّل أي نسخة بصيغة PNG.",try_h2:"جرّبه الآن",lbl_photo:"صورتك",lbl_scene:"مجموعة المشاهد",lbl_look:"الأسلوب والألوان",lbl_results:"النتائج",up_b:"انقر لرفع سيلفي",gen:"✨ أنشئ صوري",empty:"ستظهر نسخك الأربع هنا.<br>ارفع صورة واضغط إنشاء.",sc_h2:"100 مشهد، 10 مجموعات",sc_p:"مكتب، مجمع أعمال، شارع، حديقة، بحيرة، نادي تنس، مقهى، حرم جامعي والمزيد. الشريط يتحرك باستمرار — مرر للإيقاف وانقر للاختيار.",sc_search:"ابحث عن مشهد — مثل بحيرة، اجتماعات، تنس…",sc_note:"النماذج مولّدة بالذكاء الاصطناعي — ليست أشخاصًا حقيقيين؛ وصورتك تحل محلها.",pr_h2:"أول صورة مجانية، ثم باقات نقاط بسيطة.",pr_p:"أسعار محلية لبريطانيا وهونغ كونغ وأمريكا. النقاط تتراكم ولا تنتهي.",btn_free:"استخدم رصيدي المجاني",buy1:"شراء باقة Starter",buy2:"شراء باقة Pro",buy3:"شراء باقة Career+",rs_b:"ادعُ صديقًا ويربح كلاكما.",rs_t:"يبدأ صديقك بـ<b>صورتين مجانيتين</b> — وتحصل أنت على <b>+1 نقطة</b> عند انضمامه. تراكم بلا حدود.",rs_btn:"احصل على رابط الدعوة",reg_h:"انضم إلى Summy Garden Studio",reg_p:"عضوية مجانية: نقاطك تتراكم وكل صورة تُحفظ في لوحتك.",ph_name:"اسمك",ph_email:"البريد الإلكتروني",reg_btn:"إنشاء حسابي المجاني",d_credits:"النقاط المتاحة",d_shots:"الصور المُنشأة",d_refs:"الأصدقاء المدعوون",d_link:"رابط دعوتك — صورتان مجانيتان لأصدقائك و+1 نقطة لك",d_code:"رمز دعوتك — شاركه في أي مكان",d_photos:"صوري",d_empty:"لا صور بعد — أنشئ أولى صورك في الاستوديو!",d_out:"تسجيل الخروج من هذا الجهاز",copy:"نسخ",pw_h:"نفدت نقاطك",pw_btn:"عرض الباقات",credit:"نقطة",credits:"نقاط"},
+fr:{nav1:"Studio Portrait",nav2:"Décors",nav3:"Tarifs",join:"Rejoindre",badge:"✦ Inscription gratuite — votre premier portrait est offert",badge_ref:"🎁 Vous êtes parrainé — inscrivez-vous et recevez 2 portraits",h1a:"Des portraits qualité studio,",h1b:"à partir d'un selfie",hero_p:"Cadrez votre visage, choisissez un décor haut de gamme — bureau, parc d'affaires, lac, club de tennis et plus — et téléchargez des portraits professionnels en quelques minutes.",cta1:"Créer mon portrait gratuit →",cta2:"Voir les décors",st1:"de vues de profil en plus avec une photo pro",st2:"décors répartis en 10 collections",st3:"portraits offerts sur parrainage",st4:"tarifs localisés",how_h2:"Trois étapes vers votre photo pro",how_p:"Sans studio ni rendez-vous. Le premier portrait est offert avec votre compte — les filleuls en reçoivent deux.",s1t:"1 · Téléversez et cadrez",s1d:"Téléversez un selfie, puis ajustez jusqu'à remplir le guide.",s2t:"2 · Choisissez décor et style",s2d:"100 décors en 10 collections, avec des styles du plus formel au plus créatif.",s3t:"3 · Retouche, sauvegarde, export",s3d:"Peau et tons améliorés automatiquement. Téléchargez chaque variante en PNG.",try_h2:"Essayez maintenant",lbl_photo:"Votre photo",lbl_scene:"Collection de décors",lbl_look:"Style et étalonnage",lbl_results:"Résultats",up_b:"Cliquez pour téléverser un selfie",gen:"✨ Générer mes portraits",empty:"Vos 4 variantes apparaîtront ici.<br>Téléversez une photo puis cliquez sur Générer.",sc_h2:"100 décors, 10 collections",sc_p:"Bureau, parc d'affaires, rue, parc, lac, club de tennis, café, campus et plus. Le bandeau défile en continu — survolez pour mettre en pause, cliquez pour choisir.",sc_search:"Rechercher un décor — ex. lac, salle, tennis…",sc_note:"Les modèles sont générés par IA — ce ne sont pas de vraies personnes ; votre photo les remplace.",pr_h2:"Premier portrait offert. Puis des packs de crédits.",pr_p:"Tarifs localisés pour le Royaume-Uni, Hong Kong et les États-Unis. Les crédits se cumulent sans expiration.",btn_free:"Utiliser mon crédit offert",buy1:"Acheter le pack Starter",buy2:"Acheter le pack Pro",buy3:"Acheter le pack Career+",rs_b:"Parrainez un ami, tout le monde y gagne.",rs_t:"Votre ami démarre avec <b>2 portraits offerts</b> — et vous gagnez <b>+1 crédit</b> à son inscription. Cumul illimité.",rs_btn:"Obtenir mon lien",reg_h:"Rejoindre Summy Garden Studio",reg_p:"Adhésion gratuite : vos crédits se cumulent et chaque portrait est enregistré dans votre tableau de bord.",ph_name:"Votre nom",ph_email:"Adresse e-mail",reg_btn:"Créer mon compte gratuit",d_credits:"crédits disponibles",d_shots:"portraits générés",d_refs:"amis parrainés",d_link:"Votre lien de parrainage — 2 portraits offerts pour eux, +1 crédit pour vous",d_code:"Votre code de parrainage — partagez-le partout",d_photos:"Mes portraits",d_empty:"Aucun portrait — générez le premier dans le studio !",d_out:"Se déconnecter de cet appareil",copy:"Copier",pw_h:"Plus de crédits",pw_btn:"Voir les packs",credit:"crédit",credits:"crédits"},
+pt:{nav1:"Estúdio de Retratos",nav2:"Cenários",nav3:"Preços",join:"Junte-se grátis",badge:"✦ Junte-se grátis — o primeiro retrato é por nossa conta",badge_ref:"🎁 Você foi indicado — junte-se grátis e ganhe 2 retratos",h1a:"Retratos com qualidade de estúdio,",h1b:"a partir de uma selfie",hero_p:"Enquadre o rosto, escolha um cenário premium — escritório, parque empresarial, lago, clube de tênis e mais — e baixe retratos profissionais em minutos.",cta1:"Criar meu retrato grátis →",cta2:"Ver cenários",st1:"mais visualizações de perfil com foto profissional",st2:"cenários em 10 coleções temáticas",st3:"retratos quando um amigo indica você",st4:"preços localizados",how_h2:"Três passos para sua foto profissional",how_p:"Sem estúdio, sem agendamento. O primeiro retrato é grátis com sua conta — indicados começam com dois.",s1t:"1 · Envie e enquadre",s1d:"Envie uma selfie e ajuste até rosto e ombros preencherem o guia.",s2t:"2 · Escolha cenário e estilo",s2d:"100 cenários em 10 coleções, com estilos do formal ao criativo.",s3t:"3 · Melhore, salve e baixe",s3d:"Pele e tons aprimorados automaticamente. Baixe qualquer variante em PNG.",try_h2:"Experimente agora",lbl_photo:"Sua foto",lbl_scene:"Coleção de cenários",lbl_look:"Estilo e cor",lbl_results:"Resultados",up_b:"Clique para enviar uma selfie",gen:"✨ Gerar meus retratos",empty:"Suas 4 variantes aparecerão aqui.<br>Envie uma foto e clique em Gerar.",sc_h2:"100 cenários, 10 coleções",sc_p:"Escritório, parque empresarial, rua, parque, lago, clube de tênis, café, campus e mais. A faixa rola continuamente — passe o mouse para pausar, clique para escolher.",sc_search:"Buscar cenários — ex. lago, sala, tênis…",sc_note:"Os modelos são gerados por IA — não são pessoas reais; sua foto os substitui.",pr_h2:"Primeiro retrato grátis. Depois, pacotes de créditos.",pr_p:"Preços localizados para Reino Unido, Hong Kong e EUA. Créditos acumulam e não expiram.",btn_free:"Usar meu crédito grátis",buy1:"Comprar pacote Starter",buy2:"Comprar pacote Pro",buy3:"Comprar pacote Career+",rs_b:"Indique um amigo, os dois ganham.",rs_t:"Seu amigo começa com <b>2 retratos grátis</b> — e você ganha <b>+1 crédito</b> quando ele entra. Acúmulo ilimitado.",rs_btn:"Obter meu link",reg_h:"Junte-se ao Summy Garden Studio",reg_p:"Assinatura gratuita: créditos acumulam e cada retrato fica salvo no seu painel.",ph_name:"Seu nome",ph_email:"E-mail",reg_btn:"Criar minha conta grátis",d_credits:"créditos disponíveis",d_shots:"retratos gerados",d_refs:"amigos indicados",d_link:"Seu link de indicação — 2 retratos grátis para eles, +1 crédito para você",d_code:"Seu código de indicação — compartilhe onde quiser",d_photos:"Meus retratos",d_empty:"Nenhum retrato ainda — gere o primeiro no estúdio!",d_out:"Sair neste dispositivo",copy:"Copiar",pw_h:"Créditos esgotados",pw_btn:"Ver pacotes",credit:"crédito",credits:"créditos"},
+ru:{nav1:"Фотостудия",nav2:"Фоны",nav3:"Цены",join:"Бесплатно",badge:"✦ Присоединяйтесь — первый портрет за наш счёт",badge_ref:"🎁 Вас пригласили — присоединяйтесь и получите 2 портрета",h1a:"Портреты студийного качества",h1b:"из одного селфи",hero_p:"Выделите лицо и плечи, выберите премиальную сцену — офис, бизнес-парк, озеро, теннисный клуб и другие — и скачайте профессиональные портреты за минуты.",cta1:"Создать бесплатный портрет →",cta2:"Смотреть сцены",st1:"больше просмотров профиля с проф. фото",st2:"сцен в 10 тематических коллекциях",st3:"портрета по приглашению друга",st4:"локальные цены",how_h2:"Три шага к деловому портрету",how_p:"Без студии и записи. Первый портрет бесплатно — приглашённые получают два.",s1t:"1 · Загрузите и выделите",s1d:"Загрузите селфи и настройте кадр по направляющей.",s2t:"2 · Выберите сцену и стиль",s2d:"100 сцен в 10 коллекциях и цветовые стили от делового до креативного.",s3t:"3 · Улучшите и скачайте",s3d:"Автоматическая ретушь кожи и тона. Скачивание любой версии в PNG.",try_h2:"Попробуйте сейчас",lbl_photo:"Ваше фото",lbl_scene:"Коллекция сцен",lbl_look:"Стиль и тонировка",lbl_results:"Результаты",up_b:"Нажмите, чтобы загрузить селфи",gen:"✨ Создать мои портреты",empty:"Здесь появятся 4 варианта.<br>Загрузите фото и нажмите «Создать».",sc_h2:"100 сцен, 10 коллекций",sc_p:"Офис, бизнес-парк, улица, парк, озеро, теннисный клуб, кафе, кампус и другие. Лента движется непрерывно — наведите для паузы, кликните для выбора.",sc_search:"Поиск сцен — напр. озеро, офис, теннис…",sc_note:"Образцы созданы ИИ — это не реальные люди; их заменит ваше фото.",pr_h2:"Первый портрет бесплатно. Далее — пакеты кредитов.",pr_p:"Локальные цены для Великобритании, Гонконга и США. Кредиты накапливаются и не сгорают.",btn_free:"Использовать бесплатный кредит",buy1:"Купить пакет Starter",buy2:"Купить пакет Pro",buy3:"Купить пакет Career+",rs_b:"Пригласите друга — выиграют оба.",rs_t:"Друг получает <b>2 бесплатных портрета</b>, а вы — <b>+1 кредит</b> за его регистрацию. Накопление без ограничений.",rs_btn:"Получить ссылку",reg_h:"Присоединиться к Summy Garden Studio",reg_p:"Бесплатное членство: кредиты накапливаются, каждый портрет сохраняется в кабинете.",ph_name:"Ваше имя",ph_email:"Эл. почта",reg_btn:"Создать бесплатный аккаунт",d_credits:"доступно кредитов",d_shots:"портретов создано",d_refs:"друзей приглашено",d_link:"Ваша ссылка — друзьям 2 бесплатных портрета, вам +1 кредит",d_code:"Ваш код приглашения — делитесь где угодно",d_photos:"Мои портреты",d_empty:"Портретов пока нет — создайте первый в студии!",d_out:"Выйти на этом устройстве",copy:"Копировать",pw_h:"Кредиты закончились",pw_btn:"Смотреть пакеты",credit:"кредит",credits:"кредитов"},
+ja:{nav1:"ヘッドショットスタジオ",nav2:"背景",nav3:"料金",join:"無料登録",badge:"✦ 無料登録 — 最初の1枚はプレゼント",badge_ref:"🎁 ご紹介です — 無料登録で2枚プレゼント",h1a:"スタジオ品質のプロフィール写真を、",h1b:"セルフィー1枚から",hero_p:"顔と肩をフレームに収め、オフィス・ビジネスパーク・湖畔・テニスクラブなどの上質なシーンを選ぶだけ。数分でプロ品質の写真をダウンロード。",cta1:"無料で作成 →",cta2:"シーンを見る",st1:"プロ写真でプロフィール閲覧数アップ",st2:"シーン・10のテーマコレクション",st3:"友達の紹介で無料ヘッドショット",st4:"地域別価格",how_h2:"プロ写真への3ステップ",how_p:"スタジオも予約も不要。登録で1枚無料 — 紹介された方は2枚から。",s1t:"1 · アップロードして調整",s1d:"セルフィーをアップし、顔と肩がガイドに収まるよう調整します。",s2t:"2 · シーンとスタイルを選択",s2d:"10テーマ100シーン、ビジネスからクリエイティブまでのカラールック。",s3t:"3 · 補正・保存・ダウンロード",s3d:"肌と色調を自動補正。各バリエーションをPNGで保存できます。",try_h2:"今すぐ試す",lbl_photo:"あなたの写真",lbl_scene:"シーンコレクション",lbl_look:"ルックと色調",lbl_results:"生成結果",up_b:"クリックしてセルフィーをアップロード",gen:"✨ ヘッドショットを生成",empty:"4つのバリエーションがここに表示されます。<br>写真をアップして生成を押してください。",sc_h2:"100シーン・10コレクション",sc_p:"オフィス、ビジネスパーク、街並み、公園、湖畔、テニスクラブ、カフェ、キャンパスなど。自動でスクロール — ホバーで一時停止、クリックで選択。",sc_search:"シーンを検索 — 例：湖、会議室、テニス…",sc_note:"サンプルの人物はAI生成です — 実在しません。生成時はあなたの写真に置き換わります。",pr_h2:"最初の1枚は無料。その後はクレジットパック。",pr_p:"英国・香港・米国向けの地域別価格。クレジットは無期限で累積します。",btn_free:"無料クレジットを使う",buy1:"Starterパックを購入",buy2:"Proパックを購入",buy3:"Career+パックを購入",rs_b:"友達を紹介して、二人ともお得に。",rs_t:"紹介された友達は<b>無料2枚</b>からスタート — 登録時にあなたへ<b>+1クレジット</b>。上限なく累積。",rs_btn:"紹介リンクを取得",reg_h:"Summy Garden Studioに登録",reg_p:"無料メンバーシップ：クレジットは累積し、生成した写真はダッシュボードに保存されます。",ph_name:"お名前",ph_email:"メールアドレス",reg_btn:"無料アカウントを作成",d_credits:"利用可能クレジット",d_shots:"生成した写真",d_refs:"紹介した友達",d_link:"紹介リンク — 友達に無料2枚、あなたに+1クレジット",d_code:"紹介コード — どこでもシェア",d_photos:"マイフォト",d_empty:"まだ写真がありません — スタジオで1枚目を作りましょう！",d_out:"この端末からサインアウト",copy:"コピー",pw_h:"クレジットがなくなりました",pw_btn:"パックを見る",credit:"クレジット",credits:"クレジット"},
+de:{nav1:"Porträt-Studio",nav2:"Hintergründe",nav3:"Preise",join:"Gratis starten",badge:"✦ Gratis registrieren — das erste Porträt geht auf uns",badge_ref:"🎁 Sie wurden empfohlen — gratis registrieren und 2 Porträts erhalten",h1a:"Porträts in Studioqualität,",h1b:"aus einem Selfie",hero_p:"Gesicht und Schultern ausrichten, eine hochwertige Szene wählen — Büro, Businesspark, See, Tennisclub und mehr — und in Minuten professionelle Porträts herunterladen.",cta1:"Gratis-Porträt erstellen →",cta2:"Szenen ansehen",st1:"mehr Profilaufrufe mit professionellem Foto",st2:"Szenen in 10 Themenkollektionen",st3:"Porträts bei Freundes-Empfehlung",st4:"lokale Preise",how_h2:"In drei Schritten zum Bewerbungsfoto",how_p:"Kein Studio, kein Termin. Das erste Porträt ist mit Ihrem Konto gratis — Geworbene starten mit zwei.",s1t:"1 · Hochladen & ausrichten",s1d:"Selfie hochladen, dann ziehen und zoomen, bis Kopf und Schultern die Führung füllen.",s2t:"2 · Szene & Look wählen",s2d:"100 Szenen in 10 Kollektionen, mit Looks von Business bis Kreativ.",s3t:"3 · Optimieren, speichern, laden",s3d:"Haut und Farbton werden automatisch optimiert. Jede Variante als PNG.",try_h2:"Jetzt ausprobieren",lbl_photo:"Ihr Foto",lbl_scene:"Szenen-Kollektion",lbl_look:"Look & Farbstil",lbl_results:"Ergebnisse",up_b:"Klicken, um ein Selfie hochzuladen",gen:"✨ Meine Porträts erstellen",empty:"Ihre 4 Varianten erscheinen hier.<br>Foto hochladen und auf Erstellen klicken.",sc_h2:"100 Szenen, 10 Kollektionen",sc_p:"Büro, Businesspark, Straße, Park, See, Tennisclub, Café, Campus und mehr. Das Band läuft kontinuierlich — zum Pausieren hovern, zum Wählen klicken.",sc_search:"Szenen suchen — z. B. See, Boardroom, Tennis…",sc_note:"Beispielpersonen sind KI-generiert — keine echten Menschen; Ihr Foto ersetzt sie.",pr_h2:"Erstes Porträt gratis. Danach einfache Credit-Pakete.",pr_p:"Lokale Preise für UK, Hongkong und USA. Credits sammeln sich an und verfallen nicht.",btn_free:"Gratis-Credit nutzen",buy1:"Starter-Paket kaufen",buy2:"Pro-Paket kaufen",buy3:"Career+-Paket kaufen",rs_b:"Empfehlen Sie einen Freund — beide gewinnen.",rs_t:"Ihr Freund startet mit <b>2 Gratis-Porträts</b> — und Sie erhalten <b>+1 Credit</b> bei der Anmeldung. Unbegrenzt kumulierbar.",rs_btn:"Empfehlungslink holen",reg_h:"Bei Summy Garden Studio registrieren",reg_p:"Kostenlose Mitgliedschaft: Credits sammeln sich an, jedes Porträt wird im Dashboard gespeichert.",ph_name:"Ihr Name",ph_email:"E-Mail-Adresse",reg_btn:"Gratis-Konto erstellen",d_credits:"verfügbare Credits",d_shots:"erstellte Porträts",d_refs:"geworbene Freunde",d_link:"Ihr Empfehlungslink — 2 Gratis-Porträts für Freunde, +1 Credit für Sie",d_code:"Ihr Empfehlungscode — überall teilbar",d_photos:"Meine Porträts",d_empty:"Noch keine Porträts — erstellen Sie das erste im Studio!",d_out:"Auf diesem Gerät abmelden",copy:"Kopieren",pw_h:"Keine Credits mehr",pw_btn:"Pakete ansehen",credit:"Credit",credits:"Credits"}};
+let LANG='en';
+const LT=()=>I18N[LANG]||I18N.en;
+function applyLang(code){
+  LANG=I18N[code]?code:'en'; store.setItem('sgsLang',LANG); document.documentElement.lang=LANG;
+  const t=LT(); const Q=s=>document.querySelector(s); const QA=s=>document.querySelectorAll(s);
+  const st=(el,v)=>{if(el&&v!=null)el.textContent=v}; const sh=(el,v)=>{if(el&&v!=null)el.innerHTML=v};
+  const nl=QA('.nav-links a'); st(nl[0],t.nav1); st(nl[1],t.nav2); st(nl[2],t.nav3);
+  st(Q('#heroBadge'), (refParam&&!user)?t.badge_ref:t.badge);
+  sh(Q('.hero h1'), t.h1a+' <em>'+t.h1b+'</em>');
+  st(Q('.hero p'), t.hero_p);
+  st(Q('.hero .btn-primary'), t.cta1); st(Q('.hero .btn-ghost'), t.cta2);
+  const ss=QA('.hero-stats .stat span'); [t.st1,t.st2,t.st3,t.st4].forEach((v,i)=>st(ss[i],v));
+  const how=Q('section');
+  if(how){ st(how.querySelector('.sec-head h2'),t.how_h2); st(how.querySelector('.sec-head p'),t.how_p);
+    const hs=how.querySelectorAll('.step'); const tt=[[t.s1t,t.s1d],[t.s2t,t.s2d],[t.s3t,t.s3d]];
+    hs.forEach((el,i)=>{ if(tt[i]){ st(el.querySelector('h3'),tt[i][0]); st(el.querySelector('p'),tt[i][1]); }});
+  }
+  st(Q('#studio .sec-head h2'), t.try_h2);
+  const sl=QA('#studio .studio-label'); [t.lbl_photo,t.lbl_scene,t.lbl_look,t.lbl_results].forEach((v,i)=>st(sl[i],v));
+  const upb=Q('#uploadZone p b'); st(upb,t.up_b);
+  st(Q('#genBtn'), t.gen); sh(Q('#resultEmpty'), t.empty);
+  st(Q('#backgrounds .sec-head h2'), t.sc_h2); st(Q('#backgrounds .sec-head p'), t.sc_p);
+  const bs=Q('#bgSearch'); if(bs) bs.placeholder=t.sc_search;
+  st(Q('.showcase-note'), t.sc_note);
+  st(Q('#pricing .sec-head h2'), t.pr_h2); st(Q('#pricing .sec-head p'), t.pr_p);
+  const pb=QA('#pricing .price-btn'); st(pb[0],t.btn_free); st(pb[1],t.buy1); st(pb[2],t.buy2); st(pb[3],t.buy3);
+  st(Q('.referral-strip b'), t.rs_b); sh(Q('.referral-strip span'), t.rs_t); st(Q('.referral-strip .btn-primary'), t.rs_btn);
+  st(Q('#register h3'), t.reg_h); st(Q('#register .modal > p'), t.reg_p);
+  const rn=Q('#regName'); if(rn) rn.placeholder=t.ph_name;
+  const re=Q('#regEmail'); if(re) re.placeholder=t.ph_email;
+  st(Q('#register .btn-primary'), t.reg_btn);
+  const ds=QA('#dashboard .dash-stat span'); [t.d_credits,t.d_shots,t.d_refs].forEach((v,i)=>st(ds[i],v));
+  const dl=QA('#dashboard .dash-label'); st(dl[0],t.d_link); st(dl[1],t.d_code); st(dl[2],t.d_photos);
+  st(Q('#dashEmpty'), t.d_empty); st(Q('.signout'), t.d_out);
+  QA('.copy-btn').forEach(b=>st(b,t.copy));
+  st(Q('#paywall h3'), t.pw_h); st(Q('#paywall .btn-primary'), t.pw_btn);
+  updateCreditLabel(); updateAccountBtn();
+}
+const _lsEl=document.getElementById('langSel');
+LANG_LIST.forEach(([c,l])=>{const o=document.createElement('option');o.value=c;o.textContent=l;_lsEl.appendChild(o);});
+_lsEl.onchange=()=>applyLang(_lsEl.value);
+
+/* ---------- Init ---------- */
+if(refParam && !user){ document.getElementById('heroBadge').textContent='🎁 You were referred — join free and get 2 headshots on us'; }
+renderSwatches();
+renderShowcase();
+updateCreditLabel();
+updateAccountBtn();
+const _sl=store.getItem('sgsLang')||'en'; _lsEl.value=I18N[_sl]?_sl:'en'; applyLang(_lsEl.value);
+</script>
+</body>
+</html>

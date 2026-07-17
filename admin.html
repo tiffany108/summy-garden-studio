@@ -38,7 +38,7 @@ input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
 #login .btn{width:100%;justify-content:center;padding:13px}
 .msg{font-size:13px;font-weight:600;color:#c0392b;margin-top:12px;min-height:18px}
 /* dashboard */
-#dash{display:none}
+#dash{}
 .sec-title{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:28px 0 14px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
 .stat{background:#fff;border-radius:15px;box-shadow:var(--card);padding:20px 22px}
@@ -88,7 +88,7 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
   </div>
 
   <!-- DASHBOARD -->
-  <div id="dash">
+  <div id="dash" style="display:none">
     <div class="sec-title">Live overview</div>
     <div class="stats">
       <div class="stat"><div class="ico i1">👥</div><b id="sMembers">–</b><span>Registered members</span></div>
@@ -144,7 +144,7 @@ const sb=window.supabase.createClient(SB_URL,SB_KEY);
 let session=null;
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
-function show(id,on){document.getElementById(id).style.display=on?'':'none';}
+function show(id,on){document.getElementById(id).style.display=on?(id==='dash'?'block':''):'none';}
 
 async function doLogin(){
   const email=document.getElementById('email').value.trim().toLowerCase();

@@ -993,14 +993,18 @@ function updateCreditLabel(){
   const n=getCredits();
   document.getElementById('creditLabel').textContent = user ? (n+' '+(n===1?LT().credit:LT().credits)) : '★ '+TX('join');
 }
-function buyPack(name){pendingPack=name;
-  document.getElementById('checkoutTitle').textContent=name+' pack — '+PACKS[name][currency.toLowerCase()];
-  openModal('checkout');}
-function completePurchase(){
-  setCredits(getCredits()+PACKS[pendingPack].credits); store.setItem('hsPurchased','1');
-  closeModal('checkout');
-  toast('✓ '+pendingPack+' pack added — '+getCredits()+' credits available');
-  document.getElementById('studio').scrollIntoView({behavior:'smooth'});}
+async function buyPack(name){
+  if(!user){ toast('Create your free account first — then top up any time'); accountClick(); return; }
+  toast('Opening secure checkout…');
+  try{
+    const r=await fetch('/.netlify/functions/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pack:name, currency, token: sbSession?sbSession.access_token:null})});
+    const d=await r.json();
+    if(d.url){ location.href=d.url; return; }
+    toast(d.error||'Checkout unavailable — please try again');
+  }catch(e){ toast('Checkout unavailable — please try again'); }
+}
+function completePurchase(){ closeModal('checkout'); }
 function openModal(id){document.getElementById(id).classList.add('open')}
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 function scrollToStudio(){document.getElementById('studio').scrollIntoView({behavior:'smooth'})}
@@ -1098,8 +1102,10 @@ renderSwatches();
 renderShowcase();
 updateCreditLabel();
 updateAccountBtn();
+if(new URLSearchParams(location.search).get('paid')==='1'){ setTimeout(()=>toast('✓ Payment received — credits added to your account'),800); history.replaceState(null,'',location.pathname); }
 if(sb){
-  sb.auth.getSession().then(async ({data})=>{ sbSession=data.session; await loadProfile(); updateCreditLabel(); updateAccountBtn(); });
+  sb.auth.getSession().then(async ({data})=>{ sbSession=data.session; await loadProfile(); updateCreditLabel(); updateAccountBtn();
+    if(new URLSearchParams(location.search).get('paid')==='1'||sessionStorage.getItem('sgsPaid')){ sessionStorage.removeItem('sgsPaid'); setTimeout(async()=>{ await loadProfile(); updateCreditLabel(); },2500); } });
   sb.auth.onAuthStateChange(async (_e,session)=>{ sbSession=session; await loadProfile(); updateCreditLabel(); updateAccountBtn(); });
 }
 const _sl=store.getItem('sgsLang')||'en'; _lsEl.value=I18N[_sl]?_sl:'en'; applyLang(_lsEl.value);

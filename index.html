@@ -212,6 +212,19 @@ section{padding:72px 0}
 .signout{background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;margin-top:16px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);color:#fff;font-size:14px;font-weight:600;border-radius:999px;padding:13px 24px;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:.35s cubic-bezier(.2,.8,.2,1);z-index:120}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.cookie-bar{position:fixed;left:16px;right:16px;bottom:16px;max-width:940px;margin:0 auto;background:rgba(6,44,69,.97);backdrop-filter:blur(14px);color:#fff;border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1);padding:18px 22px;z-index:130;display:none;align-items:center;gap:16px;flex-wrap:wrap}
+.cookie-bar.show{display:flex}
+.cookie-bar p{flex:1;min-width:240px;font-size:13px;line-height:1.55;color:#cfe3f0;margin:0}
+.cookie-bar a{color:#7dd3fc;text-decoration:underline;cursor:pointer}
+.cookie-bar .ck-btns{display:flex;gap:8px;flex-wrap:wrap}
+.cookie-bar button{font-weight:700;font-size:13px;border-radius:10px;padding:10px 16px;cursor:pointer;border:none}
+.ck-accept{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
+.ck-essential{background:rgba(255,255,255,.08);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.legal-body{text-align:left;max-height:60vh;overflow-y:auto;font-size:13.5px;line-height:1.65;color:var(--muted)}
+.legal-body h4{color:var(--ink);font-size:15px;font-weight:800;margin:16px 0 6px}
+.legal-body p{margin:0 0 10px}
+.legal-body a{color:var(--accent)}
+.legal-updated{font-size:12px;color:#9aa9b3;margin-bottom:12px}
 footer{background:var(--bg-deep);color:var(--on-dark-muted);padding:44px 0;font-size:13.5px}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
 footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
@@ -388,7 +401,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
 <footer>
   <div class="wrap">
     <span>© 2026 Summy Garden Studio · AI Headshot Studio</span>
-    <span><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Biometric data policy</a><a href="#">Support</a></span>
+    <span><a onclick="openModal('privacyModal')" style="cursor:pointer">Privacy</a><a onclick="openModal('termsModal')" style="cursor:pointer">Terms</a><a onclick="openModal('privacyModal')" style="cursor:pointer">Biometric data policy</a><a href="mailto:support@summygarden.studio">Support</a></span>
   </div>
 </footer>
 <div class="modal-backdrop" id="register">
@@ -466,6 +479,67 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
     <p id="camHint" style="font-size:12px;margin:12px 0 0;color:#8fa6b3">Allow camera access when your browser asks.</p>
   </div>
 </div>
+<div class="cookie-bar" id="cookieBar">
+  <p id="cookieText">We use <b>essential cookies</b> to run the studio (sign-in and credits) and, with your consent, <b>optional analytics</b> to improve the service. See our <a onclick="openModal('privacyModal')">Privacy Policy</a>.</p>
+  <div class="ck-btns">
+    <button class="ck-essential" id="ckEssential" onclick="setCookie('essential')">Essential only</button>
+    <button class="ck-accept" id="ckAccept" onclick="setCookie('all')">Accept all</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="privacyModal">
+  <div class="modal wide">
+    <button class="close-x" onclick="closeModal('privacyModal')">×</button>
+    <h3>Privacy Policy</h3>
+    <div class="legal-updated">Summy Garden Studio · last updated July 2026</div>
+    <div class="legal-body">
+      <p>Your privacy matters to us. This policy explains what we collect, how we use it, and your choices. By using Summy Garden Studio you agree to this policy.</p>
+      <h4>1. Photos & biometric-related data</h4>
+      <p>When you upload or capture a selfie, it is processed to generate your professional headshots. Face photos may be considered biometric-related data. We process your photo only to create the headshots you request. <b>We never sell your photos, and we do not use your photos to train AI models.</b></p>
+      <h4>2. AI processing</h4>
+      <p>Generation is performed via a third-party AI image service (Google&apos;s Gemini API). Your selfie is sent securely to that service solely to produce your headshots and is not retained by us for training.</p>
+      <h4>3. Data retention & deletion</h4>
+      <p>Generated headshots are stored in your account so you can access them from your dashboard. You can request deletion of your account and associated images at any time by contacting support. Source selfies are not permanently stored on our servers.</p>
+      <h4>4. Account data</h4>
+      <p>We store your name, email, credit balance, referral code and generation history to operate your account. Authentication and data storage are provided by Supabase. Passwords are stored only as secure hashes.</p>
+      <h4>5. Payments</h4>
+      <p>Payments are handled by Stripe. We never see or store your full card details; Stripe processes them under its own security standards.</p>
+      <h4>6. Cookies</h4>
+      <p><b>Essential cookies</b> keep you signed in and track your credits — the service cannot work without them. <b>Optional analytics cookies</b> help us understand usage and are only set if you click &quot;Accept all&quot;. You can choose &quot;Essential only&quot; at any time.</p>
+      <h4>7. Your rights</h4>
+      <p>Depending on your location (including UK GDPR and Hong Kong PDPO), you may have rights to access, correct, or delete your data, and to withdraw consent. Contact us to exercise these rights.</p>
+      <h4>8. Contact</h4>
+      <p>Questions or requests: <a href="mailto:support@summygarden.studio">support@summygarden.studio</a>.</p>
+      <p style="font-size:11.5px;color:#9aa9b3">This template policy is provided for the demo and should be reviewed by a qualified professional before commercial launch.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="termsModal">
+  <div class="modal wide">
+    <button class="close-x" onclick="closeModal('termsModal')">×</button>
+    <h3>Terms of Service</h3>
+    <div class="legal-updated">Summy Garden Studio · last updated July 2026</div>
+    <div class="legal-body">
+      <h4>1. The service</h4>
+      <p>Summy Garden Studio generates AI professional headshots from a photo you provide. Each account receives free starter credits; further generations require credit packs.</p>
+      <h4>2. Your responsibilities</h4>
+      <p>You may only upload photos of <b>yourself</b>, or of a person who has given you explicit permission. You must not upload photos of other people without consent, celebrities, or any unlawful content. You are responsible for how you use the images you generate.</p>
+      <h4>3. Credits & payments</h4>
+      <p>Credits are added on sign-up, via referrals, and through purchased packs. Credits do not expire while your account is active. Purchases are processed by Stripe.</p>
+      <h4>4. Refunds & quality</h4>
+      <p>AI results vary. If a generation clearly fails, contact support and we will review re-generation or a credit at our discretion.</p>
+      <h4>5. Acceptable use</h4>
+      <p>Do not attempt to bypass credit limits, misuse another person&apos;s likeness, or use the service to create misleading or harmful content.</p>
+      <h4>6. Liability</h4>
+      <p>The service is provided &quot;as is&quot;. To the extent permitted by law, we are not liable for indirect or consequential loss arising from use of the service.</p>
+      <h4>7. Contact</h4>
+      <p><a href="mailto:support@summygarden.studio">support@summygarden.studio</a>.</p>
+      <p style="font-size:11.5px;color:#9aa9b3">This template is provided for the demo and should be reviewed by a qualified professional before commercial launch.</p>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
@@ -1165,6 +1239,10 @@ function applyLang(code){
 const _lsEl=document.getElementById('langSel');
 LANG_LIST.forEach(([c,l])=>{const o=document.createElement('option');o.value=c;o.textContent=l;_lsEl.appendChild(o);});
 _lsEl.onchange=()=>applyLang(_lsEl.value);
+
+/* ---------- Cookie consent ---------- */
+function setCookie(choice){ store.setItem('sgsCookie',choice); document.getElementById('cookieBar').classList.remove('show'); toast(choice==='all'?'Thanks — all cookies enabled':'Saved — essential cookies only'); }
+function initCookies(){ if(!store.getItem('sgsCookie')) setTimeout(()=>{ document.getElementById('cookieBar').classList.add('show'); },1200); }
 
 /* ---------- Init ---------- */
 if(refParam && !user){ document.getElementById('heroBadge').textContent='🎁 You were referred — join free and get 2 headshots on us'; }

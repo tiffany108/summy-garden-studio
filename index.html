@@ -657,7 +657,17 @@ async function registerAccount(){
   if(pw!==pw2){ toast('Passwords do not match'); return; }
   const { data, error } = await sb.auth.signUp({ email, password: pw,
     options: { data: { name, referred_by: refParam||'' }, emailRedirectTo: location.origin } });
-  if(error){ toast(error.message.includes('already') ? 'This email is already registered — please sign in' : error.message); if(error.message.includes('already')) authTab('in'); return; }
+  if(error){ const dup=/already|registered|exists/i.test(error.message);
+    toast(dup ? 'You already have an account with this email — please sign in' : error.message);
+    if(dup){ authTab('in'); document.getElementById('inEmail').value=email; authMsg('👋 This email is already registered. Enter your password to sign in.'); }
+    return; }
+  // Supabase returns a decoy user (empty identities) when the email already exists
+  if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
+    authTab('in'); document.getElementById('inEmail').value=email;
+    authMsg('👋 You already have an account with this email. Enter your password to sign in.');
+    toast('This email is already registered — please sign in');
+    return;
+  }
   if(data.session){ sbSession=data.session; await loadProfile(); closeModal('register'); updateCreditLabel(); updateAccountBtn();
     toast('🌿 Welcome '+name+'!'); }
   else { authMsg('📧 Almost there — check your inbox and click the confirmation link, then sign in.'); toast('Confirmation email sent to '+email); }

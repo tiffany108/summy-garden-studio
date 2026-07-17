@@ -70,10 +70,10 @@ export default async (req) => {
   const b64 = selfie.split(",")[1];
   const mime = selfie.slice(5, selfie.indexOf(";"));
   const prompt =
-    `Transform this photo into a professional corporate headshot of the SAME person — preserve their exact facial identity, features, skin tone and hair. ` +
+    `Transform this photo into a polished, professional corporate headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
+    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). ` +
     `Dress them in ${outfit}. Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
-    `Head-and-shoulders framing, ${VARIANTS[vi]}, photorealistic, 85mm portrait lens, high-end corporate photography. ` +
-    `Subtle, natural skin retouching only — keep the person recognisable.`;
+    `Head-and-shoulders framing, ${VARIANTS[vi]}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end corporate photography.`;
 
   try {
     const res = await fetch(`${API}?key=${gemKey}`, {

@@ -329,11 +329,13 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
       <button class="active" data-cur="USD">🇺🇸 USD</button>
       <button data-cur="GBP">🇬🇧 GBP</button>
       <button data-cur="HKD">🇭🇰 HKD</button>
+      <button data-cur="EUR">🇪🇺 EUR</button>
+      <button data-cur="CNY">🇨🇳 RMB</button>
     </div>
     <div class="price-grid">
       <div class="price-card">
         <div class="plan">Free</div>
-        <div class="amount" data-usd="$0" data-gbp="£0" data-hkd="HK$0">$0</div>
+        <div class="amount" data-usd="$0" data-gbp="£0" data-hkd="HK$0" data-eur="€0" data-cny="¥0">$0</div>
         <div class="per">1 credit on sign-up · 2 via referral</div>
         <ul><li>All 100 scenes</li><li>Standard resolution</li><li>Saved to your dashboard</li><li>PNG download</li></ul>
         <button class="price-btn" onclick="scrollToStudio()">Use my free credit</button>
@@ -341,21 +343,21 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
       <div class="price-card featured">
         <span class="popular-tag">MOST POPULAR</span>
         <div class="plan">Starter</div>
-        <div class="amount" data-usd="$9.99" data-gbp="£7.99" data-hkd="HK$78">$9.99</div>
+        <div class="amount" data-usd="$9.99" data-gbp="£7.99" data-hkd="HK$78" data-eur="€8.99" data-cny="¥69">$9.99</div>
         <div class="per">5 generations · 20 variants</div>
         <ul><li>All scenes & styles</li><li>High resolution (2K)</li><li>Scene re-rolls</li><li>Priority queue</li></ul>
         <button class="price-btn" onclick="buyPack('Starter')">Buy Starter pack</button>
       </div>
       <div class="price-card">
         <div class="plan">Pro</div>
-        <div class="amount" data-usd="$19.99" data-gbp="£15.99" data-hkd="HK$156">$19.99</div>
+        <div class="amount" data-usd="$19.99" data-gbp="£15.99" data-hkd="HK$156" data-eur="€17.99" data-cny="¥138">$19.99</div>
         <div class="per">15 generations · 60 variants</div>
         <ul><li>Everything in Starter</li><li>4K resolution</li><li>Outfit & lighting controls</li><li>LinkedIn-ready crops</li></ul>
         <button class="price-btn" onclick="buyPack('Pro')">Buy Pro pack</button>
       </div>
       <div class="price-card">
         <div class="plan">Career+</div>
-        <div class="amount" data-usd="$34.99" data-gbp="£27.99" data-hkd="HK$273">$34.99</div>
+        <div class="amount" data-usd="$34.99" data-gbp="£27.99" data-hkd="HK$273" data-eur="€31.99" data-cny="¥248">$34.99</div>
         <div class="per">40 generations · 160 variants</div>
         <ul><li>Everything in Pro</li><li>Human retouch on 1 photo</li><li>Team/referral sharing</li><li>Bundled CV template pack</li></ul>
         <button class="price-btn grad" onclick="buyPack('Career+')">Buy Career+ pack</button>
@@ -706,7 +708,7 @@ let selectedBg = BACKGROUNDS[30].id;
 let selectedLook='Business formal', currency='USD';
 let studioCat = 'Park & Garden', galleryCat = 'All', searchTerm='';
 const LOOKS = {'Business formal':'contrast(1.07) saturate(.96)','Smart casual':'brightness(1.05) saturate(1.06)','Creative':'saturate(1.16) contrast(1.05)','Tech casual':'brightness(1.06) saturate(1.0)','Sportswear':'saturate(1.12) brightness(1.05)','Uniform':'contrast(1.06) saturate(.98)'};
-const PACKS = {Starter:{credits:5,usd:'$9.99',gbp:'£7.99',hkd:'HK$78'},Pro:{credits:15,usd:'$19.99',gbp:'£15.99',hkd:'HK$156'},'Career+':{credits:40,usd:'$34.99',gbp:'£27.99',hkd:'HK$273'}};
+const PACKS = {Starter:{credits:5,usd:'$9.99',gbp:'£7.99',hkd:'HK$78',eur:'€8.99',cny:'¥69'},Pro:{credits:15,usd:'$19.99',gbp:'£15.99',hkd:'HK$156',eur:'€17.99',cny:'¥138'},'Career+':{credits:40,usd:'$34.99',gbp:'£27.99',hkd:'HK$273',eur:'€31.99',cny:'¥248'}};
 let pendingPack=null;
 
 /* ---------- Portrait capture (drag + zoom, head & shoulders) ---------- */

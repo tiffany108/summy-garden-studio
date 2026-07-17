@@ -441,6 +441,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script>
 /* ================= Scene engine: 10 themes x 10 variants ================= */
 const enc = s => 'data:image/svg+xml;utf8,' + encodeURIComponent(s);
@@ -608,20 +609,31 @@ function aiSampleURL(bg,i){
 
 /* ---------- Storage & membership ---------- */
 let store; try{ store = window.localStorage; }catch(e){ const m={}; store={getItem:k=>(k in m?m[k]:null),setItem:(k,v)=>m[k]=String(v)}; }
-let accounts={}; try{ accounts=JSON.parse(store.getItem('sgsAccounts')||'{}'); }catch(e){}
-/* migrate legacy single-account storage */
-try{ const legacy=JSON.parse(store.getItem('sgsUser')||'null');
-  if(legacy&&legacy.email&&!accounts[legacy.email]){ accounts[legacy.email]=legacy; store.setItem('sgsAccounts',JSON.stringify(accounts)); if(!store.getItem('sgsActive')) store.setItem('sgsActive',legacy.email); store.setItem('sgsUser','null'); }
-}catch(e){}
-let user = null; { const a=store.getItem('sgsActive'); if(a&&accounts[a]) user=accounts[a]; }
-let guestCredits = store.getItem('hsCredits')!==null ? parseInt(store.getItem('hsCredits'),10) : 1;
+/* ---------- Supabase accounts (server-side) ---------- */
+const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
+const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
+const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+let user = null; /* {name,email,credits,code,ref_count,joined} */
+let sbSession = null;
 const refParam = new URLSearchParams(location.search).get('ref');
-function getCredits(){ return user ? user.credits : guestCredits; }
-function setCredits(n){ if(user){ user.credits=n; saveUser(); } else { guestCredits=n; store.setItem('hsCredits',n); } updateCreditLabel(); }
-function saveUser(){ if(user){ accounts[user.email]=user; store.setItem('sgsAccounts',JSON.stringify(accounts)); } }
-function makeCode(email){ let h=0; for(const ch of email) h=(h*31+ch.charCodeAt(0))>>>0; return 'SGS'+h.toString(36).toUpperCase().slice(0,6); }
-async function pwHash(email,pw){ const d=await crypto.subtle.digest('SHA-256', new TextEncoder().encode('sgs:'+email+':'+pw)); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
-function pwStrong(p){ return typeof p==='string' && p.length>=8 && /[A-Za-z]/.test(p) && /[0-9]/.test(p); }
+function getCredits(){ return user ? user.credits : 0; }
+function setCredits(n){ if(user){ user.credits=n; } updateCreditLabel(); }
+async function loadProfile(){
+  if(!sb||!sbSession){ user=null; return; }
+  const { data, error } = await sb.from('profiles').select('*').eq('id', sbSession.user.id).single();
+  if(error||!data){ user=null; return; }
+  user = { email: sbSession.user.email, name: data.name||sbSession.user.email.split('@')[0],
+           credits: data.credits, code: data.ref_code, refCount: data.ref_count,
+           joined: (data.created_at||'').slice(0,10), history: [] };
+  try{
+    const g = await sb.from('generations').select('scene,look,created_at').order('created_at',{ascending:false}).limit(18);
+    if(g.data) user.history = g.data.map(r=>({bg:r.scene, attire:r.look, date:(r.created_at||'').slice(5,10)}));
+  }catch(e){}
+}
+function authMsg(text){ let m=document.getElementById('authMsg');
+  if(!m){ m=document.createElement('p'); m.id='authMsg'; m.style.cssText='margin:12px 0 0;font-size:13px;font-weight:700;color:#0284c7';
+    document.querySelector('#register .modal').appendChild(m); }
+  m.textContent=text; }
 function authTab(which){
   document.getElementById('regFields').style.display = which==='reg'?'block':'none';
   document.getElementById('inFields').style.display = which==='in'?'block':'none';
@@ -630,7 +642,9 @@ function authTab(which){
   document.getElementById('authTitle').textContent = which==='reg' ? (LT().reg_h||'Join Summy Garden Studio') : TX('a_in_t');
 }
 function accountClick(){ if(user){ renderDashboard(); openModal('dashboard'); } else { if(refParam) document.getElementById('refBanner').style.display='block'; openModal('register'); } }
+function pwStrong(p){ return typeof p==='string' && p.length>=8 && /[A-Za-z]/.test(p) && /[0-9]/.test(p); }
 async function registerAccount(){
+  if(!sb){ toast('Account service unavailable — try again shortly'); return; }
   const name=document.getElementById('regName').value.trim();
   const email=document.getElementById('regEmail').value.trim().toLowerCase();
   const pw=document.getElementById('regPw').value, pw2=document.getElementById('regPw2').value;
@@ -638,29 +652,26 @@ async function registerAccount(){
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast('Please enter a valid email'); return; }
   if(!pwStrong(pw)){ toast('Password too weak — min 8 characters with letters and numbers'); return; }
   if(pw!==pw2){ toast('Passwords do not match'); return; }
-  if(accounts[email]){ toast('This email is already registered — please sign in'); authTab('in'); document.getElementById('inEmail').value=email; return; }
-  const bonus = refParam ? 2 : 1;
-  user = { email, name, pw: await pwHash(email,pw), code:makeCode(email), credits: bonus + Math.max(guestCredits-1,0), history: [], referredBy: refParam||null, refCount: 0, joined: new Date().toISOString().slice(0,10) };
-  saveUser(); store.setItem('sgsActive',email);
-  closeModal('register'); updateCreditLabel(); updateAccountBtn();
-  toast(refParam ? ('🎁 Welcome '+name+'! 2 free headshots added via referral') : ('🌿 Welcome '+name+'! Your free headshot credit is ready'));
+  const { data, error } = await sb.auth.signUp({ email, password: pw,
+    options: { data: { name, referred_by: refParam||'' }, emailRedirectTo: location.origin } });
+  if(error){ toast(error.message.includes('already') ? 'This email is already registered — please sign in' : error.message); if(error.message.includes('already')) authTab('in'); return; }
+  if(data.session){ sbSession=data.session; await loadProfile(); closeModal('register'); updateCreditLabel(); updateAccountBtn();
+    toast('🌿 Welcome '+name+'!'); }
+  else { authMsg('📧 Almost there — check your inbox and click the confirmation link, then sign in.'); toast('Confirmation email sent to '+email); }
 }
 async function signInAccount(){
+  if(!sb){ toast('Account service unavailable — try again shortly'); return; }
   const email=document.getElementById('inEmail').value.trim().toLowerCase();
   const pw=document.getElementById('inPw').value;
-  const acct=accounts[email];
-  if(!acct){ toast('No account found with this email — create one'); authTab('reg'); return; }
-  if(!acct.pw){ /* legacy account without password: first strong password sets it */
-    if(!pwStrong(pw)){ toast('Set your password: min 8 characters with letters and numbers'); return; }
-    acct.pw=await pwHash(email,pw);
-  } else if(acct.pw !== await pwHash(email,pw)){ toast('Incorrect password'); return; }
-  user=acct; saveUser(); store.setItem('sgsActive',email);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if(error){ toast(error.message.includes('confirm') ? 'Please confirm your email first — check your inbox' : 'Sign-in failed: '+error.message); return; }
+  sbSession=data.session; await loadProfile();
   closeModal('register'); updateCreditLabel(); updateAccountBtn();
-  toast('🌿 Welcome back, '+user.name.split(' ')[0]+'!');
+  toast('🌿 Welcome back, '+(user?user.name.split(' ')[0]:'')+'!');
 }
-function signOut(){ user=null; store.setItem('sgsActive',''); closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out — your account stays saved on this device'); }
-function updateAccountBtn(){ document.getElementById('accountBtn').textContent = user ? ('🌿 '+user.name.split(' ')[0]) : (LANG==='en' ? 'Sign in / Join free' : LT().join); }
+async function signOut(){ if(sb) await sb.auth.signOut(); sbSession=null; user=null; closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out'); }
 function renderDashboard(){
+  if(!user) return;
   document.getElementById('dashHello').textContent = 'My Studio — '+user.name;
   document.getElementById('dashEmail').textContent = user.email+' · member since '+user.joined;
   document.getElementById('dashCredits').textContent = user.credits;
@@ -670,10 +681,11 @@ function renderDashboard(){
   document.getElementById('refCode').value = user.code;
   const h=document.getElementById('dashHistory'); h.innerHTML='';
   document.getElementById('dashEmpty').style.display = user.history.length ? 'none' : 'block';
-  user.history.slice().reverse().forEach(it=>{
+  user.history.forEach(it=>{
     const bg=bgById(it.bg);
     const d=document.createElement('div'); d.className='dash-frame';
-    d.innerHTML=(it.thumb?`<img src="${it.thumb}" alt="">`:'')+`<small>${bg?bg.name:''} · ${it.date}</small>`;
+    if(bg) d.style.backgroundImage=`url("${bg.image}")`;
+    d.innerHTML=`<small>${bg?bg.name:(it.bg||'')} · ${it.date}</small>`;
     h.appendChild(d);
   });
 }
@@ -909,11 +921,13 @@ async function tryServerGenerate(bg){
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
     const res=await fetch('/.netlify/functions/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, look:selectedLook, variant:vi})});
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, look:selectedLook, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
+    if(res.status===402){ openModal('paywall'); throw new Error('no credits'); }
     if(!res.ok) throw new Error('server '+res.status);
     const d=await res.json();
     if(!d.image) throw new Error('no image');
+    if(typeof d.remaining==='number') setCredits(d.remaining);
     return d.image;
   };
   const results=await Promise.allSettled([one(0),one(1),one(2),one(3)]);
@@ -926,6 +940,7 @@ async function tryServerGenerate(bg){
 /* ---------- Generate ---------- */
 document.getElementById('genBtn').onclick=()=>{
   if(!cropImg){toast('Please upload a selfie first 📷');return;}
+  if(!user){ toast('Create your free account to generate — 1 free credit on sign-up'); accountClick(); return; }
   if(getCredits()<=0){openModal('paywall');return;}
   runGeneration();
 };
@@ -959,18 +974,10 @@ async function showResults(tick){
     }catch(e){ clearInterval(tick); toast('Something went wrong — try re-uploading your photo'); return; }
   }
   clearInterval(tick);
-  setCredits(getCredits()-1);
-  if(user){
-    try{
-      const t=document.createElement('canvas'); t.width=120; t.height=150;
-      const ti=await loadImg(urls[0]); t.getContext('2d').drawImage(ti,0,0,120,150);
-      user.history.push({bg:bg.id, attire:selectedLook, date:new Date().toISOString().slice(5,10), thumb:t.toDataURL('image/jpeg',.72)});
-      if(user.history.length>18) user.history.shift();
-      saveUser();
-    }catch(e){}
-  }
+  if(mode!=='server') setCredits(Math.max(getCredits()-1,0));
+  if(user) user.history.unshift({bg:bg.id, attire:selectedLook, date:new Date().toISOString().slice(5,10)});
   const zone=document.getElementById('resultZone');
-  const joinCta = user ? '' : ' · <a href="#" onclick="accountClick();return false" style="color:#7dd3fc">Join free to save your headshots →</a>';
+  const joinCta='';
   const aiNote = mode==='server' ? 'studio AI render — identity preserved' : (usedAI ? 'AI cut-out + skin & tone enhanced' : 'soft-blend mode + tone enhanced');
   zone.innerHTML='<div class="result-grid">'+defs.map((d,i)=>
     `<div class="headshot-frame"><img class="comp" src="${urls[i]}" alt="Headshot variant ${d[0]}">
@@ -983,7 +990,7 @@ async function showResults(tick){
 /* ---------- Credits / paywall / checkout ---------- */
 function updateCreditLabel(){
   const n=getCredits();
-  document.getElementById('creditLabel').textContent = n+' '+(n===1?LT().credit:LT().credits);
+  document.getElementById('creditLabel').textContent = user ? (n+' '+(n===1?LT().credit:LT().credits)) : '★ '+TX('join');
 }
 function buyPack(name){pendingPack=name;
   document.getElementById('checkoutTitle').textContent=name+' pack — '+PACKS[name][currency.toLowerCase()];
@@ -1090,6 +1097,10 @@ renderSwatches();
 renderShowcase();
 updateCreditLabel();
 updateAccountBtn();
+if(sb){
+  sb.auth.getSession().then(async ({data})=>{ sbSession=data.session; await loadProfile(); updateCreditLabel(); updateAccountBtn(); });
+  sb.auth.onAuthStateChange(async (_e,session)=>{ sbSession=session; await loadProfile(); updateCreditLabel(); updateAccountBtn(); });
+}
 const _sl=store.getItem('sgsLang')||'en'; _lsEl.value=I18N[_sl]?_sl:'en'; applyLang(_lsEl.value);
 </script>
 </body>

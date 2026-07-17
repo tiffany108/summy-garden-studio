@@ -19,6 +19,24 @@ const OUTFITS = {
   "Sportswear": "clean modern athletic sportswear (polo or performance top)",
   "Uniform": "a smart, well-pressed professional service uniform",
 };
+const MODES = {
+  "Corporate": "clean corporate style, balanced neutral colour grade, polished and trustworthy",
+  "Creative": "creative style with richer colour and a modern, characterful mood",
+  "Editorial": "editorial magazine style, crisp high-contrast grade, striking and premium",
+  "Natural": "natural relaxed style, soft true-to-life colours and gentle contrast",
+};
+const EXPRESSIONS = {
+  "Natural smile": "a warm, natural smile",
+  "Confident": "a composed, confident expression",
+  "Friendly": "a friendly, approachable expression",
+  "Serious": "a calm, serious and professional expression",
+  "Neutral": "a relaxed neutral expression",
+};
+const FRAMES = {
+  "Head & shoulders": "head-and-shoulders framing",
+  "Close-up": "a tighter close-up portrait crop from the chest up, face prominent",
+  "Upper body": "an upper-body framing showing head, shoulders and upper chest",
+};
 
 async function sbAuthUser(token) {
   const r = await fetch(`${SB_URL}/auth/v1/user`, { headers: { apikey: SB_PUB, Authorization: `Bearer ${token}` } });
@@ -40,7 +58,7 @@ export default async (req) => {
   if (!process.env.SUPABASE_SECRET_KEY) return Response.json({ error: "SUPABASE_SECRET_KEY not configured" }, { status: 501, headers });
 
   let body = {}; try { body = await req.json(); } catch {}
-  const { selfie, scene, category, look, token, scene_id } = body;
+  const { selfie, scene, category, look, mode, expr, frame, token, scene_id } = body;
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
@@ -69,11 +87,16 @@ export default async (req) => {
   const outfit = OUTFITS[look] || OUTFITS["Business formal"];
   const b64 = selfie.split(",")[1];
   const mime = selfie.slice(5, selfie.indexOf(";"));
+  const modeDesc = MODES[mode] || MODES["Corporate"];
+  const exprDesc = EXPRESSIONS[expr] || null;
+  const frameDesc = FRAMES[frame] || FRAMES["Head & shoulders"];
+  // if the user picked an expression, use it; otherwise vary expression per variant
+  const variantDesc = exprDesc ? `${exprDesc}, ${["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi]}` : VARIANTS[vi];
   const prompt =
-    `Transform this photo into a polished, professional corporate headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
-    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). ` +
-    `Dress them in ${outfit}. Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
-    `Head-and-shoulders framing, ${VARIANTS[vi]}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end corporate photography.`;
+    `Transform this photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
+    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). ` +
+    `Dress them in ${outfit}. Overall look: ${modeDesc}. Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
+    `${frameDesc}, ${variantDesc}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   try {
     const res = await fetch(`${API}?key=${gemKey}`, {

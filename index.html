@@ -123,6 +123,8 @@ section{padding:72px 0}
 .progress-fill{height:100%;width:0%;background:var(--grad-brand);border-radius:999px;box-shadow:0 0 12px rgba(56,189,248,.6);transition:width .4s cubic-bezier(.2,.8,.2,1)}
 .progress-label{font-size:13px;color:rgba(255,255,255,.6);margin-top:8px}
 .sim-note{margin-top:14px;font-size:12px;color:rgba(255,255,255,.4)}
+.combo-summary{margin-top:16px;background:rgba(56,189,248,.1);box-shadow:inset 0 0 0 1px rgba(56,189,248,.3);border-radius:12px;padding:12px 15px;font-size:12.5px;color:#cfe9f7;line-height:1.5}
+.combo-summary b{color:#fff}
 .gallery-controls{display:flex;flex-direction:column;gap:16px;margin-bottom:26px}
 .search-bar{display:flex;justify-content:center}
 .search-bar input{width:min(440px,100%);padding:13px 20px;border:none;border-radius:999px;background:#fff;box-shadow:var(--card-shadow);font-family:inherit;font-size:14.5px;color:var(--ink);outline:none}
@@ -231,6 +233,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
 </style>
 </head>
 <body>
+<div id="annBar" style="display:none;background:linear-gradient(120deg,#fbbf24,#f97316);color:#fff;text-align:center;font-weight:700;font-size:13.5px;padding:9px 40px;position:relative"><span id="annBarTxt"></span></div>
 <nav>
   <div class="wrap nav-inner">
     <a class="logo" href="#"><span class="logo-mark">◆</span>Summy&nbsp;Garden&nbsp;Studio</a>
@@ -302,7 +305,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
           <select id="catSel" class="cat-sel"></select>
           <div class="swatch-grid" id="swatchGrid"></div>
           <div class="sel-bg-info" id="selBgInfo"></div>
-          <div class="studio-label">Look & grading</div>
+          <div class="studio-label">Outfit & style</div>
           <div class="chip-row" id="attireChips">
             <button class="chip active" data-attire="Business formal">Business formal</button>
             <button class="chip" data-attire="Smart casual">Smart casual</button>
@@ -311,6 +314,28 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
             <button class="chip" data-attire="Sportswear">Sportswear</button>
             <button class="chip" data-attire="Uniform">Uniform</button>
           </div>
+          <div class="studio-label">Mode</div>
+          <div class="chip-row" id="modeChips">
+            <button class="chip active" data-mode="Corporate">Corporate</button>
+            <button class="chip" data-mode="Creative">Creative</button>
+            <button class="chip" data-mode="Editorial">Editorial</button>
+            <button class="chip" data-mode="Natural">Natural</button>
+          </div>
+          <div class="studio-label">Facial expression</div>
+          <div class="chip-row" id="exprChips">
+            <button class="chip active" data-expr="Natural smile">Natural smile</button>
+            <button class="chip" data-expr="Confident">Confident</button>
+            <button class="chip" data-expr="Friendly">Friendly</button>
+            <button class="chip" data-expr="Serious">Serious</button>
+            <button class="chip" data-expr="Neutral">Neutral</button>
+          </div>
+          <div class="studio-label">Framing</div>
+          <div class="chip-row" id="frameChips">
+            <button class="chip active" data-frame="Head & shoulders">Head &amp; shoulders</button>
+            <button class="chip" data-frame="Close-up">Close-up</button>
+            <button class="chip" data-frame="Upper body">Upper body</button>
+          </div>
+          <div class="combo-summary" id="comboSummary"></div>
           <button class="gen-btn" id="genBtn">✨ Generate my headshots</button>
         </div>
         <div>
@@ -813,7 +838,7 @@ function copyRefCode(){
 
 /* ---------- State ---------- */
 let selectedBg = BACKGROUNDS[30].id;
-let selectedLook='Business formal', currency='USD';
+let selectedLook='Business formal', selectedMode='Corporate', selectedExpr='Natural smile', selectedFrame='Head & shoulders', currency='USD';
 let studioCat = 'Park & Garden', galleryCat = 'All', searchTerm='';
 const LOOKS = {'Business formal':'contrast(1.07) saturate(.96)','Smart casual':'brightness(1.05) saturate(1.06)','Creative':'saturate(1.16) contrast(1.05)','Tech casual':'brightness(1.06) saturate(1.0)','Sportswear':'saturate(1.12) brightness(1.05)','Uniform':'contrast(1.06) saturate(.98)'};
 const PACKS = {Starter:{credits:5,usd:'$9.99',gbp:'£7.99',hkd:'HK$78',eur:'€8.99',cny:'¥69'},Pro:{credits:15,usd:'$19.99',gbp:'£15.99',hkd:'HK$156',eur:'€17.99',cny:'¥138'},'Career+':{credits:40,usd:'$34.99',gbp:'£27.99',hkd:'HK$273',eur:'€31.99',cny:'¥248'}};
@@ -1048,13 +1073,18 @@ function selectBg(id,opts={}){
   const b=bgById(id);
   if(!opts.fromStudio){ studioCat=b.cat; renderCatStrip(); }
   renderSwatches();
+  if(typeof updateCombo==='function') updateCombo();
   document.querySelectorAll('.bg-card').forEach(c=>c.classList.toggle('selected',c.dataset.id===id));
   if(opts.scroll){document.getElementById('studio').scrollIntoView({behavior:'smooth'});toast('Scene selected: '+b.name);}
 }
-document.querySelectorAll('#attireChips .chip').forEach(c=>c.onclick=()=>{
-  selectedLook=c.dataset.attire;
-  document.querySelectorAll('#attireChips .chip').forEach(x=>x.classList.toggle('active',x===c));
-});
+function wireChips(sel,setter){ document.querySelectorAll(sel+' .chip').forEach(c=>c.onclick=()=>{
+  setter(c); document.querySelectorAll(sel+' .chip').forEach(x=>x.classList.toggle('active',x===c)); updateCombo(); }); }
+wireChips('#attireChips',c=>selectedLook=c.dataset.attire);
+wireChips('#modeChips',c=>selectedMode=c.dataset.mode);
+wireChips('#exprChips',c=>selectedExpr=c.dataset.expr);
+wireChips('#frameChips',c=>selectedFrame=c.dataset.frame);
+function updateCombo(){ const b=bgById(selectedBg); const el=document.getElementById('comboSummary');
+  if(el) el.innerHTML='✨ You\'ll generate: <b>'+selectedLook+'</b> · <b>'+selectedMode+'</b> mode · <b>'+selectedExpr+'</b> · <b>'+selectedFrame+'</b>'+(b?' in <b>'+b.name+'</b>':'')+'. <span style="opacity:.75">4 variants — pick your favourite to download.</span>'; }
 
 /* ---------- Server generation (identity-preserving, when API key is configured) ---------- */
 async function tryServerGenerate(bg){
@@ -1064,7 +1094,7 @@ async function tryServerGenerate(bg){
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
     const res=await fetch('/.netlify/functions/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, look:selectedLook, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, look:selectedLook, mode:selectedMode, expr:selectedExpr, frame:selectedFrame, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
     if(res.status===402){ openModal('paywall'); throw new Error('no credits'); }
     if(!res.ok) throw new Error('server '+res.status);
@@ -1234,11 +1264,30 @@ function applyLang(code){
   const slbl=Q('#sceneLabel'); if(slbl) slbl.textContent=TX('sc_pick');
   const shint=Q('#sceneHintTxt'); if(shint) shint.textContent=TX('sc_hint');
   renderShowcase(); renderSwatches();
+  applyAdminOverrides();
   updateCreditLabel(); updateAccountBtn();
 }
 const _lsEl=document.getElementById('langSel');
 LANG_LIST.forEach(([c,l])=>{const o=document.createElement('option');o.value=c;o.textContent=l;_lsEl.appendChild(o);});
 _lsEl.onchange=()=>applyLang(_lsEl.value);
+
+/* ---------- Admin content overrides ---------- */
+let adminContent=null;
+function applyAdminOverrides(){
+  if(!adminContent) return;
+  const c=adminContent;
+  if(c.heroA||c.heroB){ const h=document.querySelector('.hero h1'); if(h) h.innerHTML=(c.heroA||'')+' <em>'+(c.heroB||'')+'</em>'; }
+  if(c.heroP){ const p=document.querySelector('.hero p'); if(p) p.textContent=c.heroP; }
+  if(c.badge){ const b=document.getElementById('heroBadge'); if(b) b.textContent=c.badge; }
+  const bar=document.getElementById('annBar');
+  if(c.annOn && c.annText){ document.getElementById('annBarTxt').textContent=c.annText; bar.style.display='block'; }
+  else if(bar){ bar.style.display='none'; }
+}
+async function loadAdminContent(){
+  if(!sb) return;
+  try{ const {data}=await sb.from('site_config').select('value').eq('key','content').maybeSingle();
+    adminContent=(data&&data.value)||null; applyAdminOverrides(); }catch(e){}
+}
 
 /* ---------- Cookie consent ---------- */
 function setCookie(choice){ store.setItem('sgsCookie',choice); document.getElementById('cookieBar').classList.remove('show'); toast(choice==='all'?'Thanks — all cookies enabled':'Saved — essential cookies only'); }
@@ -1248,6 +1297,7 @@ function initCookies(){ if(!store.getItem('sgsCookie')) setTimeout(()=>{ documen
 if(refParam && !user){ document.getElementById('heroBadge').textContent='🎁 You were referred — join free and get 2 headshots on us'; }
 renderSwatches();
 renderShowcase();
+updateCombo();
 updateCreditLabel();
 updateAccountBtn();
 if(new URLSearchParams(location.search).get('paid')==='1'){ setTimeout(()=>toast('✓ Payment received — credits added to your account'),800); history.replaceState(null,'',location.pathname); }

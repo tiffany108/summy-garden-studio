@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Summy Garden Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<style>
+:root{
+  --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
+  --accent:#0284c7;--bg-deep:#062c45;--ink:#0c1c26;--muted:#54707e;--body:#eef6fb;
+  --card:0 1px 2px rgba(7,44,69,.05),0 8px 20px rgba(7,44,69,.08),inset 0 0 0 1px rgba(7,44,69,.05);
+  --glow:0 8px 22px rgba(14,165,233,.38);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--body);color:var(--ink);line-height:1.55}
+.wrap{max-width:1060px;margin:0 auto;padding:28px 22px}
+h1,h2,h3{letter-spacing:-.02em}
+button{font-family:inherit;border:none;cursor:pointer}
+/* topbar */
+.top{background:var(--bg-deep);color:#fff;padding:16px 0}
+.top .wrap{display:flex;align-items:center;gap:14px;padding-top:0;padding-bottom:0}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);box-shadow:var(--glow);display:grid;place-items:center}
+.top .sp{flex:1}
+.badge-admin{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700}
+.btn{background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:10px;padding:9px 16px;box-shadow:var(--glow)}
+.btn.ghost{background:rgba(255,255,255,.09);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.btn.dark{background:#eef0f4;color:#334;box-shadow:none}
+/* login */
+#login{max-width:420px;margin:70px auto;background:#fff;border-radius:18px;box-shadow:var(--card);padding:34px;text-align:center}
+#login .logo-mark{margin:0 auto 16px;width:52px;height:52px;border-radius:15px;font-size:22px}
+#login h2{font-size:22px;margin-bottom:6px}
+#login p{color:var(--muted);font-size:14px;margin-bottom:20px}
+input{width:100%;padding:12px 15px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14.5px;margin-bottom:11px;outline:none;color:var(--ink)}
+input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
+#login .btn{width:100%;justify-content:center;padding:13px}
+.msg{font-size:13px;font-weight:600;color:#c0392b;margin-top:12px;min-height:18px}
+/* dashboard */
+#dash{display:none}
+.sec-title{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:28px 0 14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+.stat{background:#fff;border-radius:15px;box-shadow:var(--card);padding:20px 22px}
+.stat .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:19px;color:#fff;margin-bottom:12px}
+.stat b{display:block;font-size:28px;font-weight:800;letter-spacing:-.02em}
+.stat span{font-size:12.5px;color:var(--muted)}
+.i1{background:linear-gradient(135deg,#7dd3fc,#0284c7)}
+.i2{background:linear-gradient(135deg,#67e8f9,#06b6d4)}
+.i3{background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+.i4{background:linear-gradient(135deg,#34d399,#0f6e56)}
+.card{background:#fff;border-radius:16px;box-shadow:var(--card);padding:24px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid #e6edf2}
+td{padding:10px;border-bottom:1px solid #f0f4f7}
+.editor label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin:14px 0 5px}
+.editor textarea{width:100%;padding:11px 14px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14px;outline:none;color:var(--ink);resize:vertical;min-height:52px}
+.editor .row{display:flex;gap:20px;flex-wrap:wrap}
+.editor .row>div{flex:1;min-width:230px}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:14px}
+.save-bar{display:flex;gap:10px;align-items:center;margin-top:20px}
+.save-note{font-size:12.5px;color:var(--muted)}
+.preview-frame{width:100%;height:520px;border:none;border-radius:14px;box-shadow:var(--card);background:#fff}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--bg-deep);color:#fff;font-size:14px;font-weight:600;border-radius:999px;padding:12px 22px;box-shadow:0 12px 30px rgba(0,0,0,.3);transition:.35s;z-index:50}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.hint{background:#fff8e1;color:#8a6d1a;border-radius:12px;padding:12px 16px;font-size:13px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <div class="logo"><span class="logo-mark">◆</span> Summy Garden Studio</div>
+  <span class="badge-admin">🔐 Super Admin</span>
+  <span class="sp"></span>
+  <span id="whoami" style="font-size:13px;opacity:.85"></span>
+  <button class="btn ghost" id="signoutBtn" onclick="signOut()" style="display:none">Sign out</button>
+</div></div>
+
+<div class="wrap">
+  <!-- LOGIN -->
+  <div id="login">
+    <div class="logo-mark">🔐</div>
+    <h2>Admin sign in</h2>
+    <p>Restricted area — super-admin access only.</p>
+    <input type="email" id="email" placeholder="Admin email">
+    <input type="password" id="pw" placeholder="Password">
+    <button class="btn" onclick="doLogin()">Sign in</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash">
+    <div class="sec-title">Live overview</div>
+    <div class="stats">
+      <div class="stat"><div class="ico i1">👥</div><b id="sMembers">–</b><span>Registered members</span></div>
+      <div class="stat"><div class="ico i2">🖼</div><b id="sShots">–</b><span>Headshots generated</span></div>
+      <div class="stat"><div class="ico i3">💳</div><b id="sCredits">–</b><span>Credits outstanding</span></div>
+      <div class="stat"><div class="ico i4">🤝</div><b id="sRefs">–</b><span>Referral rewards</span></div>
+    </div>
+
+    <div class="sec-title">Recent members</div>
+    <div class="card">
+      <table><thead><tr><th>Name</th><th>Referral code</th><th>Credits</th><th>Referrals</th><th>Joined</th></tr></thead>
+      <tbody id="memberRows"><tr><td colspan="5" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
+    </div>
+
+    <div class="sec-title">Edit marketing content <span style="text-transform:none;font-weight:600;color:#8fa6b3">· changes go live instantly, no deploy</span></div>
+    <div class="card editor">
+      <div class="toggle-row">
+        <input type="checkbox" id="annOn" style="width:auto;margin:0;box-shadow:none">
+        <label for="annOn" style="margin:0">Show announcement banner at top of site</label>
+      </div>
+      <label>Announcement text</label>
+      <textarea id="annText" placeholder="e.g. 🎉 Launch week — refer a friend and you both get free headshots!"></textarea>
+      <div class="row">
+        <div><label>Hero headline (before the highlighted words)</label><textarea id="heroA" placeholder="Studio-quality headshots,"></textarea></div>
+        <div><label>Hero highlighted words</label><textarea id="heroB" placeholder="from one selfie"></textarea></div>
+      </div>
+      <label>Hero subtitle</label>
+      <textarea id="heroP"></textarea>
+      <label>Free badge text</label>
+      <textarea id="badge"></textarea>
+      <div class="save-bar">
+        <button class="btn" onclick="saveContent()">💾 Save changes</button>
+        <button class="btn dark" onclick="loadContent()">Reset</button>
+        <span class="save-note" id="saveNote"></span>
+      </div>
+      <div class="hint">💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.</div>
+    </div>
+
+    <div class="sec-title">Live site preview</div>
+    <div class="card" style="padding:14px">
+      <iframe class="preview-frame" id="preview" src="/?admin_preview=1"></iframe>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
+const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
+const ADMIN_EMAIL='tiffany123@hotmail.com.hk';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+let session=null;
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function show(id,on){document.getElementById(id).style.display=on?'':'none';}
+
+async function doLogin(){
+  const email=document.getElementById('email').value.trim().toLowerCase();
+  const pw=document.getElementById('pw').value;
+  const msg=document.getElementById('msg'); msg.textContent='';
+  if(email!==ADMIN_EMAIL){ msg.textContent='This account is not authorised for admin access.'; return; }
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error){ msg.textContent=error.message; return; }
+  session=data.session; enterDash();
+}
+async function signOut(){ await sb.auth.signOut(); session=null; location.reload(); }
+
+async function enterDash(){
+  if(!session || session.user.email!==ADMIN_EMAIL){ return; }
+  show('login',false); show('dash',true); show('signoutBtn',true);
+  document.getElementById('whoami').textContent=session.user.email;
+  loadStats(); loadContent();
+}
+async function loadStats(){
+  try{
+    const m=await sb.from('profiles').select('*',{count:'exact'}).order('created_at',{ascending:false}).limit(12);
+    const g=await sb.from('generations').select('id',{count:'exact',head:true});
+    const all=await sb.from('profiles').select('credits,ref_count');
+    document.getElementById('sMembers').textContent=m.count ?? (m.data?m.data.length:0);
+    document.getElementById('sShots').textContent=g.count ?? 0;
+    let cr=0,rf=0; (all.data||[]).forEach(p=>{cr+=p.credits||0; rf+=p.ref_count||0;});
+    document.getElementById('sCredits').textContent=cr;
+    document.getElementById('sRefs').textContent=rf;
+    const tb=document.getElementById('memberRows'); tb.innerHTML='';
+    (m.data||[]).forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${p.name||'—'}</td><td style="font-family:monospace">${p.ref_code||''}</td><td>${p.credits}</td><td>${p.ref_count||0}</td><td>${(p.created_at||'').slice(0,10)}</td>`;
+      tb.appendChild(tr);
+    });
+    if(!m.data||!m.data.length) tb.innerHTML='<tr><td colspan="5" style="color:#8fa6b3">No members yet</td></tr>';
+  }catch(e){ toast('Could not load stats: '+e.message); }
+}
+async function loadContent(){
+  const {data}=await sb.from('site_config').select('value').eq('key','content').maybeSingle();
+  const c=(data&&data.value)||{};
+  document.getElementById('annOn').checked=!!c.annOn;
+  document.getElementById('annText').value=c.annText||'';
+  document.getElementById('heroA').value=c.heroA||'';
+  document.getElementById('heroB').value=c.heroB||'';
+  document.getElementById('heroP').value=c.heroP||'';
+  document.getElementById('badge').value=c.badge||'';
+  document.getElementById('saveNote').textContent=data?('Last saved content loaded'):'No overrides yet — fields blank use the site defaults';
+}
+async function saveContent(){
+  const c={
+    annOn:document.getElementById('annOn').checked,
+    annText:document.getElementById('annText').value.trim(),
+    heroA:document.getElementById('heroA').value.trim(),
+    heroB:document.getElementById('heroB').value.trim(),
+    heroP:document.getElementById('heroP').value.trim(),
+    badge:document.getElementById('badge').value.trim(),
+  };
+  const {error}=await sb.from('site_config').upsert({key:'content',value:c,updated_at:new Date().toISOString()});
+  if(error){ toast('Save failed: '+error.message); return; }
+  toast('✓ Saved — live on the site now');
+  document.getElementById('saveNote').textContent='Saved '+new Date().toLocaleTimeString();
+  const pv=document.getElementById('preview'); pv.src='/?admin_preview=1&t='+Date.now();
+}
+
+/* restore an existing admin session on load */
+sb.auth.getSession().then(({data})=>{ session=data.session;
+  if(session && session.user.email===ADMIN_EMAIL) enterDash();
+});
+</script>
+</body>
+</html>

@@ -1141,6 +1141,7 @@ document.getElementById('genBtn').onclick=()=>{
 };
 function runGeneration(){
   showResultsPanel();
+  try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
   const zone=document.getElementById('resultZone');
   zone.innerHTML=`<div class="result-empty" style="display:block;padding-top:60px">
     <div class="progress-wrap"><div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
@@ -1181,6 +1182,13 @@ async function showResults(tick){
     `</div><p class="sim-note" style="margin-top:18px">Scene: <b style="color:#fff">${bg.name}</b> · Look: <b style="color:#fff">${selectedOutfit}</b> · ${aiNote} · ${getCredits()} credit${getCredits()===1?'':'s'} left${user?' · saved to My Studio':''}${joinCta}</p>`;
   if(getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
   else toast('Headshots ready! Click ⤓ PNG to download'+(user?' · saved to your dashboard':''));
+  try{
+    if(navigator.vibrate) navigator.vibrate([120,60,120]);
+    if('Notification' in window && Notification.permission==='granted' && document.hidden){
+      const n=new Notification('Summy Garden Studio', {body:'✨ Your headshots are ready — tap to view & download.', icon:'/favicon.ico'});
+      n.onclick=()=>{ window.focus(); n.close(); };
+    }
+  }catch(e){}
 }
 
 /* ---------- Credits / paywall / checkout ---------- */

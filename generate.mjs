@@ -12,12 +12,38 @@ const VARIANTS = [
   "relaxed friendly expression, golden-hour rim light",
 ];
 const OUTFITS = {
-  "Business formal": "a tailored dark business suit with a crisp shirt",
-  "Smart casual": "a smart-casual blazer over an open-collar shirt",
-  "Creative": "a refined black turtleneck",
-  "Tech casual": "a clean modern crew-neck or quarter-zip",
+  "Auto": "professional attire that best suits the chosen style",
+  "Original": "the same clothing they are wearing in the photo, tidied and professional",
+  "Navy suit": "a tailored navy business suit with a crisp white shirt",
+  "Charcoal suit": "a tailored charcoal-grey business suit with a shirt",
+  "Light blazer": "a light beige/cream smart blazer over an open-collar shirt",
+  "Black turtleneck": "a refined black turtleneck",
+  "White shirt": "a clean pressed white collared shirt",
+  "Blouse": "an elegant professional blouse",
   "Sportswear": "clean modern athletic sportswear (polo or performance top)",
   "Uniform": "a smart, well-pressed professional service uniform",
+};
+const STYLES = {
+  "Formal": "formal professional headshot style, polished and corporate",
+  "Studio": "clean studio-portrait style on a neutral seamless background",
+  "Corporate": "corporate style, balanced neutral colour grade, trustworthy",
+  "Office": "modern office style with a softly blurred workplace behind",
+  "Casual": "relaxed smart-casual style, approachable and warm",
+  "Natural": "natural, true-to-life style with soft daylight",
+  "Creative": "creative style with richer colour and characterful mood",
+  "Fashion": "fashion-editorial style, stylish and contemporary",
+  "Street": "urban street style with a soft city backdrop",
+  "Luxury": "premium luxury style, refined and elegant",
+  "Editorial": "editorial magazine style, crisp high-contrast grade",
+  "Vintage": "subtle warm vintage film style",
+};
+const POSES = {
+  "Straight on": "facing the camera straight on",
+  "Slight angle": "body turned at a slight angle, face toward camera",
+  "Three-quarter": "a three-quarter turned pose",
+  "Chin up": "chin slightly up, confident posture",
+  "Relaxed": "relaxed shoulders, natural easy posture",
+  "Head tilt": "a gentle friendly head tilt",
 };
 const MODES = {
   "Corporate": "clean corporate style, balanced neutral colour grade, polished and trustworthy",
@@ -58,7 +84,7 @@ export default async (req) => {
   if (!process.env.SUPABASE_SECRET_KEY) return Response.json({ error: "SUPABASE_SECRET_KEY not configured" }, { status: 501, headers });
 
   let body = {}; try { body = await req.json(); } catch {}
-  const { selfie, scene, category, look, mode, expr, frame, token, scene_id } = body;
+  const { selfie, scene, category, outfit, style, pose, expr, frame, token, scene_id } = body;
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
@@ -84,19 +110,20 @@ export default async (req) => {
     if (!rows.length) return Response.json({ error: "no active generation" }, { status: 402, headers });
   }
 
-  const outfit = OUTFITS[look] || OUTFITS["Business formal"];
+  const outfitDesc = OUTFITS[outfit] || OUTFITS["Navy suit"];
+  const styleDesc = STYLES[style] || STYLES["Formal"];
+  const poseDesc = POSES[pose] || POSES["Straight on"];
+  const exprDesc = EXPRESSIONS[expr] || EXPRESSIONS["Natural smile"];
+  const frameDesc = FRAMES[frame] || FRAMES["Head & shoulders"];
   const b64 = selfie.split(",")[1];
   const mime = selfie.slice(5, selfie.indexOf(";"));
-  const modeDesc = MODES[mode] || MODES["Corporate"];
-  const exprDesc = EXPRESSIONS[expr] || null;
-  const frameDesc = FRAMES[frame] || FRAMES["Head & shoulders"];
-  // if the user picked an expression, use it; otherwise vary expression per variant
-  const variantDesc = exprDesc ? `${exprDesc}, ${["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi]}` : VARIANTS[vi];
+  const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
   const prompt =
     `Transform this photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
     `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). ` +
-    `Dress them in ${outfit}. Overall look: ${modeDesc}. Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
-    `${frameDesc}, ${variantDesc}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
+    `Style: ${styleDesc}. Dress them in ${outfitDesc}. The person is ${poseDesc}, with ${exprDesc}. ` +
+    `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
+    `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   try {
     const res = await fetch(`${API}?key=${gemKey}`, {

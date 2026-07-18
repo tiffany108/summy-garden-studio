@@ -125,6 +125,17 @@ section{padding:72px 0}
 .sim-note{margin-top:14px;font-size:12px;color:rgba(255,255,255,.4)}
 .combo-summary{margin-top:16px;background:rgba(56,189,248,.1);box-shadow:inset 0 0 0 1px rgba(56,189,248,.3);border-radius:12px;padding:12px 15px;font-size:12.5px;color:#cfe9f7;line-height:1.5}
 .combo-summary b{color:#fff}
+.look-tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.look-tabs::-webkit-scrollbar{display:none}
+.look-tab{flex-shrink:0;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:rgba(255,255,255,.85);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;transition:.15s;white-space:nowrap}
+.look-tab.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
+.look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px;margin-top:6px;max-height:430px;overflow-y:auto;padding:4px 2px}
+.look-card{cursor:pointer;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);transition:.15s;position:relative}
+.look-card:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 8px 18px rgba(0,0,0,.28)}
+.look-card.sel{box-shadow:0 0 0 2.5px var(--accent-bright),0 8px 18px rgba(56,189,248,.4)}
+.look-thumb{aspect-ratio:3/4;display:grid;place-items:center;font-size:34px;position:relative}
+.look-card.sel .look-thumb::after{content:'✓';position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--grad-brand);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;box-shadow:var(--brand-glow)}
+.look-label{padding:8px 6px;text-align:center;font-size:12px;font-weight:700;color:#fff;background:rgba(6,44,69,.5)}
 .gallery-controls{display:flex;flex-direction:column;gap:16px;margin-bottom:26px}
 .search-bar{display:flex;justify-content:center}
 .search-bar input{width:min(440px,100%);padding:13px 20px;border:none;border-radius:999px;background:#fff;box-shadow:var(--card-shadow);font-family:inherit;font-size:14.5px;color:var(--ink);outline:none}
@@ -305,43 +316,32 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
           <select id="catSel" class="cat-sel"></select>
           <div class="swatch-grid" id="swatchGrid"></div>
           <div class="sel-bg-info" id="selBgInfo"></div>
-          <div class="studio-label">Outfit & style</div>
-          <div class="chip-row" id="attireChips">
-            <button class="chip active" data-attire="Business formal">Business formal</button>
-            <button class="chip" data-attire="Smart casual">Smart casual</button>
-            <button class="chip" data-attire="Creative">Creative</button>
-            <button class="chip" data-attire="Tech casual">Tech casual</button>
-            <button class="chip" data-attire="Sportswear">Sportswear</button>
-            <button class="chip" data-attire="Uniform">Uniform</button>
-          </div>
-          <div class="studio-label">Mode</div>
-          <div class="chip-row" id="modeChips">
-            <button class="chip active" data-mode="Corporate">Corporate</button>
-            <button class="chip" data-mode="Creative">Creative</button>
-            <button class="chip" data-mode="Editorial">Editorial</button>
-            <button class="chip" data-mode="Natural">Natural</button>
-          </div>
-          <div class="studio-label">Facial expression</div>
-          <div class="chip-row" id="exprChips">
-            <button class="chip active" data-expr="Natural smile">Natural smile</button>
-            <button class="chip" data-expr="Confident">Confident</button>
-            <button class="chip" data-expr="Friendly">Friendly</button>
-            <button class="chip" data-expr="Serious">Serious</button>
-            <button class="chip" data-expr="Neutral">Neutral</button>
-          </div>
-          <div class="studio-label">Framing</div>
-          <div class="chip-row" id="frameChips">
-            <button class="chip active" data-frame="Head & shoulders">Head &amp; shoulders</button>
-            <button class="chip" data-frame="Close-up">Close-up</button>
-            <button class="chip" data-frame="Upper body">Upper body</button>
-          </div>
           <div class="combo-summary" id="comboSummary"></div>
           <button class="gen-btn" id="genBtn">✨ Generate my headshots</button>
         </div>
         <div>
-          <div class="studio-label">Results</div>
-          <div class="result-zone" id="resultZone">
-            <div class="result-empty" id="resultEmpty">Your 4 headshot variants will appear here.<br>Upload a photo and hit Generate.</div>
+          <div id="lookPanel">
+            <div class="studio-label" style="display:flex;align-items:center;justify-content:space-between">
+              <span id="lookTitle">Design your look</span>
+              <span style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-transform:none;letter-spacing:0">Tap to browse & combine</span>
+            </div>
+            <div class="look-tabs" id="lookTabs">
+              <button class="look-tab active" data-tab="style">Style</button>
+              <button class="look-tab" data-tab="outfit">Outfit</button>
+              <button class="look-tab" data-tab="pose">Pose</button>
+              <button class="look-tab" data-tab="expr">Expression</button>
+              <button class="look-tab" data-tab="frame">Framing</button>
+            </div>
+            <div class="look-grid" id="lookGrid"></div>
+          </div>
+          <div id="resultWrap" style="display:none">
+            <div class="studio-label" style="display:flex;align-items:center;justify-content:space-between">
+              <span>Results</span>
+              <a onclick="showLookPanel()" style="cursor:pointer;color:#7dd3fc;text-transform:none;letter-spacing:0;font-size:12px">← Change look</a>
+            </div>
+            <div class="result-zone" id="resultZone">
+              <div class="result-empty" id="resultEmpty">Your 4 headshot variants will appear here.</div>
+            </div>
           </div>
           <p class="sim-note">⚙ On-device AI: you are cut out of your photo and placed into the scene with skin & tone enhancement — nothing is uploaded to a server. The production API adds photoreal outfit transfer and studio lighting.</p>
         </div>
@@ -838,7 +838,7 @@ function copyRefCode(){
 
 /* ---------- State ---------- */
 let selectedBg = BACKGROUNDS[30].id;
-let selectedLook='Business formal', selectedMode='Corporate', selectedExpr='Natural smile', selectedFrame='Head & shoulders', currency='USD';
+let selectedOutfit='Navy suit', selectedStyle='Formal', selectedPose='Straight on', selectedExpr='Natural smile', selectedFrame='Head & shoulders', currency='USD';
 let studioCat = 'Park & Garden', galleryCat = 'All', searchTerm='';
 const LOOKS = {'Business formal':'contrast(1.07) saturate(.96)','Smart casual':'brightness(1.05) saturate(1.06)','Creative':'saturate(1.16) contrast(1.05)','Tech casual':'brightness(1.06) saturate(1.0)','Sportswear':'saturate(1.12) brightness(1.05)','Uniform':'contrast(1.06) saturate(.98)'};
 const PACKS = {Starter:{credits:5,usd:'$9.99',gbp:'£7.99',hkd:'HK$78',eur:'€8.99',cny:'¥69'},Pro:{credits:15,usd:'$19.99',gbp:'£15.99',hkd:'HK$156',eur:'€17.99',cny:'¥138'},'Career+':{credits:40,usd:'$34.99',gbp:'£27.99',hkd:'HK$273',eur:'€31.99',cny:'¥248'}};
@@ -983,7 +983,7 @@ async function composeVariant(bg, person, extra){
     const x=c.getContext('2d');
     const sc=Math.max(W/sceneImg.width,H/sceneImg.height);
     x.drawImage(sceneImg,(W-sceneImg.width*sc)/2,(H-sceneImg.height*sc)/2,sceneImg.width*sc,sceneImg.height*sc);
-    const FX=LOOKS[selectedLook]+' brightness(1.04) '+extra;
+    const FX=(LOOKS[selectedOutfit]||'contrast(1.05) saturate(1.02)')+' brightness(1.04) '+extra;
     x.save();
     x.filter=FX;
     x.drawImage(person,0,0);
@@ -1077,14 +1077,36 @@ function selectBg(id,opts={}){
   document.querySelectorAll('.bg-card').forEach(c=>c.classList.toggle('selected',c.dataset.id===id));
   if(opts.scroll){document.getElementById('studio').scrollIntoView({behavior:'smooth'});toast('Scene selected: '+b.name);}
 }
-function wireChips(sel,setter){ document.querySelectorAll(sel+' .chip').forEach(c=>c.onclick=()=>{
-  setter(c); document.querySelectorAll(sel+' .chip').forEach(x=>x.classList.toggle('active',x===c)); updateCombo(); }); }
-wireChips('#attireChips',c=>selectedLook=c.dataset.attire);
-wireChips('#modeChips',c=>selectedMode=c.dataset.mode);
-wireChips('#exprChips',c=>selectedExpr=c.dataset.expr);
-wireChips('#frameChips',c=>selectedFrame=c.dataset.frame);
+/* ---------- Visual look picker (Style / Outfit / Pose / Expression / Framing) ---------- */
+const LOOKOPTS={
+ style:[['Formal','🤵','linear-gradient(160deg,#3a4468,#232e4c)'],['Studio','📸','radial-gradient(circle at 50% 30%,#4a505c,#1c1f26)'],['Corporate','🏢','linear-gradient(160deg,#7e93a8,#556a80)'],['Office','🏙','linear-gradient(160deg,#a3b9d2,#71879f)'],['Casual','👕','linear-gradient(160deg,#cfe3c8,#7ba263)'],['Natural','🌿','linear-gradient(160deg,#c8e6f2,#8cc478)'],['Creative','🎨','linear-gradient(160deg,#d6cbe8,#9a8fc0)'],['Fashion','🕶','linear-gradient(160deg,#f2d5c8,#c47f70)'],['Street','🚶','linear-gradient(160deg,#8494a1,#4d5d80)'],['Luxury','💎','linear-gradient(160deg,#e0c9a0,#c8a978)'],['Editorial','📰','radial-gradient(circle at 50% 30%,#3a3f4a,#14161b)'],['Vintage','📻','linear-gradient(160deg,#e2ccab,#a8763f)']],
+ outfit:[['Auto','✨','var(--grad-brand)'],['Original','👕','linear-gradient(160deg,#8a97a5,#5b6675)'],['Navy suit','🥼','linear-gradient(160deg,#3a4468,#1e2740)'],['Charcoal suit','🧥','linear-gradient(160deg,#4a505c,#2b2f38)'],['Light blazer','🧥','linear-gradient(160deg,#e4ddcf,#b7ab90)'],['Black turtleneck','👔','radial-gradient(circle at 50% 30%,#2e3138,#101216)'],['White shirt','👔','linear-gradient(160deg,#eef2f6,#c6d0da)'],['Blouse','👚','linear-gradient(160deg,#f4e2e0,#d4a7a2)'],['Sportswear','🎽','linear-gradient(160deg,#7dd3fc,#0284c7)'],['Uniform','🎖','linear-gradient(160deg,#5f7d8f,#38505c)']],
+ pose:[['Straight on','🧍','linear-gradient(160deg,#7e93a8,#556a80)'],['Slight angle','↗️','linear-gradient(160deg,#88a5b5,#5c7a8c)'],['Three-quarter','🔄','linear-gradient(160deg,#9db3c4,#6a8598)'],['Chin up','⬆️','linear-gradient(160deg,#a9c0cf,#748f9f)'],['Relaxed','😌','linear-gradient(160deg,#cfe3c8,#8cae7c)'],['Head tilt','🙂','linear-gradient(160deg,#e6d3c0,#b89a7c)']],
+ expr:[['Natural smile','😊','linear-gradient(160deg,#fbe1b6,#d9a35e)'],['Confident','😎','linear-gradient(160deg,#7dd3fc,#0369a1)'],['Friendly','😄','linear-gradient(160deg,#c8e6f2,#6aa561)'],['Serious','😐','linear-gradient(160deg,#8494a1,#4d5d80)'],['Neutral','🙂','linear-gradient(160deg,#cdd6de,#8a9aa8)'],['Big smile','😁','linear-gradient(160deg,#fde68a,#f59e0b)']],
+ frame:[['Head & shoulders','👤','linear-gradient(160deg,#7e93a8,#556a80)'],['Close-up','🔍','linear-gradient(160deg,#a3b9d2,#71879f)'],['Upper body','🧍','linear-gradient(160deg,#88a5b5,#5c7a8c)']]
+};
+const SEL={style:()=>selectedStyle,outfit:()=>selectedOutfit,pose:()=>selectedPose,expr:()=>selectedExpr,frame:()=>selectedFrame};
+const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>selectedPose=v,expr:v=>selectedExpr=v,frame:v=>selectedFrame=v};
+let lookTab='style';
+function renderLook(){
+  const g=document.getElementById('lookGrid'); if(!g)return; g.innerHTML='';
+  LOOKOPTS[lookTab].forEach(([label,ico,grad])=>{
+    const cur=SEL[lookTab]()===label;
+    const c=document.createElement('div'); c.className='look-card'+(cur?' sel':'');
+    c.innerHTML='<div class="look-thumb" style="background:'+grad+'">'+ico+'</div><div class="look-label">'+label+'</div>';
+    c.onclick=()=>{ SETSEL[lookTab](label); renderLook(); updateCombo(); };
+    g.appendChild(c);
+  });
+}
+document.querySelectorAll('#lookTabs .look-tab').forEach(t=>t.onclick=()=>{
+  lookTab=t.dataset.tab;
+  document.querySelectorAll('#lookTabs .look-tab').forEach(x=>x.classList.toggle('active',x===t));
+  renderLook();
+});
+function showLookPanel(){ document.getElementById('resultWrap').style.display='none'; document.getElementById('lookPanel').style.display='block'; }
+function showResultsPanel(){ document.getElementById('lookPanel').style.display='none'; document.getElementById('resultWrap').style.display='block'; }
 function updateCombo(){ const b=bgById(selectedBg); const el=document.getElementById('comboSummary');
-  if(el) el.innerHTML='✨ You\'ll generate: <b>'+selectedLook+'</b> · <b>'+selectedMode+'</b> mode · <b>'+selectedExpr+'</b> · <b>'+selectedFrame+'</b>'+(b?' in <b>'+b.name+'</b>':'')+'. <span style="opacity:.75">4 variants — pick your favourite to download.</span>'; }
+  if(el) el.innerHTML='✨ <b>'+selectedStyle+'</b> · <b>'+selectedOutfit+'</b> · <b>'+selectedPose+'</b> · <b>'+selectedExpr+'</b> · <b>'+selectedFrame+'</b>'+(b?' · <b>'+b.name+'</b>':'')+'<br><span style="opacity:.7">4 variants generated — pick your favourite to download.</span>'; }
 
 /* ---------- Server generation (identity-preserving, when API key is configured) ---------- */
 async function tryServerGenerate(bg){
@@ -1094,7 +1116,7 @@ async function tryServerGenerate(bg){
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
     const res=await fetch('/.netlify/functions/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, look:selectedLook, mode:selectedMode, expr:selectedExpr, frame:selectedFrame, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit, style:selectedStyle, pose:selectedPose, expr:selectedExpr, frame:selectedFrame, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
     if(res.status===402){ openModal('paywall'); throw new Error('no credits'); }
     if(!res.ok) throw new Error('server '+res.status);
@@ -1118,6 +1140,7 @@ document.getElementById('genBtn').onclick=()=>{
   runGeneration();
 };
 function runGeneration(){
+  showResultsPanel();
   const zone=document.getElementById('resultZone');
   zone.innerHTML=`<div class="result-empty" style="display:block;padding-top:60px">
     <div class="progress-wrap"><div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
@@ -1148,14 +1171,14 @@ async function showResults(tick){
   }
   clearInterval(tick);
   if(mode!=='server') setCredits(Math.max(getCredits()-1,0));
-  if(user) user.history.unshift({bg:bg.id, attire:selectedLook, date:new Date().toISOString().slice(5,10)});
+  if(user) user.history.unshift({bg:bg.id, attire:selectedOutfit, date:new Date().toISOString().slice(5,10)});
   const zone=document.getElementById('resultZone');
   const joinCta='';
   const aiNote = mode==='server' ? 'studio AI render — identity preserved' : (usedAI ? 'AI cut-out + skin & tone enhanced' : 'soft-blend mode + tone enhanced');
   zone.innerHTML='<div class="result-grid">'+defs.map((d,i)=>
     `<div class="headshot-frame"><img class="comp" src="${urls[i]}" alt="Headshot variant ${d[0]}">
      <span class="tag">Variant ${d[0]}</span><a class="dl" download="summy-garden-headshot-${d[0]}.png" href="${urls[i]}">⤓ PNG</a></div>`).join('')+
-    `</div><p class="sim-note" style="margin-top:18px">Scene: <b style="color:#fff">${bg.name}</b> · Look: <b style="color:#fff">${selectedLook}</b> · ${aiNote} · ${getCredits()} credit${getCredits()===1?'':'s'} left${user?' · saved to My Studio':''}${joinCta}</p>`;
+    `</div><p class="sim-note" style="margin-top:18px">Scene: <b style="color:#fff">${bg.name}</b> · Look: <b style="color:#fff">${selectedOutfit}</b> · ${aiNote} · ${getCredits()} credit${getCredits()===1?'':'s'} left${user?' · saved to My Studio':''}${joinCta}</p>`;
   if(getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
   else toast('Headshots ready! Click ⤓ PNG to download'+(user?' · saved to your dashboard':''));
 }
@@ -1297,6 +1320,7 @@ function initCookies(){ if(!store.getItem('sgsCookie')) setTimeout(()=>{ documen
 if(refParam && !user){ document.getElementById('heroBadge').textContent='🎁 You were referred — join free and get 2 headshots on us'; }
 renderSwatches();
 renderShowcase();
+renderLook();
 updateCombo();
 updateCreditLabel();
 updateAccountBtn();

@@ -1,17 +1,70 @@
-// Summy Garden Studio — gallery sample images.
-// Each image is generated ONCE via Gemini (text-to-image), stored in Netlify Blobs,
-// and served from storage forever after. Max 200 images ever (100 portraits + 100 backdrops).
+// Summy Garden Studio — AI thumbnails for the gallery scenes AND the studio option pickers.
+// Each image is generated ONCE via Gemini and cached in Netlify Blobs, then served forever.
 import { getStore } from "@netlify/blobs";
 
 const MODEL = "gemini-2.5-flash-image";
 const API = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 const SUBJECTS = ["a professional businesswoman","a professional businessman","a young professional woman","a young professional man","a confident senior female executive","a confident senior male executive"];
+
+// scene metadata is injected at build; keep a small fallback so the function is standalone
 const META = [{"n": "Morning Boardroom", "c": "Office & Boardroom", "d": "Dawn light through glass walls of a quiet boardroom."}, {"n": "Executive Corner Office", "c": "Office & Boardroom", "d": "Warm window light over a softly blurred corner office."}, {"n": "Glass Meeting Room", "c": "Office & Boardroom", "d": "Cool frosted glass and steel, precise and corporate."}, {"n": "Open-Plan Daylight", "c": "Office & Boardroom", "d": "Bright open workspace with soft depth of field."}, {"n": "Dusk Boardroom", "c": "Office & Boardroom", "d": "Blue-hour glass office with city glow beyond."}, {"n": "Mahogany Suite", "c": "Office & Boardroom", "d": "Wood-panelled warmth, classic senior-partner presence."}, {"n": "Reception Lounge", "c": "Office & Boardroom", "d": "Bright marble lobby with a premium first impression."}, {"n": "Skyline Meeting Deck", "c": "Office & Boardroom", "d": "High-floor room with a hazy skyline through glass."}, {"n": "Creative Studio Office", "c": "Office & Boardroom", "d": "Soft neutral studio office with plants and daylight."}, {"n": "Navy Panel Office", "c": "Office & Boardroom", "d": "Deep navy panelling with a confident key light."}, {"n": "Business Park Morning", "c": "Business Park", "d": "Fresh morning light over landscaped office towers."}, {"n": "Campus at Noon", "c": "Business Park", "d": "Bright glass campus blocks with clipped green rows."}, {"n": "Golden Hour Park", "c": "Business Park", "d": "Amber sun across the office park facades."}, {"n": "Innovation District", "c": "Business Park", "d": "Cool blue towers, young trees, startup energy."}, {"n": "Riverside Offices", "c": "Business Park", "d": "Soft water-cooled light over the business quarter."}, {"n": "Dusk Business Park", "c": "Business Park", "d": "Warm windows lighting up at blue hour."}, {"n": "Rainy-Day Campus", "c": "Business Park", "d": "Muted grey-green calm after summer rain."}, {"n": "Tech Quarter", "c": "Business Park", "d": "Steel-and-glass blocks with a cyan reflection."}, {"n": "Garden Atrium Walk", "c": "Business Park", "d": "Planted walkway between low glass pavilions."}, {"n": "Harbourfront Offices", "c": "Business Park", "d": "Sea-light towers on the waterfront boulevard."}, {"n": "Downtown Morning", "c": "City Street", "d": "Soft-focus main street in early light."}, {"n": "Golden Hour Avenue", "c": "City Street", "d": "Warm evening sun down the avenue."}, {"n": "Blue Hour Crossing", "c": "City Street", "d": "Blue dusk with warm windows and lamp glow."}, {"n": "Old Town Lane", "c": "City Street", "d": "Heritage facades in gentle stone tones."}, {"n": "Neon District", "c": "City Street", "d": "Muted neon bokeh, urban creative energy."}, {"n": "Financial Mile", "c": "City Street", "d": "Steel canyon of banks and towers, direct and sharp."}, {"n": "Rainy Reflections", "c": "City Street", "d": "Wet asphalt reflecting soft city light."}, {"n": "Market Street", "c": "City Street", "d": "Lively low-rise street with awning colours."}, {"n": "Tram Line Morning", "c": "City Street", "d": "Hong Kong-style tram street waking up."}, {"n": "Bridge Approach", "c": "City Street", "d": "First light on the bridge into the city."}, {"n": "Summer Garden", "c": "Park & Garden", "d": "Full-bloom greens with flower dots — the studio signature scene."}, {"n": "Rose Garden", "c": "Park & Garden", "d": "Soft pink-touched foliage in warm light."}, {"n": "Morning Park Path", "c": "Park & Garden", "d": "Dappled path light through fresh leaves."}, {"n": "Botanic Conservatory", "c": "Park & Garden", "d": "Lush deep greens with glasshouse light."}, {"n": "Autumn Arboretum", "c": "Park & Garden", "d": "Amber and rust foliage, seasoned and warm."}, {"n": "Lavender Walk", "c": "Park & Garden", "d": "Purple-touched borders in soft evening sun."}, {"n": "Meadow Light", "c": "Park & Garden", "d": "Open meadow greens under a big bright sky."}, {"n": "Zen Courtyard", "c": "Park & Garden", "d": "Still, minimal greens with quiet balance."}, {"n": "Rain-Fresh Green", "c": "Park & Garden", "d": "Post-rain leaves with a cool clean sheen."}, {"n": "Evening Garden Party", "c": "Park & Garden", "d": "Warm string-light glow over dusk foliage."}, {"n": "Lake Sunrise", "c": "Lakeside", "d": "First gold over still summer water."}, {"n": "Blue Noon Lake", "c": "Lakeside", "d": "Bright blue water under a clear sky."}, {"n": "Misty Morning Water", "c": "Lakeside", "d": "Soft grey-blue mist over the shoreline."}, {"n": "Golden Hour Pier", "c": "Lakeside", "d": "Warm low sun stretching across the water."}, {"n": "Alpine Lake", "c": "Lakeside", "d": "Cool mountain blues, steady and far-sighted."}, {"n": "Harbour View", "c": "Lakeside", "d": "Sea-light blues with a bright horizon."}, {"n": "Dusk Reflection", "c": "Lakeside", "d": "Violet-blue dusk mirrored on calm water."}, {"n": "Reed Bank Morning", "c": "Lakeside", "d": "Gentle green-blue shore with soft reeds."}, {"n": "Summer Regatta", "c": "Lakeside", "d": "Crisp regatta blues with white light."}, {"n": "Moonlit Water", "c": "Lakeside", "d": "Deep night blues with a silver moon path."}, {"n": "Centre Court Blue", "c": "Sports & Tennis", "d": "Classic hard-court blue with crisp white lines."}, {"n": "Grass Court Club", "c": "Sports & Tennis", "d": "Lawn-court green, heritage and polish."}, {"n": "Clay Court Session", "c": "Sports & Tennis", "d": "Terracotta clay with warm summer light."}, {"n": "Morning Practice", "c": "Sports & Tennis", "d": "Cool early-light court before the heat."}, {"n": "Padel Club", "c": "Sports & Tennis", "d": "Modern teal court, social and fast-growing."}, {"n": "Sunset Match", "c": "Sports & Tennis", "d": "Golden sky over a dusk-lit court."}, {"n": "Indoor Arena", "c": "Sports & Tennis", "d": "Even indoor light on a pro surface."}, {"n": "Country Club Green", "c": "Sports & Tennis", "d": "Deep green court framed by hedges."}, {"n": "Beach Tennis", "c": "Sports & Tennis", "d": "Sandy court with holiday brightness."}, {"n": "Championship Purple", "c": "Sports & Tennis", "d": "Tour-style purple court, bold and pro."}, {"n": "Sunlit Café Corner", "c": "Café & Canteen", "d": "Warm café wall with pendant glow and window light."}, {"n": "Modern Staff Canteen", "c": "Café & Canteen", "d": "Clean bright canteen with long tables."}, {"n": "Espresso Bar", "c": "Café & Canteen", "d": "Deep coffee tones with warm brass light."}, {"n": "Garden Terrace Café", "c": "Café & Canteen", "d": "Airy terrace greens beside the counter."}, {"n": "Harbour Café", "c": "Café & Canteen", "d": "Sea-light café with big open windows."}, {"n": "Bookshop Coffee Nook", "c": "Café & Canteen", "d": "Cosy shelves-and-coffee warmth."}, {"n": "Brunch House", "c": "Café & Canteen", "d": "Blush-and-cream weekend brightness."}, {"n": "Night Café", "c": "Café & Canteen", "d": "Low amber light for after-hours character."}, {"n": "Juice & Salad Bar", "c": "Café & Canteen", "d": "Fresh green-and-citrus counter energy."}, {"n": "Tea House", "c": "Café & Canteen", "d": "Calm jade-and-wood tea room serenity."}, {"n": "University Main Hall", "c": "Campus & Library", "d": "Classical columns in honey stone."}, {"n": "Graduation Lawn", "c": "Campus & Library", "d": "Bright quad ready for the big day."}, {"n": "Heritage Library Front", "c": "Campus & Library", "d": "Stately facade in warm afternoon light."}, {"n": "Modern Faculty", "c": "Campus & Library", "d": "Concrete-and-glass faculty building, crisp lines."}, {"n": "Autumn Campus", "c": "Campus & Library", "d": "Amber trees framing the old hall."}, {"n": "Museum Steps", "c": "Campus & Library", "d": "Grand gallery entrance, cultured and calm."}, {"n": "Observatory Hill", "c": "Campus & Library", "d": "Dusk blues over the science dome."}, {"n": "Law School Portico", "c": "Campus & Library", "d": "Dark stone authority with measured light."}, {"n": "Boarding School Green", "c": "Campus & Library", "d": "Collegiate red-brick warmth on the green."}, {"n": "Exam Hall Calm", "c": "Campus & Library", "d": "Quiet neutral stone, focused and steady."}, {"n": "Classic Studio Grey", "c": "Studio Classics", "d": "Timeless neutral sweep — the safest choice anywhere."}, {"n": "Pearl White", "c": "Studio Classics", "d": "Clean bright white with gentle falloff."}, {"n": "Charcoal Editorial", "c": "Studio Classics", "d": "Matte charcoal spotlight, magazine-grade."}, {"n": "Warm Stone", "c": "Studio Classics", "d": "Neutral stone with a friendly warm cast."}, {"n": "Deep Navy Studio", "c": "Studio Classics", "d": "Rich navy vignette with quiet gravitas."}, {"n": "Soft Beige Portrait", "c": "Studio Classics", "d": "Gentle cream flattering to all skin tones."}, {"n": "Sage Studio", "c": "Studio Classics", "d": "Muted sage green, balanced and natural."}, {"n": "Powder Blue Studio", "c": "Studio Classics", "d": "Calm powder blue diffusion, trustworthy."}, {"n": "Blush Studio", "c": "Studio Classics", "d": "Soft rose warmth, personable and polished."}, {"n": "Jet Black Studio", "c": "Studio Classics", "d": "True black with a controlled rim glow."}, {"n": "Summy Signature", "c": "Signature Gradients", "d": "The Summy Garden Studio brand gradient — sky to leaf."}, {"n": "Sky to Sun", "c": "Signature Gradients", "d": "Morning blue melting into sunshine gold."}, {"n": "Ocean Noon", "c": "Signature Gradients", "d": "Clean two-stop sea blues, bright and technical."}, {"n": "Garden Dawn", "c": "Signature Gradients", "d": "Leaf green into soft dawn cream."}, {"n": "Sunset Petal", "c": "Signature Gradients", "d": "Gold into petal pink, warm achievement energy."}, {"n": "Deep Sea Slate", "c": "Signature Gradients", "d": "Slate-teal depths, serious and unhurried."}, {"n": "Champagne Fade", "c": "Signature Gradients", "d": "Champagne into bronze, celebratory and refined."}, {"n": "Midsummer Night", "c": "Signature Gradients", "d": "Deep blue-green dusk with firefly glow."}, {"n": "Lemonade", "c": "Signature Gradients", "d": "Zesty citrus freshness for early careers."}, {"n": "Sky Ceiling", "c": "Signature Gradients", "d": "Open blue-sky wash — limitless and upward."}];
+
+// ---- studio option prompt sets (generic model, photoreal) ----
+const OPT = {
+  style: [
+    ["Formal","professional corporate headshot photograph of a person in formal business attire, neutral studio backdrop"],
+    ["Studio","studio portrait headshot photograph of a person on a clean seamless grey backdrop"],
+    ["Corporate","corporate headshot photograph of a person with a modern office softly blurred behind"],
+    ["Office","professional headshot photograph of a person in a bright modern office"],
+    ["Casual","relaxed smart-casual headshot photograph of a person in warm natural light"],
+    ["Natural","natural outdoor headshot photograph of a person, soft daylight, green bokeh"],
+    ["Creative","creative colourful headshot photograph of a person with artistic studio lighting"],
+    ["Fashion","fashion editorial headshot photograph of a stylish person"],
+    ["Street","urban street-style headshot photograph of a person, city bokeh background"],
+    ["Luxury","luxury premium headshot photograph of a person, elegant dark background"],
+    ["Editorial","black and white editorial headshot photograph of a person, high contrast"],
+    ["Vintage","warm vintage film-style headshot photograph of a person"],
+  ],
+  outfit: [
+    ["Navy suit","close-up product photograph of a tailored navy business suit with a white shirt worn on a torso, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Charcoal suit","close-up product photograph of a charcoal grey business suit worn on a torso, cropped shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Light blazer","close-up product photograph of a light beige smart blazer over an open-collar shirt worn on a torso, NO head and NO face visible, clothing detail, clean studio"],
+    ["Black turtleneck","close-up product photograph of a refined black turtleneck worn on a torso, NO head and NO face visible, clothing detail, clean studio"],
+    ["White shirt","close-up product photograph of a crisp white collared shirt worn on a torso, NO head and NO face visible, clothing detail, clean studio"],
+    ["Blouse","close-up product photograph of an elegant professional blouse worn on a torso, NO head and NO face visible, clothing detail, clean studio"],
+    ["Sportswear","close-up product photograph of a clean modern athletic performance polo worn on a torso, NO head and NO face visible, clothing detail, clean studio"],
+    ["Uniform","close-up product photograph of a smart pressed professional service uniform worn on a torso, NO head and NO face visible, clothing detail, clean studio"],
+  ],
+  pose: [
+    ["Straight on","professional headshot photograph of a person facing the camera straight on, neutral studio"],
+    ["Left facing","professional headshot photograph of a person with body turned to their left, face toward camera, neutral studio"],
+    ["Right facing","professional headshot photograph of a person with body turned to their right, face toward camera, neutral studio"],
+    ["Close-up","tight close-up professional portrait photograph of a person's face, neutral studio"],
+    ["Half body","half-body professional portrait photograph of a person from the waist up, neutral studio"],
+    ["Chin up","professional headshot photograph of a person with chin slightly raised, confident posture, neutral studio"],
+  ],
+  expr: [
+    ["Natural smile","professional headshot photograph of a person with a natural gentle smile, neutral studio"],
+    ["Big smile","professional headshot photograph of a person with a big happy smile showing teeth, neutral studio"],
+    ["Confident","professional headshot photograph of a person with a confident composed expression, neutral studio"],
+    ["Friendly","professional headshot photograph of a person with a warm friendly expression, neutral studio"],
+    ["Serious","professional headshot photograph of a person with a serious strict expression, neutral studio"],
+    ["Neutral","professional headshot photograph of a person with a relaxed neutral expression, neutral studio"],
+  ],
+};
+
+function buildPrompt(kind, i) {
+  if (kind === "p") { const m = META[i]; return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, professional attire.`; }
+  if (kind === "b") { const m = META[i]; return `Empty professional photography backdrop: ${m.n.toLowerCase()} (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, absolutely no people, photorealistic, soft bokeh, shallow depth of field.`; }
+  const set = OPT[kind]; if (!set || !set[i]) return null;
+  return set[i][1] + ", photorealistic, high quality, soft professional lighting.";
+}
 
 export default async (req) => {
   const url = new URL(req.url);
-  const i = Math.min(Math.max(parseInt(url.searchParams.get("i") || "0", 10) || 0, 0), META.length - 1);
-  const kind = url.searchParams.get("kind") === "b" ? "b" : "p";
+  const kind = ["p","b","style","outfit","pose","expr"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
+  const maxI = kind === "p" || kind === "b" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
+  const i = Math.min(Math.max(parseInt(url.searchParams.get("i") || "0", 10) || 0, 0), maxI - 1);
   const key = `${kind}-${i}`;
   const store = getStore("gallery");
 
@@ -19,17 +72,11 @@ export default async (req) => {
   if (!buf) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return new Response("not configured", { status: 501 });
-    const m = META[i];
-    const prompt = kind === "p"
-      ? `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g, "")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, professional attire.`
-      : `Empty professional photography backdrop: ${m.n.toLowerCase()} (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g, "")}, absolutely no people, photorealistic, soft bokeh, shallow depth of field.`;
+    const prompt = buildPrompt(kind, i);
+    if (!prompt) return new Response("bad kind/index", { status: 400 });
     const res = await fetch(`${API}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { imageConfig: { aspectRatio: "3:4" } },
-      }),
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
     if (!res.ok) return new Response("generation failed", { status: 502 });
     const data = await res.json();
@@ -41,11 +88,5 @@ export default async (req) => {
     await store.set(key, bin.buffer);
     buf = bin.buffer;
   }
-  return new Response(buf, {
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+  return new Response(buf, { headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=31536000, immutable", "Access-Control-Allow-Origin": "*" } });
 };

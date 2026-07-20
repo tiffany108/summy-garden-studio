@@ -129,6 +129,10 @@ const OPT = {
     ["Hand to chin","professional portrait photograph of a person with a hand thoughtfully near the chin"],
     ["Looking away","candid professional portrait photograph of a person looking slightly away from camera"],
   ],
+  osp: [
+    ["Auto","close-up photograph of a tidy rail of assorted tailored professional jackets, blazers and shirts in a boutique, garments only, absolutely no people, no head, no face, clean bright studio"],
+    ["Original","close-up product photograph of a plain simple everyday casual top worn on a torso, cropped from shoulders to waist, NO head and NO face visible, soft neutral colour, clean studio"],
+  ],
   expr: [
     ["Natural smile","professional headshot photograph of a person with a natural gentle smile, neutral studio"],
     ["Big smile","professional headshot photograph of a person with a big happy smile showing teeth, neutral studio"],
@@ -148,7 +152,7 @@ function buildPrompt(kind, i) {
 
 export default async (req) => {
   const url = new URL(req.url);
-  const kind = ["p","b","style","outfit","pose","expr"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
+  const kind = ["p","b","style","outfit","pose","expr","osp"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
   const maxI = kind === "p" || kind === "b" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
   const i = Math.min(Math.max(parseInt(url.searchParams.get("i") || "0", 10) || 0, 0), maxI - 1);
   const ver = (kind !== "p" && kind !== "b" && OPT[kind] && OPT[kind][i] && OPT[kind][i][2]) ? "-" + OPT[kind][i][2] : "";

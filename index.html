@@ -82,7 +82,7 @@ section{padding:72px 0}
 .step p{color:var(--muted);font-size:14.5px}
 #studio .studio-card{background:linear-gradient(135deg,#083048,#0a4160,#0c5273);border-radius:20px;box-shadow:0 20px 50px rgba(6,44,69,.35), inset 0 0 0 1px rgba(255,255,255,.07);padding:36px;color:#fff}
 .studio-grid{display:grid;grid-template-columns:360px 1fr;gap:34px}
-@media(max-width:880px){.studio-grid{grid-template-columns:1fr};.look-grid{max-height:430px;flex:none}}
+@media(max-width:880px){.studio-grid{grid-template-columns:1fr}}
 .upload-zone{border-radius:16px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.45);min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px;transition:.2s}
 .upload-zone.clickable{cursor:pointer}
 .upload-zone.clickable:hover{background:rgba(255,255,255,.08)}
@@ -129,6 +129,8 @@ section{padding:72px 0}
 .look-tabs::-webkit-scrollbar{display:none}
 .look-tab{flex-shrink:0;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:rgba(255,255,255,.85);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;transition:.15s;white-space:nowrap}
 .look-tab.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
+.sim-note{flex:none}
+.result-zone{flex:1;min-height:280px}
 .look-col{display:flex;flex-direction:column;min-height:0}
 #lookPanel{display:flex;flex-direction:column;flex:1;min-height:0}
 #resultWrap{display:flex;flex-direction:column;flex:1;min-height:0}
@@ -249,6 +251,7 @@ section{padding:72px 0}
 footer{background:var(--bg-deep);color:var(--on-dark-muted);padding:44px 0;font-size:13.5px}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
 footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
+@media(max-width:880px){.look-grid{max-height:430px;flex:none}.result-zone{flex:none}}
 </style>
 </head>
 <body>
@@ -1094,7 +1097,7 @@ const OPTLABELS={
 };
 const OUTFITGENDER={"Navy suit": "m", "Charcoal suit": "m", "Light blazer": "u", "Black turtleneck": "u", "White shirt": "u", "Blouse": "w", "Sportswear": "u", "Uniform": "u", "Black suit": "m", "Light grey suit": "m", "Pinstripe suit": "m", "Three-piece suit": "m", "Women's trouser suit": "w", "Women's skirt suit": "w", "Linen blazer": "u", "Tweed jacket": "m", "Blazer over tee": "u", "Blue shirt": "m", "Striped shirt": "m", "Open-collar shirt": "m", "Shirt & tie": "m", "Tuxedo": "m", "Silk blouse": "w", "Knit sweater": "u", "Cardigan": "u", "Sheath dress": "w", "Wrap dress": "w", "Polo shirt": "u", "Hijab & blazer": "w", "White coat": "u", "Medical scrubs": "u", "Chef's whites": "u", "Pilot uniform": "u", "Hi-vis workwear": "u", "Academic gown": "u", "Cheongsam": "w", "Blazer & camisole": "w", "Longline blazer": "w", "Bouclé jacket": "w", "Women's tuxedo": "w", "Puff-sleeve blouse": "w", "Ruffle blouse": "w", "Knit twinset": "w", "Shirt dress": "w", "Midi dress": "w", "Kimono jacket": "w", "Sari": "w", "Abaya": "w", "Cardigan & scarf": "w", "Turtleneck & blazer": "w", "Peplum jacket": "w", "Satin blouse": "w", "Double-breasted suit": "m", "Brown suit": "m", "Blue suit": "m", "Waistcoat & shirt": "m", "Suit & pocket square": "m", "Knit tie & shirt": "m", "Denim shirt": "m", "Bomber jacket": "m", "Field jacket": "m", "Sweater vest": "m", "Henley shirt": "m", "Mandarin collar suit": "m", "Women's navy suit": "w", "Women's charcoal suit": "w", "Women's black suit": "w", "Women's grey suit": "w", "Women's pinstripe suit": "w", "Women's double-breasted suit": "w"};
 let outfitFilter='all';
-const OPTSPECIAL={ outfit:[['Auto','✨','var(--grad-brand)'],['Original','👕','linear-gradient(160deg,#8a97a5,#5b6675)']] };
+const OPTSPECIAL={ outfit:[['Auto','osp',0],['Original','osp',1]] };
 const SEL={style:()=>selectedStyle,outfit:()=>selectedOutfit,pose:()=>selectedPose,expr:()=>selectedExpr};
 const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>selectedPose=v,expr:v=>selectedExpr=v};
 let lookTab='style';
@@ -1103,7 +1106,7 @@ function retryOpt(el){ const n=(+el.dataset.r||0)+1; el.dataset.r=n; if(n>3){el.
 function makeOptCard(kind,label,i,special){
   const cur=SEL[kind]()===label;
   const c=document.createElement('div'); c.className='look-card'+(cur?' sel':'');
-  if(special){ c.innerHTML='<div class="look-thumb ic" style="background:'+special[2]+'">'+special[1]+'</div><div class="look-label">'+label+'</div>'; }
+  if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+label+'"></div><div class="look-label">'+label+'</div>'; }
   else { c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(kind,i)+'" onerror="retryOpt(this)" alt="'+label+'"></div><div class="look-label">'+label+'</div>'; }
   c.onclick=()=>{ SETSEL[kind](label); renderLook(); updateCombo(); };
   return c;
@@ -1129,8 +1132,8 @@ document.querySelectorAll('#lookTabs .look-tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('#lookTabs .look-tab').forEach(x=>x.classList.toggle('active',x===t));
   renderLook();
 });
-function showLookPanel(){ document.getElementById('resultWrap').style.display='none'; document.getElementById('lookPanel').style.display='block'; }
-function showResultsPanel(){ document.getElementById('lookPanel').style.display='none'; document.getElementById('resultWrap').style.display='block'; }
+function showLookPanel(){ document.getElementById('resultWrap').style.display='none'; document.getElementById('lookPanel').style.display='flex'; }
+function showResultsPanel(){ document.getElementById('lookPanel').style.display='none'; document.getElementById('resultWrap').style.display='flex'; }
 function updateCombo(){ const b=bgById(selectedBg); const el=document.getElementById('comboSummary');
   if(el) el.innerHTML='✨ <b>'+selectedStyle+'</b> · <b>'+selectedOutfit+'</b> · <b>'+selectedPose+'</b> · <b>'+selectedExpr+'</b>'+(b?' · <b>'+b.name+'</b>':'')+'<br><span style="opacity:.7">4 variants generated — pick your favourite to download.</span>'; }
 

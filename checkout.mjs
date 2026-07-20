@@ -43,7 +43,8 @@ export default async (req) => {
   form.set("line_items[0][price_data][currency]", cur);
   form.set("line_items[0][price_data][unit_amount]", String(P[cur]));
   form.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — ${pack} pack (${P.credits} credits)`);
-  ["card","alipay"].forEach((m,i)=>form.set(`payment_method_types[${i}]`, m));
+  // Omit payment_method_types so Checkout offers whatever is enabled in the Stripe
+  // dashboard (card always; Alipay/WeChat Pay etc. appear automatically once activated).
 
   let res, data;
   try {

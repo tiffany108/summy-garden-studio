@@ -1209,6 +1209,9 @@ function renderLook(){
     if(lookTab==='outfit' && outfitFilter!=='all' && OUTFITGENDER[label]!==outfitFilter) return;
     g.appendChild(makeOptCard(lookTab,label,i));
   });
+  /* size cards so every tab fills the panel — few options get bigger cards, no empty area */
+  const n=g.children.length;
+  g.style.gridTemplateColumns='repeat(auto-fill,minmax('+(n<=8?'160px':n<=20?'124px':'104px')+',1fr))';
   g.scrollTop=0;
 }
 document.querySelectorAll('#outfitFilter .look-chip').forEach(b=>b.onclick=()=>{

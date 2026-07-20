@@ -169,7 +169,7 @@ export default async (req) => {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
-    if (!res.ok) return new Response("generation failed", { status: 502 });
+    if (!res.ok) { const t = await res.text(); return new Response("gemini " + res.status + ": " + t.slice(0, 300), { status: 502 }); }
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts || [];
     const img = parts.find((p) => p.inlineData || p.inline_data);

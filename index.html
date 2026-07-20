@@ -1367,7 +1367,7 @@ function applyLang(code){
 }
 const _lsEl=document.getElementById('langSel');
 LANG_LIST.forEach(([c,l])=>{const o=document.createElement('option');o.value=c;o.textContent=l;_lsEl.appendChild(o);});
-_lsEl.onchange=()=>applyLang(_lsEl.value);
+_lsEl.onchange=()=>{ applyLang(_lsEl.value); applyAdminOverrides(); };
 
 /* ---------- Admin content overrides ---------- */
 let adminContent=null;
@@ -1406,6 +1406,7 @@ if(sb){
   sb.auth.onAuthStateChange(async (_e,session)=>{ sbSession=session; await loadProfile(); updateCreditLabel(); updateAccountBtn(); });
 }
 const _sl=store.getItem('sgsLang')||'en'; _lsEl.value=I18N[_sl]?_sl:'en'; applyLang(_lsEl.value);
+loadAdminContent(); initCookies();
 </script>
 </body>
 </html>

@@ -919,9 +919,12 @@ async function submitContact(){
   const msg=document.getElementById('ctMsg').value.trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast('Please enter a valid email'); return; }
   if(!msg){ toast('Please write a short message'); return; }
-  if(!sb){ location.href='mailto:support@summygarden.studio?subject='+encodeURIComponent('['+ctSel+'] Summy Garden Studio')+'&body='+encodeURIComponent(msg); return; }
+  if(!sb){ location.href='mailto:gogonrenres@gmail.com?subject='+encodeURIComponent('['+ctSel+'] Summy Garden Studio')+'&body='+encodeURIComponent(msg); return; }
   const {error}=await sb.from('contact_messages').insert({ name, email, topic:ctSel, message:msg, user_id: sbSession?sbSession.user.id:null });
-  if(error){ toast('Could not send — please email support@summygarden.studio'); return; }
+  if(error){ toast('Could not send — please email gogonrenres@gmail.com'); return; }
+  // fire-and-forget: forward a copy to the studio mailbox (no-op until email is configured)
+  try{ fetch('/.netlify/functions/contact-notify',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,email,topic:ctSel,message:msg})}); }catch(e){}
   document.getElementById('ctMsg').value='';
   closeModal('contactModal');
   toast('✉️ Thanks — message received! We\'ll reply to '+email);

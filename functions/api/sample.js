@@ -166,6 +166,7 @@ const handler = async (req) => {
     try {
       const nres = await fetch(`https://summy-garden-studio.netlify.app/.netlify/functions/sample?kind=${encodeURIComponent(kind)}&i=${i}`);
       const ct = nres.headers.get("content-type") || "";
+      console.log("SAMPLE_BACKFILL", key, "netlifyStatus", nres.status, "ct", ct);
       if (nres.ok && ct.startsWith("image/")) {
         const ab = await nres.arrayBuffer();
         if (ab && ab.byteLength > 0) {
@@ -173,7 +174,7 @@ const handler = async (req) => {
           buf = ab;
         }
       }
-    } catch (e) { /* fall through to Gemini */ }
+    } catch (e) { console.log("SAMPLE_BACKFILL_ERR", key, String(e && (e.message || e))); }
   }
 
   if (!buf) {

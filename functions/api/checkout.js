@@ -61,4 +61,13 @@ const handler = async (req) => {
   return Response.json({ url: data.url }, { status: 200, headers });
 };
 
-export async function onRequest(context){ env = context.env; return handler(context.request); }
+export async function onRequest(context){
+  env = context.env;
+  try {
+    return await handler(context.request);
+  } catch (e) {
+    console.log("CHECKOUT_HANDLER_ERROR", e && (e.stack || e.message) || String(e));
+    return new Response("checkout handler error: " + (e && (e.stack || e.message) || String(e)),
+      { status: 500, headers: { "Content-Type": "text/plain", "Access-Control-Allow-Origin": "*" } });
+  }
+}

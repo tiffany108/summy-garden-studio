@@ -55,9 +55,10 @@ const handler = async (req) => {
     });
     data = await res.json();
   } catch (e) {
-    return Response.json({ error: "stripe request failed: " + (e?.message || String(e)) }, { status: 502, headers });
+    // 502 gets replaced by the zone's branded error page, hiding the reason — use 400 so the message reaches the client.
+    return Response.json({ error: "stripe request failed: " + (e?.message || String(e)) }, { status: 400, headers });
   }
-  if (!res.ok) return Response.json({ error: data.error?.message || "stripe error" }, { status: 502, headers });
+  if (!res.ok) return Response.json({ error: data.error?.message || "stripe error" }, { status: 400, headers });
   return Response.json({ url: data.url }, { status: 200, headers });
 };
 

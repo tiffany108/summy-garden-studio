@@ -19,7 +19,7 @@ const handler = async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
-  const sk = env.STRIPE_SECRET_KEY;
+  const sk = (env.STRIPE_SECRET_KEY || "").trim();
   if (!sk) return Response.json({ error: "STRIPE_SECRET_KEY not configured" }, { status: 501, headers });
 
   let body = {}; try { body = await req.json(); } catch {}
@@ -46,12 +46,17 @@ const handler = async (req) => {
   form.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — ${pack} pack (${P.credits} credits)`);
   ["card","alipay"].forEach((m,i)=>form.set(`payment_method_types[${i}]`, m));
 
-  const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
-    body: form.toString(),
-  });
-  const data = await res.json();
+  let res, data;
+  try {
+    res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+    });
+    data = await res.json();
+  } catch (e) {
+    return Response.json({ error: "stripe request failed: " + (e?.message || String(e)) }, { status: 502, headers });
+  }
   if (!res.ok) return Response.json({ error: data.error?.message || "stripe error" }, { status: 502, headers });
   return Response.json({ url: data.url }, { status: 200, headers });
 };

@@ -14,8 +14,8 @@ async function verify(payload, sigHeader, secret) {
 
 export default async (req) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  const sbKey = process.env.SUPABASE_SECRET_KEY;
+  const secret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
+  const sbKey = (process.env.SUPABASE_SECRET_KEY || "").trim();
   if (!secret || !sbKey) return new Response("not configured", { status: 501 });
 
   const payload = await req.text();

@@ -129,6 +129,9 @@ section{padding:72px 0}
 .look-tabs::-webkit-scrollbar{display:none}
 .look-tab{flex-shrink:0;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:rgba(255,255,255,.85);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;transition:.15s;white-space:nowrap}
 .look-tab.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
+.look-filter{display:flex;gap:6px;margin:2px 0 8px;flex-wrap:wrap}
+.look-chip{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);color:rgba(255,255,255,.78);border-radius:999px;padding:5px 13px;font-size:12px;font-weight:700;transition:.15s;cursor:pointer}
+.look-chip.active{background:rgba(56,189,248,.9);color:#04202f;box-shadow:none}
 .look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px;margin-top:6px;max-height:430px;overflow-y:auto;padding:4px 2px}
 .look-card{cursor:pointer;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);transition:.15s;position:relative}
 .look-card:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 8px 18px rgba(0,0,0,.28)}
@@ -333,7 +336,8 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
               <button class="look-tab" data-tab="pose">Pose</button>
               <button class="look-tab" data-tab="expr">Expression</button>
             </div>
-            <div class="look-grid" id="lookGrid"></div>
+            <div class="look-filter" id="outfitFilter" style="display:none"><button class="look-chip active" data-g="all">All</button><button class="look-chip" data-g="w">Women's</button><button class="look-chip" data-g="m">Men's</button><button class="look-chip" data-g="u">Unisex</button></div>
+              <div class="look-grid" id="lookGrid"></div>
           </div>
           <div id="resultWrap" style="display:none">
             <div class="studio-label" style="display:flex;align-items:center;justify-content:space-between">
@@ -1081,10 +1085,12 @@ function selectBg(id,opts={}){
 /* ---------- Visual look picker (Style / Outfit / Pose / Expression / Framing) ---------- */
 const OPTLABELS={
  style:["Formal", "Studio", "Corporate", "Office", "Casual", "Natural", "Creative", "Fashion", "Street", "Luxury", "Editorial", "Vintage", "Black & white", "Soft glow", "High key", "Low key", "Golden warm", "Cool crisp", "Cinematic", "Executive", "Approachable", "Tech", "Academic", "Bold"],
- outfit:["Navy suit", "Charcoal suit", "Light blazer", "Black turtleneck", "White shirt", "Blouse", "Sportswear", "Uniform", "Black suit", "Light grey suit", "Pinstripe suit", "Three-piece suit", "Women's trouser suit", "Women's skirt suit", "Linen blazer", "Tweed jacket", "Blazer over tee", "Blue shirt", "Striped shirt", "Open-collar shirt", "Shirt & tie", "Tuxedo", "Silk blouse", "Knit sweater", "Cardigan", "Sheath dress", "Wrap dress", "Polo shirt", "Hijab & blazer", "White coat", "Medical scrubs", "Chef's whites", "Pilot uniform", "Hi-vis workwear", "Academic gown", "Cheongsam"],
+ outfit:["Navy suit", "Charcoal suit", "Light blazer", "Black turtleneck", "White shirt", "Blouse", "Sportswear", "Uniform", "Black suit", "Light grey suit", "Pinstripe suit", "Three-piece suit", "Women's trouser suit", "Women's skirt suit", "Linen blazer", "Tweed jacket", "Blazer over tee", "Blue shirt", "Striped shirt", "Open-collar shirt", "Shirt & tie", "Tuxedo", "Silk blouse", "Knit sweater", "Cardigan", "Sheath dress", "Wrap dress", "Polo shirt", "Hijab & blazer", "White coat", "Medical scrubs", "Chef's whites", "Pilot uniform", "Hi-vis workwear", "Academic gown", "Cheongsam", "Blazer & camisole", "Longline blazer", "Bouclé jacket", "Women's tuxedo", "Puff-sleeve blouse", "Ruffle blouse", "Knit twinset", "Shirt dress", "Midi dress", "Kimono jacket", "Sari", "Abaya", "Cardigan & scarf", "Turtleneck & blazer", "Peplum jacket", "Satin blouse", "Double-breasted suit", "Brown suit", "Blue suit", "Waistcoat & shirt", "Suit & pocket square", "Knit tie & shirt", "Denim shirt", "Bomber jacket", "Field jacket", "Sweater vest", "Henley shirt", "Mandarin collar suit"],
  pose:["Straight on", "Left facing", "Right facing", "Close-up", "Half body", "Chin up", "Three-quarter", "Slight angle", "Over shoulder", "Arms crossed", "Hands in pockets", "Seated", "Leaning", "Head tilt", "Relaxed", "Standing tall", "Hand to chin", "Looking away"],
  expr:["Natural smile", "Big smile", "Confident", "Friendly", "Serious", "Neutral"]
 };
+const OUTFITGENDER={"Navy suit": "m", "Charcoal suit": "m", "Light blazer": "u", "Black turtleneck": "u", "White shirt": "u", "Blouse": "w", "Sportswear": "u", "Uniform": "u", "Black suit": "m", "Light grey suit": "m", "Pinstripe suit": "m", "Three-piece suit": "m", "Women's trouser suit": "w", "Women's skirt suit": "w", "Linen blazer": "u", "Tweed jacket": "m", "Blazer over tee": "u", "Blue shirt": "m", "Striped shirt": "m", "Open-collar shirt": "m", "Shirt & tie": "m", "Tuxedo": "m", "Silk blouse": "w", "Knit sweater": "u", "Cardigan": "u", "Sheath dress": "w", "Wrap dress": "w", "Polo shirt": "u", "Hijab & blazer": "w", "White coat": "u", "Medical scrubs": "u", "Chef's whites": "u", "Pilot uniform": "u", "Hi-vis workwear": "u", "Academic gown": "u", "Cheongsam": "w", "Blazer & camisole": "w", "Longline blazer": "w", "Bouclé jacket": "w", "Women's tuxedo": "w", "Puff-sleeve blouse": "w", "Ruffle blouse": "w", "Knit twinset": "w", "Shirt dress": "w", "Midi dress": "w", "Kimono jacket": "w", "Sari": "w", "Abaya": "w", "Cardigan & scarf": "w", "Turtleneck & blazer": "w", "Peplum jacket": "w", "Satin blouse": "w", "Double-breasted suit": "m", "Brown suit": "m", "Blue suit": "m", "Waistcoat & shirt": "m", "Suit & pocket square": "m", "Knit tie & shirt": "m", "Denim shirt": "m", "Bomber jacket": "m", "Field jacket": "m", "Sweater vest": "m", "Henley shirt": "m", "Mandarin collar suit": "m"};
+let outfitFilter='all';
 const OPTSPECIAL={ outfit:[['Auto','✨','var(--grad-brand)'],['Original','👕','linear-gradient(160deg,#8a97a5,#5b6675)']] };
 const SEL={style:()=>selectedStyle,outfit:()=>selectedOutfit,pose:()=>selectedPose,expr:()=>selectedExpr};
 const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>selectedPose=v,expr:v=>selectedExpr=v};
@@ -1101,10 +1107,20 @@ function makeOptCard(kind,label,i,special){
 }
 function renderLook(){
   const g=document.getElementById('lookGrid'); if(!g)return; g.innerHTML='';
+  const fw=document.getElementById('outfitFilter'); if(fw) fw.style.display = lookTab==='outfit' ? 'flex' : 'none';
   const spec=OPTSPECIAL[lookTab]||[];
   spec.forEach(sp=>g.appendChild(makeOptCard(lookTab,sp[0],-1,sp)));
-  OPTLABELS[lookTab].forEach((label,i)=>g.appendChild(makeOptCard(lookTab,label,i)));
+  OPTLABELS[lookTab].forEach((label,i)=>{
+    if(lookTab==='outfit' && outfitFilter!=='all' && OUTFITGENDER[label]!==outfitFilter) return;
+    g.appendChild(makeOptCard(lookTab,label,i));
+  });
+  g.scrollTop=0;
 }
+document.querySelectorAll('#outfitFilter .look-chip').forEach(b=>b.onclick=()=>{
+  outfitFilter=b.dataset.g;
+  document.querySelectorAll('#outfitFilter .look-chip').forEach(x=>x.classList.toggle('active',x===b));
+  renderLook();
+});
 document.querySelectorAll('#lookTabs .look-tab').forEach(t=>t.onclick=()=>{
   lookTab=t.dataset.tab;
   document.querySelectorAll('#lookTabs .look-tab').forEach(x=>x.classList.toggle('active',x===t));

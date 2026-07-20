@@ -131,7 +131,8 @@ section{padding:72px 0}
 .look-tab.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
 .sim-note{flex:none}
 .result-zone{flex:1;min-height:280px}
-.look-col{display:flex;flex-direction:column;min-height:0}
+.look-col{position:relative;min-height:0}
+.look-inner{position:absolute;inset:0;display:flex;flex-direction:column;min-height:0}
 #lookPanel{display:flex;flex-direction:column;flex:1;min-height:0}
 #resultWrap{display:flex;flex-direction:column;flex:1;min-height:0}
 .look-filter{display:flex;gap:6px;margin:2px 0 8px;flex-wrap:wrap}
@@ -251,7 +252,7 @@ section{padding:72px 0}
 footer{background:var(--bg-deep);color:var(--on-dark-muted);padding:44px 0;font-size:13.5px}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
 footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
-@media(max-width:880px){.look-grid{max-height:430px;flex:none}.result-zone{flex:none}}
+@media(max-width:880px){.look-inner{position:static;inset:auto}.look-grid{max-height:430px;flex:none}.result-zone{flex:none}}
 </style>
 </head>
 <body>
@@ -331,6 +332,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
           <button class="gen-btn" id="genBtn">✨ Generate my headshots</button>
         </div>
         <div class="look-col">
+          <div class="look-inner">
           <div id="lookPanel">
             <div class="studio-label" style="display:flex;align-items:center;justify-content:space-between">
               <span id="lookTitle">Design your look</span>
@@ -355,6 +357,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
             </div>
           </div>
           <p class="sim-note">⚙ On-device AI: you are cut out of your photo and placed into the scene with skin & tone enhancement — nothing is uploaded to a server. The production API adds photoreal outfit transfer and studio lighting.</p>
+          </div>
         </div>
       </div>
     </div>

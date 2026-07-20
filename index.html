@@ -762,7 +762,7 @@ function samplePhoto(i){
   return 'https://randomuser.me/api/portraits/'+gender+'/'+((i*7+3)%99)+'.jpg';
 }
 function aiSceneURL(bg,i){
-  return '/.netlify/functions/sample?kind=b&i='+i;
+  return '/api/sample?kind=b&i='+i;
 }
 const sceneCache={};
 function timeoutP(p,ms){ return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]); }
@@ -773,7 +773,7 @@ async function getSceneImg(bg){
   return sceneCache[bg.id];
 }
 function aiSampleURL(bg,i){
-  return '/.netlify/functions/sample?kind=p&i='+i;
+  return '/api/sample?kind=p&i='+i;
 }
 
 /* ---------- Storage & membership ---------- */
@@ -924,7 +924,7 @@ async function submitContact(){
   const {error}=await sb.from('contact_messages').insert({ name, email, topic:ctSel, message:msg, user_id: sbSession?sbSession.user.id:null });
   if(error){ toast('Could not send — please email gogonewnews@gmail.com'); return; }
   // fire-and-forget: forward a copy to the studio mailbox (no-op until email is configured)
-  try{ fetch('/.netlify/functions/contact-notify',{method:'POST',headers:{'Content-Type':'application/json'},
+  try{ fetch('/api/contact-notify',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({name,email,topic:ctSel,message:msg})}); }catch(e){}
   document.getElementById('ctMsg').value='';
   closeModal('contactModal');
@@ -1194,7 +1194,7 @@ const OPTSPECIAL={ outfit:[['Auto','osp',0],['Original','osp',1]] };
 const SEL={style:()=>selectedStyle,outfit:()=>selectedOutfit,pose:()=>selectedPose,expr:()=>selectedExpr};
 const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>selectedPose=v,expr:v=>selectedExpr=v};
 let lookTab='style';
-function optImg(kind,i){ return '/.netlify/functions/sample?kind='+kind+'&i='+i; }
+function optImg(kind,i){ return '/api/sample?kind='+kind+'&i='+i; }
 function retryOpt(el){ const n=(+el.dataset.r||0)+1; el.dataset.r=n; if(n>3){el.parentElement.classList.add('noimg');el.remove();return;} const src=el.src; el.removeAttribute('src'); setTimeout(()=>{el.src=src;},5000*n); }
 function makeOptCard(kind,label,i,special){
   const cur=SEL[kind]()===label;
@@ -1239,7 +1239,7 @@ async function tryServerGenerate(bg){
   const selfie=pc.toDataURL('image/jpeg',.85);
   const one=async(vi)=>{
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
-    const res=await fetch('/.netlify/functions/generate',{method:'POST',signal:ctrl.signal,
+    const res=await fetch('/api/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit, style:selectedStyle, pose:selectedPose, expr:selectedExpr, frame:selectedFrame, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
@@ -1326,7 +1326,7 @@ async function emailShot(i){
   if(!sbSession){ toast('Sign in to email your headshots'); return; }
   toast('✉️ Sending to '+user.email+'…');
   try{
-    const r=await fetch('/.netlify/functions/send-photo',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch('/api/send-photo',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({token:sbSession.access_token,image:s.urls[i],scene:s.scene,look:s.look,variant:i})});
     const d=await r.json().catch(()=>({}));
     if(r.status===501){ toast('Email delivery is not set up yet — use ⤓ PNG for now'); return; }
@@ -1349,7 +1349,7 @@ async function buyPack(name){
   if(!user){ toast('Create your free account first — then top up any time'); accountClick(); return; }
   toast('Opening secure checkout…');
   try{
-    const r=await fetch('/.netlify/functions/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({pack:name, currency, token: sbSession?sbSession.access_token:null})});
     const d=await r.json();
     if(d.url){ location.href=d.url; return; }

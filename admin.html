@@ -233,7 +233,7 @@ const toUSD=(amt,cur)=>(+amt||0)*(FX[String(cur||'usd').toLowerCase()]??1);
 let BD=null, bizComputed=[];
 async function loadBiz(){
   try{
-    const r=await fetch('/.netlify/functions/admin-stats',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch('/api/admin-stats',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({token:session.access_token})});
     if(!r.ok){ const d=await r.json().catch(()=>({})); document.getElementById('bdNote').textContent='Business data unavailable: '+(d.error||r.status); return; }
     BD=await r.json();

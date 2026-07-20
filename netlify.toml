@@ -4,3 +4,9 @@
 [functions]
   directory = "."
   node_bundler = "esbuild"
+
+# keep the new /api/* paths working on Netlify too (fallback while migrating to Cloudflare)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

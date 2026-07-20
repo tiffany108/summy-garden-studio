@@ -1,7 +1,6 @@
 // Summy Garden Studio — forward each Contact-us message to the studio mailbox.
 // Env: RESEND_API_KEY (required), CONTACT_NOTIFY_TO (optional, defaults below),
 // EMAIL_FROM (optional). Reply-To is the visitor, so replying reaches them directly.
-const NOTIFY_TO = process.env.CONTACT_NOTIFY_TO || "gogonewnews@gmail.com";
 
 export default async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
@@ -9,6 +8,7 @@ export default async (req) => {
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
   const rk = process.env.RESEND_API_KEY;
   if (!rk) return Response.json({ error: "email not configured" }, { status: 501, headers });
+  const NOTIFY_TO = process.env.CONTACT_NOTIFY_TO || "gogonewnews@gmail.com"; // read per request (env unavailable at module load on Cloudflare)
 
   // stopgap anti-abuse: only accept requests from our own site (browser-enforced).
   // Proper defence (Cloudflare Turnstile + rate limiting) is added during the CF migration.

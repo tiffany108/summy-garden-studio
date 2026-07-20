@@ -783,6 +783,7 @@ const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
 const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
 const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 let user = null; /* {name,email,credits,code,ref_count,joined} */
+const escH=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let sbSession = null;
 const refParam = new URLSearchParams(location.search).get('ref');
 function getCredits(){ return user ? user.credits : 0; }
@@ -875,7 +876,7 @@ function renderDashboard(){
       const d=document.createElement('div'); d.className='dash-frame';
       if(bg) d.style.backgroundImage=`url("${bg.image}")`;
       d.innerHTML=`<img alt="Saved headshot" loading="lazy" style="display:none">
-        <small>${bg?bgName(bg):(s.scene||'')} · ${(s.created_at||'').slice(5,10)}</small>
+        <small>${bg?escH(bgName(bg)):escH(s.scene||'')} · ${escH((s.created_at||'').slice(5,10))}</small>
         <a class="dash-dl" title="Download" style="display:none">⤓</a>`;
       h.appendChild(d);
       sb.storage.from('headshots').createSignedUrl(s.path, 3600).then(r=>{
@@ -889,7 +890,7 @@ function renderDashboard(){
       const bg=bgById(it.bg);
       const d=document.createElement('div'); d.className='dash-frame';
       if(bg) d.style.backgroundImage=`url("${bg.image}")`;
-      d.innerHTML=`<small>${bg?bgName(bg):(it.bg||'')} · ${it.date}</small>`;
+      d.innerHTML=`<small>${bg?escH(bgName(bg)):escH(it.bg||'')} · ${escH(it.date)}</small>`;
       h.appendChild(d);
     });
   }

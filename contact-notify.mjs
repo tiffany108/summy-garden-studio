@@ -10,6 +10,13 @@ export default async (req) => {
   const rk = process.env.RESEND_API_KEY;
   if (!rk) return Response.json({ error: "email not configured" }, { status: 501, headers });
 
+  // stopgap anti-abuse: only accept requests from our own site (browser-enforced).
+  // Proper defence (Cloudflare Turnstile + rate limiting) is added during the CF migration.
+  const origin = req.headers.get("origin") || "";
+  const ALLOWED = ["https://summy-garden-studio.netlify.app"];
+  const okOrigin = !origin || ALLOWED.some(a => origin === a) || origin.endsWith(".summygarden.com") || origin.endsWith(".summygarden.app") || origin.endsWith(".pages.dev");
+  if (!okOrigin) return Response.json({ error: "forbidden" }, { status: 403, headers });
+
   let body = {}; try { body = await req.json(); } catch {}
   const name = String(body.name || "").slice(0, 120);
   const email = String(body.email || "").slice(0, 200);

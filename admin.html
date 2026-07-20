@@ -359,7 +359,7 @@ async function loadStats(){
     const tb=document.getElementById('memberRows'); tb.innerHTML='';
     (m.data||[]).forEach(p=>{
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${p.name||'—'}</td><td style="font-family:monospace">${p.ref_code||''}</td><td>${p.credits}</td><td>${p.ref_count||0}</td><td>${(p.created_at||'').slice(0,10)}</td>`;
+      tr.innerHTML=`<td>${esc(p.name)||'—'}</td><td style="font-family:monospace">${esc(p.ref_code)}</td><td>${esc(p.credits)}</td><td>${esc(p.ref_count||0)}</td><td>${esc((p.created_at||'').slice(0,10))}</td>`;
       tb.appendChild(tr);
     });
     if(!m.data||!m.data.length) tb.innerHTML='<tr><td colspan="5" style="color:#8fa6b3">No members yet</td></tr>';

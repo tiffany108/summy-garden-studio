@@ -102,6 +102,12 @@ const OPT = {
     ["Sweater vest","close-up product photograph of a knitted sweater vest over a collared shirt worn on a man's torso, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
     ["Henley shirt","close-up product photograph of a fitted charcoal henley shirt worn on a man's torso, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
     ["Mandarin collar suit","close-up product photograph of a mandarin-collar suit jacket in dark navy worn on a man's torso, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Women's navy suit","close-up product photograph of a tailored women's navy business suit jacket with a white shell top worn on a woman's dress form, clearly feminine tailored cut, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Women's charcoal suit","close-up product photograph of a tailored women's charcoal grey business suit jacket worn on a woman's dress form, clearly feminine tailored cut, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Women's black suit","close-up product photograph of a sharp women's black business suit jacket with a silk shell worn on a woman's dress form, clearly feminine tailored cut, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Women's grey suit","close-up product photograph of a tailored women's light grey business suit jacket worn on a woman's dress form, clearly feminine tailored cut, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Women's pinstripe suit","close-up product photograph of a women's navy pinstripe business suit jacket worn on a woman's dress form, clearly feminine tailored cut, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
+    ["Women's double-breasted suit","close-up product photograph of a women's double-breasted business suit jacket worn on a woman's dress form, clearly feminine tailored cut, cropped from shoulders to waist, NO head and NO face visible, clothing detail, clean studio"],
   ],
   pose: [
     ["Straight on","professional headshot photograph of a person facing camera straight on"],

@@ -78,6 +78,12 @@ const OUTFITS = {
   "Sweater vest": "a sweater vest over a shirt",
   "Henley shirt": "a fitted henley shirt",
   "Mandarin collar suit": "a mandarin-collar suit jacket",
+  "Women's navy suit": "a tailored women's navy business suit",
+  "Women's charcoal suit": "a tailored women's charcoal business suit",
+  "Women's black suit": "a sharp women's black business suit",
+  "Women's grey suit": "a tailored women's light grey business suit",
+  "Women's pinstripe suit": "a women's pinstripe business suit",
+  "Women's double-breasted suit": "a women's double-breasted business suit",
 };
 const STYLES = {
   "Formal": "formal professional look, polished and corporate",

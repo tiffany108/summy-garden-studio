@@ -53,6 +53,8 @@ input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{text-align:left;color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid #e6edf2}
 td{padding:10px;border-bottom:1px solid #f0f4f7}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:#e8f4fd}
 .editor label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin:14px 0 5px}
 .editor textarea{width:100%;padding:11px 14px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14px;outline:none;color:var(--ink);resize:vertical;min-height:52px}
 .editor .row{display:flex;gap:20px;flex-wrap:wrap}
@@ -105,6 +107,7 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
         <label style="font-size:12.5px;font-weight:700;color:var(--muted)">Cost per AI image (US$) <input type="number" step="0.001" id="bdCost" value="0.039" style="width:90px;margin:0 8px 0 4px"></label>
         <button class="btn" onclick="renderBiz()">Apply</button>
         <button class="btn dark" onclick="exportUsersCSV()">⬇ Export users CSV</button>
+        <button class="btn dark" onclick="exportEmailsCSV()">✉️ Export emails</button>
         <span class="save-note" id="bdNote">Loading business data…</span>
       </div>
       <div class="stats" style="margin-top:18px">
@@ -123,6 +126,7 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
     <div class="card" style="margin-bottom:6px;overflow-x:auto">
       <table><thead><tr><th>Email</th><th>Name</th><th>Confirmed</th><th>Credits</th><th>Shots</th><th>Spent (≈US$)</th><th>Returning</th><th>Joined</th><th>Last active</th></tr></thead>
       <tbody id="bizRows"><tr><td colspan="9" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
+      <div style="text-align:center;margin-top:10px"><button class="btn dark" id="bizMoreBtn" onclick="toggleBiz()" style="display:none">Show all ▾</button></div>
     </div>
 
     <div class="sec-title">Recent members</div>
@@ -252,13 +256,32 @@ function renderBiz(){
   const net=revUSD-tok;
   const netEl=document.getElementById('bdNet'); netEl.textContent=(net<0?'-$':'$')+Math.abs(net).toFixed(2); netEl.style.color=net<0?'#c0392b':'#0f6e56';
   document.getElementById('bdNote').textContent='Data as of '+new Date(BD.generated_at).toLocaleTimeString()+' · '+gensRange+' generations ('+gensRange*4+' AI images) in range';
+  renderBizTable();
+}
+let bizExpanded=false;
+function toggleBiz(){ bizExpanded=!bizExpanded; renderBizTable(); }
+function renderBizTable(){
   const tb=document.getElementById('bizRows'); tb.innerHTML='';
-  bizComputed.forEach(x=>{ const tr=document.createElement('tr');
+  const rows=bizExpanded?bizComputed:bizComputed.slice(0,10);   // 10 records by default, rest hidden
+  rows.forEach(x=>{ const tr=document.createElement('tr');
     tr.innerHTML=`<td><a href="mailto:${esc(x.email)}">${esc(x.email)}</a></td><td>${esc(x.name)||'—'}</td>
       <td>${x.confirmed?'✅':'✖️ not confirmed'}</td><td>${x.credits}</td><td>${x.shots}</td>
       <td>$${x.spentUSD.toFixed(2)}</td><td>${x.returning?'🔁 yes':'—'}</td><td>${esc(x.joined)}</td><td>${esc(x.last)||'—'}</td>`;
     tb.appendChild(tr); });
   if(!bizComputed.length) tb.innerHTML='<tr><td colspan="9" style="color:#8fa6b3">No accounts yet</td></tr>';
+  const btn=document.getElementById('bizMoreBtn');
+  if(bizComputed.length>10){ btn.style.display='inline-block';
+    btn.textContent=bizExpanded?'Show less ▴':('Show all '+bizComputed.length+' members ▾'); }
+  else btn.style.display='none';
+}
+function exportEmailsCSV(){
+  if(!bizComputed.length){ toast('No data to export yet'); return; }
+  const csv=['email'].concat(bizComputed.map(x=>x.email)).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));
+  a.download='summy-garden-emails-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('✉️ Emails exported — '+bizComputed.length+' addresses');
 }
 function exportUsersCSV(){
   if(!bizComputed.length){ toast('No data to export yet'); return; }

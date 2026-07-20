@@ -295,7 +295,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
       <div class="stat"><b>21×</b><span>more profile views with a professional photo</span></div>
       <div class="stat"><b>100</b><span>designed scenes in 10 themed collections</span></div>
       <div class="stat"><b>+2 free</b><span>headshots when a friend refers you</span></div>
-      <div class="stat"><b>UK · HK · US</b><span>localised pricing</span></div>
+      <div class="stat"><b>UK · HK · US · EU · CN</b><span>localised pricing</span></div>
     </div>
   </div>
 </header>
@@ -1540,7 +1540,14 @@ if(sb){
     if(new URLSearchParams(location.search).get('paid')==='1'||sessionStorage.getItem('sgsPaid')){ sessionStorage.removeItem('sgsPaid'); setTimeout(async()=>{ await loadProfile(); updateCreditLabel(); },2500); } });
   sb.auth.onAuthStateChange(async (_e,session)=>{ sbSession=session; await loadProfile(); updateCreditLabel(); updateAccountBtn(); });
 }
-const _sl=store.getItem('sgsLang')||'en'; _lsEl.value=I18N[_sl]?_sl:'en'; applyLang(_lsEl.value);
+/* language: saved choice wins, else auto-detect from the browser */
+const _sl=store.getItem('sgsLang')||(function(){
+  const l=(navigator.language||'en').toLowerCase();
+  if(l.startsWith('zh')) return (l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh';
+  const p=l.split('-')[0];
+  return I18N[p]?p:'en';
+})();
+_lsEl.value=I18N[_sl]?_sl:'en'; applyLang(_lsEl.value);
 /* local currency: use the saved choice, else detect from browser locale/timezone */
 (function initCurrency(){
   let cur=store.getItem('sgsCur');

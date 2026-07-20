@@ -71,104 +71,107 @@ tbody tr:hover{background:#e8f4fd}
 <body>
 <div class="top"><div class="wrap">
   <div class="logo"><span class="logo-mark">◆</span> Summy Garden Studio</div>
-  <span class="badge-admin">🔐 Super Admin</span>
+  <span class="badge-admin" data-i18n="badge_admin">🔐 Super Admin</span>
   <span class="sp"></span>
+  <select id="adminLang" onchange="setAdminLang(this.value)" style="background:rgba(255,255,255,.09);color:#fff;border:none;border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">
+    <option value="en">English</option><option value="zh">中文 (简体)</option><option value="zh-TW">中文 (繁體)</option>
+  </select>
   <span id="whoami" style="font-size:13px;opacity:.85"></span>
-  <button class="btn ghost" id="signoutBtn" onclick="signOut()" style="display:none">Sign out</button>
+  <button class="btn ghost" id="signoutBtn" onclick="signOut()" style="display:none" data-i18n="signout">Sign out</button>
 </div></div>
 
 <div class="wrap">
   <!-- LOGIN -->
   <div id="login">
     <div class="logo-mark">🔐</div>
-    <h2>Admin sign in</h2>
-    <p>Restricted area — super-admin access only.</p>
-    <input type="email" id="email" placeholder="Admin email">
-    <input type="password" id="pw" placeholder="Password">
-    <button class="btn" onclick="doLogin()">Sign in</button>
+    <h2 data-i18n="login_h">Admin sign in</h2>
+    <p data-i18n="login_p">Restricted area — super-admin access only.</p>
+    <input type="email" id="email" placeholder="Admin email" data-i18n-ph="ph_email">
+    <input type="password" id="pw" placeholder="Password" data-i18n-ph="ph_pw">
+    <button class="btn" onclick="doLogin()" data-i18n="btn_signin">Sign in</button>
     <div class="msg" id="msg"></div>
   </div>
 
   <!-- DASHBOARD -->
   <div id="dash" style="display:none">
-    <div class="sec-title">Live overview</div>
+    <div class="sec-title" data-i18n="t_overview">Live overview</div>
     <div class="stats">
-      <div class="stat"><div class="ico i1">👥</div><b id="sMembers">–</b><span>Registered members</span></div>
-      <div class="stat"><div class="ico i2">🖼</div><b id="sShots">–</b><span>Headshots generated</span></div>
-      <div class="stat"><div class="ico i3">💳</div><b id="sCredits">–</b><span>Credits outstanding</span></div>
-      <div class="stat"><div class="ico i4">🤝</div><b id="sRefs">–</b><span>Referral rewards</span></div>
+      <div class="stat"><div class="ico i1">👥</div><b id="sMembers">–</b><span data-i18n="s_members">Registered members</span></div>
+      <div class="stat"><div class="ico i2">🖼</div><b id="sShots">–</b><span data-i18n="s_shots">Headshots generated</span></div>
+      <div class="stat"><div class="ico i3">💳</div><b id="sCredits">–</b><span data-i18n="s_credits">Credits outstanding</span></div>
+      <div class="stat"><div class="ico i4">🤝</div><b id="sRefs">–</b><span data-i18n="s_refs">Referral rewards</span></div>
     </div>
 
-    <div class="sec-title">Business dashboard</div>
+    <div class="sec-title" data-i18n="t_biz">Business dashboard</div>
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">From <input type="date" id="bdFrom" style="width:auto;margin:0 8px 0 4px"></label>
-        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">To <input type="date" id="bdTo" style="width:auto;margin:0 8px 0 4px"></label>
-        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">Cost per AI image (US$) <input type="number" step="0.001" id="bdCost" value="0.039" style="width:90px;margin:0 8px 0 4px"></label>
-        <button class="btn" onclick="renderBiz()">Apply</button>
-        <button class="btn dark" onclick="exportUsersCSV()">⬇ Export users CSV</button>
-        <button class="btn dark" onclick="exportEmailsCSV()">✉️ Export emails</button>
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_from">From</span> <input type="date" id="bdFrom" style="width:auto;margin:0 8px 0 4px"></label>
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_to">To</span> <input type="date" id="bdTo" style="width:auto;margin:0 8px 0 4px"></label>
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_cost">Cost per AI image (US$)</span> <input type="number" step="0.001" id="bdCost" value="0.039" style="width:90px;margin:0 8px 0 4px"></label>
+        <button class="btn" onclick="renderBiz()" data-i18n="btn_apply">Apply</button>
+        <button class="btn dark" onclick="exportUsersCSV()" data-i18n="btn_export">⬇ Export users CSV</button>
+        <button class="btn dark" onclick="exportEmailsCSV()" data-i18n="btn_export_em">✉️ Export emails</button>
         <span class="save-note" id="bdNote">Loading business data…</span>
       </div>
       <div class="stats" style="margin-top:18px">
-        <div class="stat"><div class="ico i1">👥</div><b id="bdReg">–</b><span>Registered accounts</span></div>
-        <div class="stat"><div class="ico i4">✅</div><b id="bdConf">–</b><span>Email confirmed</span></div>
-        <div class="stat"><div class="ico i3">✉️</div><b id="bdUnconf">–</b><span>Email not confirmed</span></div>
-        <div class="stat"><div class="ico i2">💳</div><b id="bdPaying">–</b><span>Paying members</span></div>
-        <div class="stat"><div class="ico i4">🔁</div><b id="bdReturning">–</b><span>Returning members (2+ days active)</span></div>
+        <div class="stat"><div class="ico i1">👥</div><b id="bdReg">–</b><span data-i18n="b_reg">Registered accounts</span></div>
+        <div class="stat"><div class="ico i4">✅</div><b id="bdConf">–</b><span data-i18n="b_conf">Email confirmed</span></div>
+        <div class="stat"><div class="ico i3">✉️</div><b id="bdUnconf">–</b><span data-i18n="b_unconf">Email not confirmed</span></div>
+        <div class="stat"><div class="ico i2">💳</div><b id="bdPaying">–</b><span data-i18n="b_pay">Paying members</span></div>
+        <div class="stat"><div class="ico i4">🔁</div><b id="bdReturning">–</b><span data-i18n="b_ret">Returning members (2+ days active)</span></div>
       </div>
       <div class="stats" style="margin-top:14px">
-        <div class="stat"><div class="ico i4">💰</div><b id="bdRev">–</b><span id="bdRevNote">Revenue in range (≈US$)</span></div>
-        <div class="stat"><div class="ico i3">🤖</div><b id="bdTok">–</b><span>AI token cost in range (est., US$)</span></div>
-        <div class="stat"><div class="ico i1">📈</div><b id="bdNet">–</b><span>Net profit in range (≈US$)</span></div>
+        <div class="stat"><div class="ico i4">💰</div><b id="bdRev">–</b><span id="bdRevNote" data-i18n="b_rev">Revenue in range (≈US$)</span></div>
+        <div class="stat"><div class="ico i3">🤖</div><b id="bdTok">–</b><span data-i18n="b_tok">AI token cost in range (est., US$)</span></div>
+        <div class="stat"><div class="ico i1">📈</div><b id="bdNet">–</b><span data-i18n="b_net">Net profit in range (≈US$)</span></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:6px;overflow-x:auto">
-      <table><thead><tr><th>Email</th><th>Name</th><th>Confirmed</th><th>Credits</th><th>Shots</th><th>Spent (≈US$)</th><th>Returning</th><th>Joined</th><th>Last active</th></tr></thead>
+      <table><thead><tr><th data-i18n="th_email">Email</th><th data-i18n="th_name">Name</th><th data-i18n="th_conf">Confirmed</th><th data-i18n="th_credits">Credits</th><th data-i18n="th_shots">Shots</th><th data-i18n="th_spent">Spent (≈US$)</th><th data-i18n="th_ret">Returning</th><th data-i18n="th_joined">Joined</th><th data-i18n="th_last">Last active</th></tr></thead>
       <tbody id="bizRows"><tr><td colspan="9" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
       <div style="text-align:center;margin-top:10px"><button class="btn dark" id="bizMoreBtn" onclick="toggleBiz()" style="display:none">Show all ▾</button></div>
     </div>
 
-    <div class="sec-title">Recent members</div>
+    <div class="sec-title" data-i18n="t_members">Recent members</div>
     <div class="card">
-      <table><thead><tr><th>Name</th><th>Referral code</th><th>Credits</th><th>Referrals</th><th>Joined</th></tr></thead>
+      <table><thead><tr><th data-i18n="th_name">Name</th><th data-i18n="th_refcode">Referral code</th><th data-i18n="th_credits">Credits</th><th data-i18n="th_refs">Referrals</th><th data-i18n="th_joined">Joined</th></tr></thead>
       <tbody id="memberRows"><tr><td colspan="5" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
     </div>
 
-    <div class="sec-title">Contact messages <span style="text-transform:none;font-weight:600;color:#8fa6b3">· quotations, feedback & questions from the site</span></div>
+    <div class="sec-title"><span data-i18n="t_msgs">Contact messages</span> <span style="text-transform:none;font-weight:600;color:#8fa6b3" data-i18n="t_msgs_sub">· quotations, feedback & questions from the site</span></div>
     <div class="card">
-      <table><thead><tr><th>Date</th><th>Topic</th><th>Name</th><th>Email</th><th>Message</th></tr></thead>
+      <table><thead><tr><th data-i18n="th_date">Date</th><th data-i18n="th_topic">Topic</th><th data-i18n="th_name">Name</th><th data-i18n="th_email">Email</th><th data-i18n="th_msg">Message</th></tr></thead>
       <tbody id="msgRows"><tr><td colspan="5" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
     </div>
 
-    <div class="sec-title">Edit marketing content <span style="text-transform:none;font-weight:600;color:#8fa6b3">· changes go live instantly, no deploy</span></div>
+    <div class="sec-title"><span data-i18n="t_edit">Edit marketing content</span> <span style="text-transform:none;font-weight:600;color:#8fa6b3" data-i18n="t_edit_sub">· changes go live instantly, no deploy</span></div>
     <div class="card editor">
       <div class="toggle-row">
         <input type="checkbox" id="annOn" style="width:auto;margin:0;box-shadow:none">
-        <label for="annOn" style="margin:0">Show announcement banner at top of site</label>
+        <label for="annOn" style="margin:0" data-i18n="lbl_annOn">Show announcement banner at top of site</label>
       </div>
-      <label>Announcement text</label>
+      <label data-i18n="lbl_ann">Announcement text</label>
       <textarea id="annText" placeholder="e.g. 🎉 Launch week — refer a friend and you both get free headshots!"></textarea>
       <div class="row">
-        <div><label>Hero headline (before the highlighted words)</label><textarea id="heroA" placeholder="Studio-quality headshots,"></textarea></div>
-        <div><label>Hero highlighted words</label><textarea id="heroB" placeholder="from one selfie"></textarea></div>
+        <div><label data-i18n="lbl_heroA">Hero headline (before the highlighted words)</label><textarea id="heroA" placeholder="Studio-quality headshots,"></textarea></div>
+        <div><label data-i18n="lbl_heroB">Hero highlighted words</label><textarea id="heroB" placeholder="from one selfie"></textarea></div>
       </div>
-      <label>Hero subtitle</label>
+      <label data-i18n="lbl_heroP">Hero subtitle</label>
       <textarea id="heroP"></textarea>
-      <label>Free badge text</label>
+      <label data-i18n="lbl_badge">Free badge text</label>
       <textarea id="badge"></textarea>
       <div class="save-bar">
-        <button class="btn" onclick="saveContent()">💾 Save changes</button>
-        <button class="btn dark" onclick="loadContent()">Reset</button>
-        <a class="btn dark" href="/?edit=1" target="_blank" style="text-decoration:none">✏️ Live-edit any text on the site</a>
+        <button class="btn" onclick="saveContent()" data-i18n="btn_save">💾 Save changes</button>
+        <button class="btn dark" onclick="loadContent()" data-i18n="btn_reset">Reset</button>
+        <a class="btn dark" href="/?edit=1" target="_blank" style="text-decoration:none" data-i18n="btn_liveedit">✏️ Live-edit any text on the site</a>
         <span class="save-note" id="saveNote"></span>
       </div>
-      <div class="hint">💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.</div>
+      <div class="hint" data-i18n="hint_pricing">💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.</div>
     </div>
 
-    <div class="sec-title">Live site preview
-      <button class="btn dark" style="margin-left:10px;padding:6px 13px;font-size:12px;text-transform:none;letter-spacing:0" onclick="fullscreenPreview()">⛶ Full screen</button>
-      <a class="btn dark" style="margin-left:4px;padding:6px 13px;font-size:12px;text-decoration:none;text-transform:none;letter-spacing:0" href="/" target="_blank">↗ Open in new tab</a>
+    <div class="sec-title"><span data-i18n="t_preview">Live site preview</span>
+      <button class="btn dark" style="margin-left:10px;padding:6px 13px;font-size:12px;text-transform:none;letter-spacing:0" onclick="fullscreenPreview()" data-i18n="btn_fs">⛶ Full screen</button>
+      <a class="btn dark" style="margin-left:4px;padding:6px 13px;font-size:12px;text-decoration:none;text-transform:none;letter-spacing:0" href="/" target="_blank" data-i18n="btn_newtab">↗ Open in new tab</a>
     </div>
     <div class="card" style="padding:14px">
       <iframe class="preview-frame" id="preview" src="/?admin_preview=1" allowfullscreen></iframe>
@@ -184,6 +187,24 @@ const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
 const ADMIN_EMAIL='tiffany123@hotmail.com.hk';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 let session=null;
+
+/* ---------- Admin i18n (en / zh / zh-TW) ---------- */
+const AL={
+en:{badge_admin:"🔐 Super Admin",signout:"Sign out",login_h:"Admin sign in",login_p:"Restricted area — super-admin access only.",ph_email:"Admin email",ph_pw:"Password",btn_signin:"Sign in",t_overview:"Live overview",s_members:"Registered members",s_shots:"Headshots generated",s_credits:"Credits outstanding",s_refs:"Referral rewards",t_biz:"Business dashboard",lbl_from:"From",lbl_to:"To",lbl_cost:"Cost per AI image (US$)",btn_apply:"Apply",btn_export:"⬇ Export users CSV",btn_export_em:"✉️ Export emails",b_reg:"Registered accounts",b_conf:"Email confirmed",b_unconf:"Email not confirmed",b_pay:"Paying members",b_ret:"Returning members (2+ days active)",b_rev:"Revenue in range (≈US$)",b_tok:"AI token cost in range (est., US$)",b_net:"Net profit in range (≈US$)",th_email:"Email",th_name:"Name",th_conf:"Confirmed",th_credits:"Credits",th_shots:"Shots",th_spent:"Spent (≈US$)",th_ret:"Returning",th_joined:"Joined",th_last:"Last active",t_members:"Recent members",th_refcode:"Referral code",th_refs:"Referrals",t_msgs:"Contact messages",t_msgs_sub:"· quotations, feedback & questions from the site",th_date:"Date",th_topic:"Topic",th_msg:"Message",t_edit:"Edit marketing content",t_edit_sub:"· changes go live instantly, no deploy",lbl_annOn:"Show announcement banner at top of site",lbl_ann:"Announcement text",lbl_heroA:"Hero headline (before the highlighted words)",lbl_heroB:"Hero highlighted words",lbl_heroP:"Hero subtitle",lbl_badge:"Free badge text",btn_save:"💾 Save changes",btn_reset:"Reset",btn_liveedit:"✏️ Live-edit any text on the site",hint_pricing:"💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.",t_preview:"Live site preview",btn_fs:"⛶ Full screen",btn_newtab:"↗ Open in new tab",show_all:"Show all {n} members ▾",show_less:"Show less ▴"},
+zh:{badge_admin:"🔐 超级管理员",signout:"登出",login_h:"管理员登录",login_p:"受限区域 — 仅超级管理员可访问。",ph_email:"管理员邮箱",ph_pw:"密码",btn_signin:"登录",t_overview:"实时概览",s_members:"注册会员",s_shots:"已生成头像",s_credits:"未使用点数",s_refs:"推荐奖励",t_biz:"业务仪表板",lbl_from:"从",lbl_to:"至",lbl_cost:"每张 AI 图片成本（美元）",btn_apply:"应用",btn_export:"⬇ 导出用户 CSV",btn_export_em:"✉️ 导出邮箱",b_reg:"注册账户",b_conf:"邮箱已验证",b_unconf:"邮箱未验证",b_pay:"付费会员",b_ret:"回访会员（活跃 2 天以上）",b_rev:"区间收入（约美元）",b_tok:"区间 AI 成本（估算，美元）",b_net:"区间净利润（约美元）",th_email:"邮箱",th_name:"姓名",th_conf:"已验证",th_credits:"点数",th_shots:"生成数",th_spent:"消费（约美元）",th_ret:"回访",th_joined:"注册日期",th_last:"最近活跃",t_members:"最新会员",th_refcode:"推荐码",th_refs:"推荐人数",t_msgs:"联络消息",t_msgs_sub:"· 来自网站的询价、反馈与问题",th_date:"日期",th_topic:"主题",th_msg:"消息",t_edit:"编辑营销内容",t_edit_sub:"· 修改即时生效，无需部署",lbl_annOn:"在网站顶部显示公告横幅",lbl_ann:"公告文字",lbl_heroA:"主标题（高亮词之前）",lbl_heroB:"主标题高亮词",lbl_heroP:"主副标题",lbl_badge:"免费徽章文字",btn_save:"💾 保存修改",btn_reset:"重置",btn_liveedit:"✏️ 在网站上实时编辑任意文字",hint_pricing:"💡 价格与支付金额此处不可编辑 — 需与 Stripe 保持同步以确保收费正确。想改价请告诉我，我会安全地同步更新。",t_preview:"网站实时预览",btn_fs:"⛶ 全屏",btn_newtab:"↗ 新标签页打开",show_all:"显示全部 {n} 位会员 ▾",show_less:"收起 ▴"},
+"zh-TW":{badge_admin:"🔐 超級管理員",signout:"登出",login_h:"管理員登入",login_p:"受限區域 — 僅超級管理員可存取。",ph_email:"管理員電郵",ph_pw:"密碼",btn_signin:"登入",t_overview:"即時概覽",s_members:"註冊會員",s_shots:"已生成頭像",s_credits:"未使用點數",s_refs:"推薦獎勵",t_biz:"業務儀表板",lbl_from:"從",lbl_to:"至",lbl_cost:"每張 AI 圖片成本（美元）",btn_apply:"套用",btn_export:"⬇ 匯出用戶 CSV",btn_export_em:"✉️ 匯出電郵",b_reg:"註冊帳戶",b_conf:"電郵已驗證",b_unconf:"電郵未驗證",b_pay:"付費會員",b_ret:"回訪會員（活躍 2 天以上）",b_rev:"區間收入（約美元）",b_tok:"區間 AI 成本（估算，美元）",b_net:"區間淨利潤（約美元）",th_email:"電郵",th_name:"姓名",th_conf:"已驗證",th_credits:"點數",th_shots:"生成數",th_spent:"消費（約美元）",th_ret:"回訪",th_joined:"註冊日期",th_last:"最近活躍",t_members:"最新會員",th_refcode:"推薦碼",th_refs:"推薦人數",t_msgs:"聯絡訊息",t_msgs_sub:"· 來自網站的詢價、回饋與問題",th_date:"日期",th_topic:"主題",th_msg:"訊息",t_edit:"編輯行銷內容",t_edit_sub:"· 修改即時生效，無需部署",lbl_annOn:"在網站頂部顯示公告橫幅",lbl_ann:"公告文字",lbl_heroA:"主標題（醒目詞之前）",lbl_heroB:"主標題醒目詞",lbl_heroP:"主副標題",lbl_badge:"免費徽章文字",btn_save:"💾 儲存修改",btn_reset:"重設",btn_liveedit:"✏️ 在網站上即時編輯任意文字",hint_pricing:"💡 價格與付款金額此處不可編輯 — 需與 Stripe 保持同步以確保收費正確。想改價請告訴我，我會安全地同步更新。",t_preview:"網站即時預覽",btn_fs:"⛶ 全螢幕",btn_newtab:"↗ 新分頁開啟",show_all:"顯示全部 {n} 位會員 ▾",show_less:"收起 ▴"}};
+let ALANG=localStorage.getItem('sgsAdminLang')||(function(){const l=(navigator.language||'').toLowerCase();
+  if(l.startsWith('zh')) return (l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh'; return 'en';})();
+const AT=k=>(AL[ALANG]&&AL[ALANG][k])||AL.en[k]||k;
+function applyAdminLang(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const v=AT(el.dataset.i18n); if(v!=null) el.textContent=v;});
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{const v=AT(el.dataset.i18nPh); if(v!=null) el.placeholder=v;});
+  const s=document.getElementById('adminLang'); if(s) s.value=ALANG;
+  document.documentElement.lang=ALANG;
+  if(typeof bizComputed!=='undefined'&&bizComputed.length) renderBizTable();
+}
+function setAdminLang(v){ ALANG=AL[v]?v:'en'; localStorage.setItem('sgsAdminLang',ALANG); applyAdminLang(); }
+document.addEventListener('DOMContentLoaded',applyAdminLang);
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 function show(id,on){document.getElementById(id).style.display=on?(id==='dash'?'block':''):'none';}
@@ -271,7 +292,7 @@ function renderBizTable(){
   if(!bizComputed.length) tb.innerHTML='<tr><td colspan="9" style="color:#8fa6b3">No accounts yet</td></tr>';
   const btn=document.getElementById('bizMoreBtn');
   if(bizComputed.length>10){ btn.style.display='inline-block';
-    btn.textContent=bizExpanded?'Show less ▴':('Show all '+bizComputed.length+' members ▾'); }
+    btn.textContent=bizExpanded?AT('show_less'):AT('show_all').replace('{n}',bizComputed.length); }
   else btn.style.display='none';
 }
 function exportEmailsCSV(){

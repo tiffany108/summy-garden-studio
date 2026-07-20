@@ -103,6 +103,12 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
       <tbody id="memberRows"><tr><td colspan="5" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
     </div>
 
+    <div class="sec-title">Contact messages <span style="text-transform:none;font-weight:600;color:#8fa6b3">· quotations, feedback & questions from the site</span></div>
+    <div class="card">
+      <table><thead><tr><th>Date</th><th>Topic</th><th>Name</th><th>Email</th><th>Message</th></tr></thead>
+      <tbody id="msgRows"><tr><td colspan="5" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
+    </div>
+
     <div class="sec-title">Edit marketing content <span style="text-transform:none;font-weight:600;color:#8fa6b3">· changes go live instantly, no deploy</span></div>
     <div class="card editor">
       <div class="toggle-row">
@@ -161,7 +167,20 @@ async function enterDash(){
   if(!session || session.user.email!==ADMIN_EMAIL){ return; }
   show('login',false); show('dash',true); show('signoutBtn',true);
   document.getElementById('whoami').textContent=session.user.email;
-  loadStats(); loadContent();
+  loadStats(); loadContent(); loadMessages();
+}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function loadMessages(){
+  const tb=document.getElementById('msgRows');
+  const {data,error}=await sb.from('contact_messages').select('*').order('created_at',{ascending:false}).limit(30);
+  tb.innerHTML='';
+  if(error){ tb.innerHTML='<tr><td colspan="5" style="color:#c0392b">'+esc(error.message)+'</td></tr>'; return; }
+  (data||[]).forEach(m=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="white-space:nowrap">${esc((m.created_at||'').slice(0,10))}</td><td>${esc(m.topic)}</td><td>${esc(m.name)||'—'}</td><td><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></td><td style="max-width:360px">${esc(m.message)}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!data||!data.length) tb.innerHTML='<tr><td colspan="5" style="color:#8fa6b3">No messages yet</td></tr>';
 }
 async function loadStats(){
   try{

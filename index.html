@@ -217,6 +217,7 @@ section{padding:72px 0}
 .modal p{color:var(--muted);font-size:14.5px;margin-bottom:22px}
 .modal .close-x{position:absolute;top:14px;right:18px;background:none;font-size:22px;color:#8fb6cc}
 .modal input[type=text],.modal input[type=email],.modal input[type=password]{width:100%;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:15px;margin-bottom:12px;outline:none;color:var(--ink);box-sizing:border-box}
+.modal textarea{width:100%;min-height:110px;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:15px;margin-bottom:12px;outline:none;color:var(--ink);box-sizing:border-box;resize:vertical}
 .modal input::placeholder{font-size:13.5px;color:#7a94a3}
 .modal input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
 .gift-banner{background:linear-gradient(120deg,#fbbf24,#f97316);color:#fff;font-size:13px;font-weight:700;border-radius:12px;padding:10px 14px;margin-bottom:16px}
@@ -442,9 +443,26 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
 <footer>
   <div class="wrap">
     <span>© 2026 Summy Garden Studio · AI Headshot Studio</span>
-    <span><a onclick="openModal('privacyModal')" style="cursor:pointer">Privacy</a><a onclick="openModal('termsModal')" style="cursor:pointer">Terms</a><a onclick="openModal('privacyModal')" style="cursor:pointer">Biometric data policy</a><a href="mailto:support@summygarden.studio">Support</a></span>
+    <span><a onclick="openModal('privacyModal')" style="cursor:pointer">Privacy</a><a onclick="openModal('termsModal')" style="cursor:pointer">Terms</a><a onclick="openModal('privacyModal')" style="cursor:pointer">Biometric data policy</a><a onclick="openContact()" style="cursor:pointer">Contact us</a></span>
   </div>
 </footer>
+<div class="modal-backdrop" id="contactModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('contactModal')">×</button>
+    <div class="icon-tile tile-teal">✉️</div>
+    <h3>Contact us</h3>
+    <p style="margin-bottom:16px">Ask for a quotation, share feedback — or anything else. We reply by email, usually within 1–2 working days.</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap" id="ctTopics">
+      <button class="cat-pill active" data-t="Quotation" onclick="ctTopic(this)">💼 Quotation</button>
+      <button class="cat-pill" data-t="Feedback" onclick="ctTopic(this)">💬 Feedback</button>
+      <button class="cat-pill" data-t="Other" onclick="ctTopic(this)">✨ Anything else</button>
+    </div>
+    <input type="text" id="ctName" placeholder="Your name">
+    <input type="email" id="ctEmail" placeholder="Your email">
+    <textarea id="ctMsg" placeholder="Tell us what you need…"></textarea>
+    <button class="btn-primary" style="width:100%;justify-content:center" onclick="submitContact()">Send message</button>
+  </div>
+</div>
 <div class="modal-backdrop" id="register">
   <div class="modal">
     <button class="close-x" onclick="closeModal('register')">×</button>
@@ -876,6 +894,28 @@ function copyRefCode(){
   const inp=document.getElementById('refCode'); inp.select();
   try{ navigator.clipboard.writeText(inp.value); }catch(e){ document.execCommand('copy'); }
   toast('Referral code copied!');
+}
+
+/* ---------- Contact us ---------- */
+let ctSel='Quotation';
+function ctTopic(b){ ctSel=b.dataset.t; document.querySelectorAll('#ctTopics .cat-pill').forEach(x=>x.classList.toggle('active',x===b)); }
+function openContact(){
+  if(user){ const n=document.getElementById('ctName'), e=document.getElementById('ctEmail');
+    if(!n.value) n.value=user.name||''; if(!e.value) e.value=user.email||''; }
+  openModal('contactModal');
+}
+async function submitContact(){
+  const name=document.getElementById('ctName').value.trim();
+  const email=document.getElementById('ctEmail').value.trim().toLowerCase();
+  const msg=document.getElementById('ctMsg').value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast('Please enter a valid email'); return; }
+  if(!msg){ toast('Please write a short message'); return; }
+  if(!sb){ location.href='mailto:support@summygarden.studio?subject='+encodeURIComponent('['+ctSel+'] Summy Garden Studio')+'&body='+encodeURIComponent(msg); return; }
+  const {error}=await sb.from('contact_messages').insert({ name, email, topic:ctSel, message:msg, user_id: sbSession?sbSession.user.id:null });
+  if(error){ toast('Could not send — please email support@summygarden.studio'); return; }
+  document.getElementById('ctMsg').value='';
+  closeModal('contactModal');
+  toast('✉️ Thanks — message received! We\'ll reply to '+email);
 }
 
 /* ---------- State ---------- */

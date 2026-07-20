@@ -97,6 +97,34 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
       <div class="stat"><div class="ico i4">🤝</div><b id="sRefs">–</b><span>Referral rewards</span></div>
     </div>
 
+    <div class="sec-title">Business dashboard</div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">From <input type="date" id="bdFrom" style="width:auto;margin:0 8px 0 4px"></label>
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">To <input type="date" id="bdTo" style="width:auto;margin:0 8px 0 4px"></label>
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">Cost per AI image (US$) <input type="number" step="0.001" id="bdCost" value="0.039" style="width:90px;margin:0 8px 0 4px"></label>
+        <button class="btn" onclick="renderBiz()">Apply</button>
+        <button class="btn dark" onclick="exportUsersCSV()">⬇ Export users CSV</button>
+        <span class="save-note" id="bdNote">Loading business data…</span>
+      </div>
+      <div class="stats" style="margin-top:18px">
+        <div class="stat"><div class="ico i1">👥</div><b id="bdReg">–</b><span>Registered accounts</span></div>
+        <div class="stat"><div class="ico i4">✅</div><b id="bdConf">–</b><span>Email confirmed</span></div>
+        <div class="stat"><div class="ico i3">✉️</div><b id="bdUnconf">–</b><span>Email not confirmed</span></div>
+        <div class="stat"><div class="ico i2">💳</div><b id="bdPaying">–</b><span>Paying members</span></div>
+        <div class="stat"><div class="ico i4">🔁</div><b id="bdReturning">–</b><span>Returning members (2+ days active)</span></div>
+      </div>
+      <div class="stats" style="margin-top:14px">
+        <div class="stat"><div class="ico i4">💰</div><b id="bdRev">–</b><span id="bdRevNote">Revenue in range (≈US$)</span></div>
+        <div class="stat"><div class="ico i3">🤖</div><b id="bdTok">–</b><span>AI token cost in range (est., US$)</span></div>
+        <div class="stat"><div class="ico i1">📈</div><b id="bdNet">–</b><span>Net profit in range (≈US$)</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:6px;overflow-x:auto">
+      <table><thead><tr><th>Email</th><th>Name</th><th>Confirmed</th><th>Credits</th><th>Shots</th><th>Spent (≈US$)</th><th>Returning</th><th>Joined</th><th>Last active</th></tr></thead>
+      <tbody id="bizRows"><tr><td colspan="9" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
+    </div>
+
     <div class="sec-title">Recent members</div>
     <div class="card">
       <table><thead><tr><th>Name</th><th>Referral code</th><th>Credits</th><th>Referrals</th><th>Joined</th></tr></thead>
@@ -171,7 +199,77 @@ async function enterDash(){
   if(!session || session.user.email!==ADMIN_EMAIL){ return; }
   show('login',false); show('dash',true); show('signoutBtn',true);
   document.getElementById('whoami').textContent=session.user.email;
-  loadStats(); loadContent(); loadMessages();
+  loadStats(); loadContent(); loadMessages(); loadBiz();
+}
+
+/* ---------- Business dashboard ---------- */
+const FX={usd:1,gbp:1.27,hkd:0.128,eur:1.09,cny:0.14}; // approx rates for the ≈US$ figures
+const toUSD=(amt,cur)=>(+amt||0)*(FX[String(cur||'usd').toLowerCase()]??1);
+let BD=null, bizComputed=[];
+async function loadBiz(){
+  try{
+    const r=await fetch('/.netlify/functions/admin-stats',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:session.access_token})});
+    if(!r.ok){ const d=await r.json().catch(()=>({})); document.getElementById('bdNote').textContent='Business data unavailable: '+(d.error||r.status); return; }
+    BD=await r.json();
+    const today=new Date(), past=new Date(Date.now()-29*86400000);
+    if(!document.getElementById('bdFrom').value) document.getElementById('bdFrom').value=past.toISOString().slice(0,10);
+    if(!document.getElementById('bdTo').value) document.getElementById('bdTo').value=today.toISOString().slice(0,10);
+    renderBiz();
+  }catch(e){ document.getElementById('bdNote').textContent='Business data failed to load'; }
+}
+function renderBiz(){
+  if(!BD) return;
+  const from=document.getElementById('bdFrom').value||'0000', to=(document.getElementById('bdTo').value||'9999')+'T23:59:59Z';
+  const inRange=d=>d&&d>=from&&d<=to;
+  const profs={}; (BD.profiles||[]).forEach(p=>profs[p.id]=p);
+  const gensBy={}, daysBy={};
+  (BD.generations||[]).forEach(g=>{ (gensBy[g.user_id]=gensBy[g.user_id]||[]).push(g.created_at);
+    (daysBy[g.user_id]=daysBy[g.user_id]||new Set()).add((g.created_at||'').slice(0,10)); });
+  const spendBy={};
+  (BD.purchases||[]).forEach(p=>{ spendBy[p.user_id]=(spendBy[p.user_id]||0)+toUSD(p.amount,p.currency); });
+  bizComputed=(BD.users||[]).map(u=>({
+    email:u.email, name:(profs[u.id]&&profs[u.id].name)||'', confirmed:u.confirmed,
+    credits:(profs[u.id]&&profs[u.id].credits)??'', shots:(gensBy[u.id]||[]).length,
+    spentUSD:+(spendBy[u.id]||0).toFixed(2), returning:(daysBy[u.id]?daysBy[u.id].size:0)>=2,
+    joined:(u.created_at||'').slice(0,10), last:(u.last_sign_in_at||'').slice(0,10)
+  }));
+  const conf=bizComputed.filter(x=>x.confirmed).length;
+  document.getElementById('bdReg').textContent=bizComputed.length;
+  document.getElementById('bdConf').textContent=conf;
+  document.getElementById('bdUnconf').textContent=bizComputed.length-conf;
+  document.getElementById('bdPaying').textContent=bizComputed.filter(x=>x.spentUSD>0).length;
+  document.getElementById('bdReturning').textContent=bizComputed.filter(x=>x.returning).length;
+  const purch=(BD.purchases||[]).filter(p=>inRange(p.created_at));
+  const revUSD=purch.reduce((a,p)=>a+toUSD(p.amount,p.currency),0);
+  const byCur={}; purch.forEach(p=>{ const c=(p.currency||'usd').toUpperCase(); byCur[c]=(byCur[c]||0)+(+p.amount||0); });
+  const gensRange=(BD.generations||[]).filter(g=>inRange(g.created_at)).length;
+  const cost=parseFloat(document.getElementById('bdCost').value)||0;
+  const tok=gensRange*4*cost;
+  document.getElementById('bdRev').textContent='$'+revUSD.toFixed(2);
+  document.getElementById('bdRevNote').textContent='Revenue in range (≈US$)'+(Object.keys(byCur).length?' · '+Object.entries(byCur).map(([c,v])=>c+' '+v.toFixed(2)).join(' + '):'');
+  document.getElementById('bdTok').textContent='$'+tok.toFixed(2);
+  const net=revUSD-tok;
+  const netEl=document.getElementById('bdNet'); netEl.textContent=(net<0?'-$':'$')+Math.abs(net).toFixed(2); netEl.style.color=net<0?'#c0392b':'#0f6e56';
+  document.getElementById('bdNote').textContent='Data as of '+new Date(BD.generated_at).toLocaleTimeString()+' · '+gensRange+' generations ('+gensRange*4+' AI images) in range';
+  const tb=document.getElementById('bizRows'); tb.innerHTML='';
+  bizComputed.forEach(x=>{ const tr=document.createElement('tr');
+    tr.innerHTML=`<td><a href="mailto:${esc(x.email)}">${esc(x.email)}</a></td><td>${esc(x.name)||'—'}</td>
+      <td>${x.confirmed?'✅':'✖️ not confirmed'}</td><td>${x.credits}</td><td>${x.shots}</td>
+      <td>$${x.spentUSD.toFixed(2)}</td><td>${x.returning?'🔁 yes':'—'}</td><td>${esc(x.joined)}</td><td>${esc(x.last)||'—'}</td>`;
+    tb.appendChild(tr); });
+  if(!bizComputed.length) tb.innerHTML='<tr><td colspan="9" style="color:#8fa6b3">No accounts yet</td></tr>';
+}
+function exportUsersCSV(){
+  if(!bizComputed.length){ toast('No data to export yet'); return; }
+  const head=['email','name','email_confirmed','credits','generations','spent_usd_approx','returning','joined','last_active'];
+  const csv=[head.join(',')].concat(bizComputed.map(x=>[x.email,x.name,x.confirmed,x.credits,x.shots,x.spentUSD,x.returning,x.joined,x.last]
+    .map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));
+  a.download='summy-garden-members-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('CSV exported — '+bizComputed.length+' members');
 }
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function loadMessages(){

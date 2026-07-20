@@ -207,7 +207,7 @@ export default async (req) => {
     if (val === -1 || val === null) return Response.json({ error: "no credits" }, { status: 402, headers });
     remaining = val;
     await sbService(`/rest/v1/generations`, { method: "POST", headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: look || "" }) });
+      body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · ") }) });
   } else {
     // variants 1-3 ride on a generation started in the last 3 minutes
     const since = new Date(Date.now() - 3 * 60 * 1000).toISOString();

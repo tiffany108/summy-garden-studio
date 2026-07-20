@@ -158,6 +158,24 @@ const handler = async (req) => {
   const key = `${kind}-${i}${ver}`;
 
   let buf = (env.SCENE_CACHE ? await env.SCENE_CACHE.get(key, { type: "arrayBuffer" }) : null);
+
+  // Migration bridge: the thumbnails were generated once and cached on the old
+  // Netlify host. On a cold Cloudflare KV miss, pull the already-generated image
+  // from Netlify (no Gemini usage) and store it in KV so it persists going forward.
+  if (!buf) {
+    try {
+      const nres = await fetch(`https://summy-garden-studio.netlify.app/.netlify/functions/sample?kind=${encodeURIComponent(kind)}&i=${i}`);
+      const ct = nres.headers.get("content-type") || "";
+      if (nres.ok && ct.startsWith("image/")) {
+        const ab = await nres.arrayBuffer();
+        if (ab && ab.byteLength > 0) {
+          if (env.SCENE_CACHE) await env.SCENE_CACHE.put(key, ab);
+          buf = ab;
+        }
+      }
+    } catch (e) { /* fall through to Gemini */ }
+  }
+
   if (!buf) {
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) return new Response("not configured", { status: 501 });

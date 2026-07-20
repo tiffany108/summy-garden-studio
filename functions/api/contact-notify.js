@@ -1,9 +1,10 @@
+let env;
 // Summy Garden Studio — forward each Contact-us message to the studio mailbox.
 // Env: RESEND_API_KEY (required), CONTACT_NOTIFY_TO (optional, defaults below),
 // EMAIL_FROM (optional). Reply-To is the visitor, so replying reaches them directly.
 const NOTIFY_TO = env.CONTACT_NOTIFY_TO || "gogonewnews@gmail.com";
 
-const handler = async (req, env) => {
+const handler = async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -43,4 +44,4 @@ const handler = async (req, env) => {
   return Response.json({ ok: true }, { status: 200, headers });
 };
 
-export async function onRequest(context){ return handler(context.request, context.env); }
+export async function onRequest(context){ env = context.env; return handler(context.request); }

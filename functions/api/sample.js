@@ -1,3 +1,4 @@
+let env;
 // Summy Garden Studio — AI thumbnails for the gallery scenes AND the studio option pickers.
 // Each image is generated ONCE via Gemini and cached in Netlify Blobs, then served forever.
 const MODEL = "gemini-2.5-flash-image";
@@ -148,7 +149,7 @@ function buildPrompt(kind, i) {
   return set[i][1] + ", photorealistic, high quality, soft professional lighting.";
 }
 
-const handler = async (req, env) => {
+const handler = async (req) => {
   const url = new URL(req.url);
   const kind = ["p","b","style","outfit","pose","expr","osp"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
   const maxI = kind === "p" || kind === "b" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
@@ -179,4 +180,4 @@ const handler = async (req, env) => {
   return new Response(buf, { headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=31536000, immutable", "Access-Control-Allow-Origin": "*" } });
 };
 
-export async function onRequest(context){ return handler(context.request, context.env); }
+export async function onRequest(context){ env = context.env; return handler(context.request); }

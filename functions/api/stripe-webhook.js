@@ -1,3 +1,4 @@
+let env;
 // Summy Garden Studio — Stripe webhook: credit the account after successful payment.
 // Env: STRIPE_WEBHOOK_SECRET, SUPABASE_SECRET_KEY.
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
@@ -12,7 +13,7 @@ async function verify(payload, sigHeader, secret) {
   return hex === v1;
 }
 
-const handler = async (req, env) => {
+const handler = async (req) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
   const secret = env.STRIPE_WEBHOOK_SECRET;
   const sbKey = env.SUPABASE_SECRET_KEY;
@@ -53,4 +54,4 @@ const handler = async (req, env) => {
   return new Response("ok", { status: 200 });
 };
 
-export async function onRequest(context){ return handler(context.request, context.env); }
+export async function onRequest(context){ env = context.env; return handler(context.request); }

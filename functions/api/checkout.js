@@ -1,3 +1,4 @@
+let env;
 // Summy Garden Studio — create a Stripe Checkout Session.
 // Env: STRIPE_SECRET_KEY. Verifies the Supabase session so credits land on the right account.
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
@@ -14,7 +15,7 @@ async function sbUser(token) {
   return r.ok ? await r.json() : null;
 }
 
-const handler = async (req, env) => {
+const handler = async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -55,4 +56,4 @@ const handler = async (req, env) => {
   return Response.json({ url: data.url }, { status: 200, headers });
 };
 
-export async function onRequest(context){ return handler(context.request, context.env); }
+export async function onRequest(context){ env = context.env; return handler(context.request); }

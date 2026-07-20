@@ -1,3 +1,4 @@
+let env;
 // Summy Garden Studio — business stats for the admin dashboard.
 // Verifies the caller is the admin account, then gathers data with the
 // service key (bypasses RLS): all auth users (email + confirmation status),
@@ -7,7 +8,7 @@ const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 const ADMIN_EMAIL = "tiffany123@hotmail.com.hk";
 
-const handler = async (req, env) => {
+const handler = async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -41,4 +42,4 @@ const handler = async (req, env) => {
   return Response.json({ users, profiles, generations, purchases, generated_at: new Date().toISOString() }, { status: 200, headers });
 };
 
-export async function onRequest(context){ return handler(context.request, context.env); }
+export async function onRequest(context){ env = context.env; return handler(context.request); }

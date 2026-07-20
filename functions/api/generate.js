@@ -1,3 +1,4 @@
+let env;
 // Summy Garden Studio — identity-preserving headshot generation (streaming v2)
 // Auth + credits enforced via Supabase. Env: GEMINI_API_KEY, SUPABASE_SECRET_KEY.
 const MODEL = "gemini-2.5-flash-image";
@@ -180,7 +181,7 @@ async function sbService(path, opts = {}) {
   return fetch(`${SB_URL}${path}`, { ...opts, headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(opts.headers || {}) } });
 }
 
-const handler = async (req, env) => {
+const handler = async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -268,4 +269,4 @@ const handler = async (req, env) => {
   }
 };
 
-export async function onRequest(context){ return handler(context.request, context.env); }
+export async function onRequest(context){ env = context.env; return handler(context.request); }

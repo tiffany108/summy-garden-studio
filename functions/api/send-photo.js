@@ -1,3 +1,4 @@
+let env;
 // Summy Garden Studio — email a generated headshot to the signed-in member.
 // Env: RESEND_API_KEY (create a free account at resend.com), optional EMAIL_FROM
 // (defaults to Resend's onboarding sender, which can only deliver to the
@@ -5,7 +6,7 @@
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
-const handler = async (req, env) => {
+const handler = async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -44,4 +45,4 @@ const handler = async (req, env) => {
   return Response.json({ ok: true, to: user.email }, { status: 200, headers });
 };
 
-export async function onRequest(context){ return handler(context.request, context.env); }
+export async function onRequest(context){ env = context.env; return handler(context.request); }

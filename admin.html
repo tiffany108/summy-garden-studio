@@ -128,14 +128,18 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
       <div class="save-bar">
         <button class="btn" onclick="saveContent()">💾 Save changes</button>
         <button class="btn dark" onclick="loadContent()">Reset</button>
+        <a class="btn dark" href="/?edit=1" target="_blank" style="text-decoration:none">✏️ Live-edit any text on the site</a>
         <span class="save-note" id="saveNote"></span>
       </div>
       <div class="hint">💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.</div>
     </div>
 
-    <div class="sec-title">Live site preview</div>
+    <div class="sec-title">Live site preview
+      <button class="btn dark" style="margin-left:10px;padding:6px 13px;font-size:12px;text-transform:none;letter-spacing:0" onclick="fullscreenPreview()">⛶ Full screen</button>
+      <a class="btn dark" style="margin-left:4px;padding:6px 13px;font-size:12px;text-decoration:none;text-transform:none;letter-spacing:0" href="/" target="_blank">↗ Open in new tab</a>
+    </div>
     <div class="card" style="padding:14px">
-      <iframe class="preview-frame" id="preview" src="/?admin_preview=1"></iframe>
+      <iframe class="preview-frame" id="preview" src="/?admin_preview=1" allowfullscreen></iframe>
     </div>
   </div>
 </div>
@@ -228,6 +232,11 @@ async function saveContent(){
   const pv=document.getElementById('preview'); pv.src='/?admin_preview=1&t='+Date.now();
 }
 
+function fullscreenPreview(){
+  const f=document.getElementById('preview');
+  const rq=f.requestFullscreen||f.webkitRequestFullscreen||f.msRequestFullscreen;
+  if(rq) rq.call(f); else window.open('/','_blank');
+}
 /* restore an existing admin session on load */
 sb.auth.getSession().then(({data})=>{ session=data.session;
   if(session && session.user.email===ADMIN_EMAIL) enterDash();

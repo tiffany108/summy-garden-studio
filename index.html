@@ -218,6 +218,14 @@ section{padding:72px 0}
 .modal .close-x{position:absolute;top:14px;right:18px;background:none;font-size:22px;color:#8fb6cc}
 .modal input[type=text],.modal input[type=email],.modal input[type=password]{width:100%;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:15px;margin-bottom:12px;outline:none;color:var(--ink);box-sizing:border-box}
 .modal textarea{width:100%;min-height:110px;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:15px;margin-bottom:12px;outline:none;color:var(--ink);box-sizing:border-box;resize:vertical}
+/* admin live text edit mode */
+.editable{outline:1.5px dashed rgba(56,189,248,.55);outline-offset:2px;cursor:text}
+.editable:hover{outline-color:#f59e0b;background:rgba(56,189,248,.09)}
+#editBar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:999;display:flex;gap:10px;align-items:center;background:#062c45;color:#fff;border-radius:999px;padding:10px 16px;box-shadow:0 12px 30px rgba(0,0,0,.35);font-size:13px;flex-wrap:wrap;max-width:94vw}
+#editBar span{opacity:.75}
+#editBar button{background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:999px;padding:7px 14px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
+#editBar button:hover{background:rgba(255,255,255,.24)}
+#editBar button.save{background:var(--grad-brand,linear-gradient(120deg,#38bdf8,#4ade80))}
 .modal input::placeholder{font-size:13.5px;color:#7a94a3}
 .modal input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
 .gift-banner{background:linear-gradient(120deg,#fbbf24,#f97316);color:#fff;font-size:13px;font-weight:700;border-radius:12px;padding:10px 14px;margin-bottom:16px}
@@ -1408,7 +1416,7 @@ function applyLang(code){
 }
 const _lsEl=document.getElementById('langSel');
 LANG_LIST.forEach(([c,l])=>{const o=document.createElement('option');o.value=c;o.textContent=l;_lsEl.appendChild(o);});
-_lsEl.onchange=()=>{ applyLang(_lsEl.value); applyAdminOverrides(); };
+_lsEl.onchange=()=>{ applyLang(_lsEl.value); applyAdminOverrides(); applyTextOverrides(); };
 
 /* ---------- Admin content overrides ---------- */
 let adminContent=null;
@@ -1428,6 +1436,70 @@ async function loadAdminContent(){
     adminContent=(data&&data.value)||null; applyAdminOverrides(); }catch(e){}
 }
 
+/* ---------- Admin live text edit mode ---------- */
+const ADMIN_EMAIL='tiffany123@hotmail.com.hk';
+let textOverrides=null, editDirty={}, editModeOn=false;
+function cssPath(el){
+  const parts=[];
+  while(el && el.nodeType===1 && el.tagName!=='BODY'){
+    if(el.id){ parts.unshift('#'+el.id); break; }
+    let i=1,s=el; while(s=s.previousElementSibling){ if(s.tagName===el.tagName) i++; }
+    parts.unshift(el.tagName.toLowerCase()+':nth-of-type('+i+')');
+    el=el.parentElement;
+  }
+  return parts.join(' > ');
+}
+function applyTextOverrides(){
+  if(!textOverrides) return;
+  if((store.getItem('sgsLang')||'en')!=='en') return; /* edits override the English text only */
+  for(const sel in textOverrides){ try{ const el=document.querySelector(sel); if(el && !el.isContentEditable) el.innerHTML=textOverrides[sel]; }catch(e){} }
+}
+async function loadTextOverrides(){
+  if(!sb) return;
+  try{ const {data}=await sb.from('site_config').select('value').eq('key','text_overrides').maybeSingle();
+    textOverrides=(data&&data.value)||null; applyTextOverrides(); }catch(e){}
+}
+const EDIT_BLOCK='#lookGrid,#resultZone,#dashHistory,#currencyToggle,#annBar,#creditLabel,#comboSummary,#cookieBar,#lookTabs,#outfitFilter,#register,#dashboard,#paywall,#editBar,.amount,.toast';
+function startEditMode(){
+  if(editModeOn) return; editModeOn=true;
+  document.querySelectorAll('h1,h2,h3,h4,p,li,small,label,th,td,button,a,span,em,b').forEach(el=>{
+    if(el.closest(EDIT_BLOCK)) return;
+    if(el.children.length>3) return;
+    if(!el.textContent.trim()) return;
+    el.classList.add('editable');
+    el.addEventListener('input',()=>{ editDirty[cssPath(el)]=el.innerHTML; updateEditBar(); });
+    el.addEventListener('blur',()=>{ el.contentEditable='false'; });
+  });
+  document.addEventListener('click',ev=>{
+    if(!editModeOn) return;
+    if(ev.target.closest('#editBar')) return;
+    const el=ev.target.closest('.editable');
+    if(el){ ev.preventDefault(); ev.stopPropagation(); if(!el.isContentEditable){ el.contentEditable='true'; el.focus(); } }
+  },true);
+  const bar=document.createElement('div'); bar.id='editBar';
+  bar.innerHTML='<b>✏️ Live edit</b><span id="editCount">Click any text to edit · 0 changes</span>'+
+    '<button class="save" onclick="saveTextEdits()">💾 Save</button>'+
+    '<button onclick="resetTextEdits()">↺ Remove all edits</button>'+
+    '<button onclick="location.href=location.pathname">✕ Exit</button>';
+  document.body.appendChild(bar);
+  toast('✏️ Edit mode on — click any text, type, then Save');
+}
+function updateEditBar(){ const n=Object.keys(editDirty).length; const e=document.getElementById('editCount'); if(e) e.textContent='Click any text to edit · '+n+' change'+(n===1?'':'s'); }
+async function saveTextEdits(){
+  if(!Object.keys(editDirty).length){ toast('No changes yet — click some text first'); return; }
+  const merged=Object.assign({},textOverrides||{},editDirty);
+  const {error}=await sb.from('site_config').upsert({key:'text_overrides',value:merged,updated_at:new Date().toISOString()});
+  if(error){ toast('Save failed: '+error.message); return; }
+  textOverrides=merged; editDirty={}; updateEditBar();
+  toast('✓ Saved — this text is now live for all visitors');
+}
+async function resetTextEdits(){
+  const {error}=await sb.from('site_config').upsert({key:'text_overrides',value:{},updated_at:new Date().toISOString()});
+  if(error){ toast('Could not reset: '+error.message); return; }
+  textOverrides={}; editDirty={};
+  toast('All text edits removed — back to the built-in text'); setTimeout(()=>location.reload(),900);
+}
+
 /* ---------- Cookie consent ---------- */
 function setCookie(choice){ store.setItem('sgsCookie',choice); document.getElementById('cookieBar').classList.remove('show'); toast(choice==='all'?'Thanks — all cookies enabled':'Saved — essential cookies only'); }
 function initCookies(){ if(!store.getItem('sgsCookie')) setTimeout(()=>{ document.getElementById('cookieBar').classList.add('show'); },1200); }
@@ -1443,6 +1515,10 @@ updateAccountBtn();
 if(new URLSearchParams(location.search).get('paid')==='1'){ setTimeout(()=>toast('✓ Payment received — credits added to your account'),800); history.replaceState(null,'',location.pathname); }
 if(sb){
   sb.auth.getSession().then(async ({data})=>{ sbSession=data.session; await loadProfile(); updateCreditLabel(); updateAccountBtn();
+    if(new URLSearchParams(location.search).get('edit')==='1'){
+      if(sbSession && sbSession.user.email===ADMIN_EMAIL) startEditMode();
+      else toast('Live edit is for the admin account — please sign in as admin first');
+    }
     if(new URLSearchParams(location.search).get('paid')==='1'||sessionStorage.getItem('sgsPaid')){ sessionStorage.removeItem('sgsPaid'); setTimeout(async()=>{ await loadProfile(); updateCreditLabel(); },2500); } });
   sb.auth.onAuthStateChange(async (_e,session)=>{ sbSession=session; await loadProfile(); updateCreditLabel(); updateAccountBtn(); });
 }
@@ -1463,7 +1539,7 @@ const _sl=store.getItem('sgsLang')||'en'; _lsEl.value=I18N[_sl]?_sl:'en'; applyL
   }
   if(cur&&cur!=='USD'){ const b=document.querySelector('#currencyToggle button[data-cur="'+cur+'"]'); if(b) b.onclick(); }
 })();
-loadAdminContent(); initCookies();
+loadAdminContent(); loadTextOverrides(); initCookies();
 </script>
 </body>
 </html>

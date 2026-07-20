@@ -1220,7 +1220,8 @@ async function showResults(tick){
   const bg=bgById(selectedBg);
   const defs=[['A',''],['B','brightness(1.03)'],['C','contrast(1.05) saturate(.96)'],['D','sepia(.07) brightness(1.02)']];
   let urls=null, mode='local', usedAI=true;
-  try{ urls=await tryServerGenerate(bg); mode='server'; }catch(e){}
+  try{ urls=await tryServerGenerate(bg); mode='server'; }
+  catch(e){ if(!(e&&e.message==='no credits')) toast('⚠️ Studio AI render unavailable right now — showing a quick browser preview instead (your look settings are not applied)'); }
   if(!urls){
     try{
       const pc=getPortraitCanvas();

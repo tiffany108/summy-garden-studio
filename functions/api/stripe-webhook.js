@@ -37,17 +37,31 @@ const handler = async (req) => {
         body: JSON.stringify({ user_id: uid, session_id: s.id, pack: s.metadata?.pack || "",
           credits: add, amount: (s.amount_total ?? 0) / 100, currency: s.currency || "usd" }),
       });
-      const inserted = rec.ok ? await rec.json() : [];
-      // only credit the account when this event hasn't been processed before
-      if (!rec.ok || (Array.isArray(inserted) && inserted.length > 0)) {
+      // NEVER report success on a failed write — return 5xx so Stripe retries and the error is visible.
+      if (!rec.ok) {
+        const detail = await rec.text().catch(() => "");
+        return new Response(`purchase insert failed: ${rec.status} ${detail}`.slice(0, 480), { status: 500 });
+      }
+      // Newly inserted rows come back in the array; an empty array means this session was
+      // already processed (duplicate) — so credit exactly once.
+      const inserted = await rec.json().catch(() => []);
+      if (Array.isArray(inserted) && inserted.length > 0) {
         const g = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${uid}&select=credits`, { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` } });
-        const rows = g.ok ? await g.json() : [];
+        if (!g.ok) {
+          const detail = await g.text().catch(() => "");
+          return new Response(`profile read failed: ${g.status} ${detail}`.slice(0, 480), { status: 500 });
+        }
+        const rows = await g.json().catch(() => []);
         const cur = rows[0]?.credits ?? 0;
-        await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${uid}`, {
+        const up = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${uid}`, {
           method: "PATCH",
           headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify({ credits: cur + add }),
         });
+        if (!up.ok) {
+          const detail = await up.text().catch(() => "");
+          return new Response(`credit update failed: ${up.status} ${detail}`.slice(0, 480), { status: 500 });
+        }
       }
     }
   }

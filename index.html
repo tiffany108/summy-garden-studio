@@ -792,7 +792,7 @@ async function loadProfile(){
   const { data, error } = await sb.from('profiles').select('*').eq('id', sbSession.user.id).single();
   if(error||!data){ user=null; return; }
   user = { email: sbSession.user.email, name: data.name||sbSession.user.email.split('@')[0],
-           credits: data.credits, code: data.ref_code, refCount: data.ref_count,
+           credits: data.credits, code: data.ref_code, refCount: data.ref_count, tester: !!data.is_tester,
            joined: (data.created_at||'').slice(0,10), history: [], shots: [] };
   try{
     const g = await sb.from('generations').select('scene,look,created_at').order('created_at',{ascending:false}).limit(18);
@@ -1257,7 +1257,7 @@ async function tryServerGenerate(bg){
 document.getElementById('genBtn').onclick=()=>{
   if(!cropImg){toast('Please upload a selfie first 📷');return;}
   if(!user){ toast('Create your free account to generate — 1 free credit on sign-up'); accountClick(); return; }
-  if(getCredits()<=0){openModal('paywall');return;}
+  if(!(user&&user.tester) && getCredits()<=0){openModal('paywall');return;}
   runGeneration();
 };
 function runGeneration(){
@@ -1293,7 +1293,7 @@ async function showResults(tick){
     }catch(e){ clearInterval(tick); toast('Something went wrong — try re-uploading your photo'); return; }
   }
   clearInterval(tick);
-  if(mode!=='server') setCredits(Math.max(getCredits()-1,0));
+  if(mode!=='server' && !(user&&user.tester)) setCredits(Math.max(getCredits()-1,0));
   if(user) user.history.unshift({bg:bg.id, attire:selectedOutfit, date:new Date().toISOString().slice(5,10)});
   if(mode==='server') setTimeout(loadShots, 2500); // pick up freshly saved headshots for the dashboard
   const zone=document.getElementById('resultZone');
@@ -1304,7 +1304,7 @@ async function showResults(tick){
     `<div class="headshot-frame"><img class="comp" src="${urls[i]}" alt="Headshot variant ${d[0]}">
      <span class="tag">Variant ${d[0]}</span><a class="dl mail" onclick="emailShot(${i})">✉️ Email</a><a class="dl" download="summy-garden-headshot-${d[0]}.png" href="${urls[i]}">⤓ PNG</a></div>`).join('')+
     `</div><p class="sim-note" style="margin-top:18px">${TX('res_scene')}: <b style="color:#fff">${bgName(bg)}</b> · ${TX('res_look')}: <b style="color:#fff">${xl(selectedOutfit)}</b> · ${aiNote} · ${TX('left_t').replace('{n}',getCredits())}${user?' · '+TX('savedTo'):''}${joinCta}</p>`;
-  if(getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
+  if(!(user&&user.tester) && getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
   else toast('Headshots ready! Click ⤓ PNG to download'+(user?' · saved to your dashboard':''));
   try{
     if(navigator.vibrate) navigator.vibrate([120,60,120]);
@@ -1334,7 +1334,7 @@ async function emailShot(i){
 /* ---------- Credits / paywall / checkout ---------- */
 function updateCreditLabel(){
   const n=getCredits();
-  document.getElementById('creditLabel').textContent = user ? (n+' '+(n===1?LT().credit:LT().credits)) : '★ '+TX('join');
+  document.getElementById('creditLabel').textContent = user ? ((user.tester?'∞':n)+' '+((user.tester||n!==1)?LT().credits:LT().credit)) : '★ '+TX('join');
 }
 function updateAccountBtn(){
   const b=document.getElementById('accountBtn'); if(!b) return;

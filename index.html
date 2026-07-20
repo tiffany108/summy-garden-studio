@@ -233,6 +233,8 @@ section{padding:72px 0}
 .dash-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .dash-frame small{position:absolute;bottom:4px;left:6px;right:6px;color:#fff;font-size:8.5px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash-empty{font-size:13px;color:var(--muted);background:#f4f9fc;border-radius:12px;padding:18px;text-align:center}
+.dash-dl{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(6,44,69,.65);color:#fff;font-size:13px;font-weight:800;place-items:center;text-decoration:none;cursor:pointer;transition:.15s}
+.dash-dl:hover{background:var(--accent-bright,#38bdf8)}
 .signout{background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;margin-top:16px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);color:#fff;font-size:14px;font-weight:600;border-radius:999px;padding:13px 24px;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:.35s cubic-bezier(.2,.8,.2,1);z-index:120}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -764,10 +766,18 @@ async function loadProfile(){
   if(error||!data){ user=null; return; }
   user = { email: sbSession.user.email, name: data.name||sbSession.user.email.split('@')[0],
            credits: data.credits, code: data.ref_code, refCount: data.ref_count,
-           joined: (data.created_at||'').slice(0,10), history: [] };
+           joined: (data.created_at||'').slice(0,10), history: [], shots: [] };
   try{
     const g = await sb.from('generations').select('scene,look,created_at').order('created_at',{ascending:false}).limit(18);
     if(g.data) user.history = g.data.map(r=>({bg:r.scene, attire:r.look, date:(r.created_at||'').slice(5,10)}));
+  }catch(e){}
+  await loadShots();
+}
+async function loadShots(){
+  if(!sb||!user) return;
+  try{
+    const s = await sb.from('headshots').select('scene,look,variant,path,created_at').order('created_at',{ascending:false}).limit(24);
+    if(s.data) user.shots = s.data;
   }catch(e){}
 }
 function authMsg(text){ let m=document.getElementById('authMsg');
@@ -825,19 +835,37 @@ function renderDashboard(){
   document.getElementById('dashHello').textContent = 'My Studio — '+user.name;
   document.getElementById('dashEmail').textContent = user.email+' · member since '+user.joined;
   document.getElementById('dashCredits').textContent = user.credits;
-  document.getElementById('dashShots').textContent = user.history.length;
+  document.getElementById('dashShots').textContent = (user.shots&&user.shots.length) ? user.shots.length : user.history.length;
   document.getElementById('dashRefs').textContent = user.refCount||0;
   document.getElementById('refLink').value = location.origin+location.pathname+'?ref='+user.code;
   document.getElementById('refCode').value = user.code;
   const h=document.getElementById('dashHistory'); h.innerHTML='';
-  document.getElementById('dashEmpty').style.display = user.history.length ? 'none' : 'block';
-  user.history.forEach(it=>{
-    const bg=bgById(it.bg);
-    const d=document.createElement('div'); d.className='dash-frame';
-    if(bg) d.style.backgroundImage=`url("${bg.image}")`;
-    d.innerHTML=`<small>${bg?bg.name:(it.bg||'')} · ${it.date}</small>`;
-    h.appendChild(d);
-  });
+  const hasShots = user.shots && user.shots.length;
+  document.getElementById('dashEmpty').style.display = (hasShots||user.history.length) ? 'none' : 'block';
+  if(hasShots){
+    user.shots.forEach(s=>{
+      const bg=bgById(s.scene);
+      const d=document.createElement('div'); d.className='dash-frame';
+      if(bg) d.style.backgroundImage=`url("${bg.image}")`;
+      d.innerHTML=`<img alt="Saved headshot" loading="lazy" style="display:none">
+        <small>${bg?bg.name:(s.scene||'')} · ${(s.created_at||'').slice(5,10)}</small>
+        <a class="dash-dl" title="Download" style="display:none">⤓</a>`;
+      h.appendChild(d);
+      sb.storage.from('headshots').createSignedUrl(s.path, 3600).then(r=>{
+        const u = r && r.data && r.data.signedUrl; if(!u) return;
+        const img=d.querySelector('img'); img.src=u; img.style.display='block';
+        const a=d.querySelector('.dash-dl'); a.href=u; a.download='summy-garden-headshot.png'; a.style.display='grid';
+      }).catch(()=>{});
+    });
+  } else {
+    user.history.forEach(it=>{
+      const bg=bgById(it.bg);
+      const d=document.createElement('div'); d.className='dash-frame';
+      if(bg) d.style.backgroundImage=`url("${bg.image}")`;
+      d.innerHTML=`<small>${bg?bg.name:(it.bg||'')} · ${it.date}</small>`;
+      h.appendChild(d);
+    });
+  }
 }
 function copyRefLink(){
   const inp=document.getElementById('refLink'); inp.select();
@@ -1205,6 +1233,7 @@ async function showResults(tick){
   clearInterval(tick);
   if(mode!=='server') setCredits(Math.max(getCredits()-1,0));
   if(user) user.history.unshift({bg:bg.id, attire:selectedOutfit, date:new Date().toISOString().slice(5,10)});
+  if(mode==='server') setTimeout(loadShots, 2500); // pick up freshly saved headshots for the dashboard
   const zone=document.getElementById('resultZone');
   const joinCta='';
   const aiNote = mode==='server' ? 'studio AI render — identity preserved' : (usedAI ? 'AI cut-out + skin & tone enhanced' : 'soft-blend mode + tone enhanced');

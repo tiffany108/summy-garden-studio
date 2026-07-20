@@ -243,6 +243,22 @@ export default async (req) => {
     const img = parts.find((p) => p.inlineData || p.inline_data);
     if (!img) return Response.json({ error: "no image in response" }, { status: 502, headers });
     const d = img.inlineData || img.inline_data;
+    // Save this variant to the user's dashboard (best effort — never blocks the response)
+    try {
+      const outMime = d.mimeType || d.mime_type || "image/png";
+      const ext = outMime.includes("jpeg") ? "jpg" : "png";
+      const path = `${authUser.id}/${Date.now()}_v${vi}.${ext}`;
+      const sbKey = process.env.SUPABASE_SECRET_KEY;
+      const up = await fetch(`${SB_URL}/storage/v1/object/headshots/${path}`, {
+        method: "POST",
+        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": outMime, "x-upsert": "true" },
+        body: Buffer.from(d.data, "base64"),
+      });
+      if (up.ok) {
+        await sbService(`/rest/v1/headshots`, { method: "POST", headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path }) });
+      }
+    } catch {}
     const payload = JSON.stringify({ image: `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`, variant: vi, remaining, mode: "gemini" });
     const stream = new ReadableStream({ start(c) { const enc = new TextEncoder(); const CH = 65536;
       for (let i = 0; i < payload.length; i += CH) c.enqueue(enc.encode(payload.slice(i, i + CH))); c.close(); } });

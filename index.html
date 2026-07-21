@@ -1028,7 +1028,17 @@ let selectedOutfit=null, selectedStyle=null, selectedPose=null, selectedExpr=nul
 const LOOK_DEFAULTS={style:'Formal', outfit:'Auto', pose:'Straight on', expr:'Natural smile'};
 function resetLookSelections(){ selectedStyle=null; selectedOutfit=null; selectedPose=null; selectedExpr=null; if(typeof renderLook==='function'){ renderLook(); updateCombo(); } }
 function enhChanged(){ const v=document.getElementById('enhSlider').value; document.getElementById('enhVal').textContent=v+'%';
-  document.getElementById('enhLbl').textContent = v==0?'Original face':v<50?'Light touch':v<80?'Enhance':'Full polish'; }
+  document.getElementById('enhLbl').textContent = v==0?'Original face':v<50?'Light touch':v<80?'Enhance':'Full polish';
+  applyEnhPreview(); }
+/* Instant, free preview: a browser-side smoothing/glow approximation of the chosen
+   Enhance level, applied to the uploaded selfie (no AI calls, no cost). */
+function applyEnhPreview(){
+  const cv=document.getElementById('cropCanvas'); if(!cv) return;
+  const p=(+document.getElementById('enhSlider')?.value||0)/100;
+  cv.style.filter=p===0?'none':
+    `brightness(${(1+p*0.055).toFixed(3)}) contrast(${(1-p*0.055).toFixed(3)}) saturate(${(1+p*0.06).toFixed(3)}) blur(${(p*1.05).toFixed(2)}px)`;
+  cv.style.transition='filter .15s';
+}
 /* Ask for feedback once per session, a moment after the first successful generation */
 function maybeAskFeedback(){
   try{ if(sessionStorage.getItem('sgsFbAsked')) return; sessionStorage.setItem('sgsFbAsked','1'); }catch(e){}
@@ -1097,6 +1107,7 @@ function setupCropper(){
   zone.innerHTML=`<canvas id="cropCanvas" width="${CW}" height="${CH}"></canvas>
    <div class="zoom-row">🔍<input type="range" id="zoomSlider" min="100" max="320" value="100"></div>
    <div class="crop-hint">Drag to frame your head & shoulders · slide to zoom</div>
+   <div class="crop-hint" id="enhPrevNote" style="color:#4ade80">✨ Live preview: this photo simulates your Enhance level — move the slider to compare</div>
    <button class="change-photo" onclick="document.getElementById('fileInput').click()">Change photo</button>`;
   cropMin=Math.max(CW/cropImg.width, CH/cropImg.height); cropScale=cropMin;
   cropOX=(CW-cropImg.width*cropScale)/2; cropOY=(CH-cropImg.height*cropScale)/2;
@@ -1106,7 +1117,7 @@ function setupCropper(){
   cv.addEventListener('pointerup',()=>dragging=false);
   cv.addEventListener('wheel',ev=>{ev.preventDefault(); zoomCrop(cropScale*(ev.deltaY<0?1.06:0.94));},{passive:false});
   document.getElementById('zoomSlider').addEventListener('input',ev=>{ zoomCrop(cropMin*ev.target.value/100); });
-  drawCrop();
+  drawCrop(); applyEnhPreview();
   toast(TX('toast_photo'));
   const _cs=document.getElementById('catSel'); if(_cs){ _cs.scrollIntoView({behavior:'smooth',block:'center'}); }
 }

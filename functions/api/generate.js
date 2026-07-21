@@ -204,9 +204,18 @@ const handler = async (req) => {
   if (selfie.length > 6_000_000) return Response.json({ error: "image too large" }, { status: 413, headers });
 
   const vi = Math.min(Math.max(parseInt(body.variant ?? 0, 10) || 0, 0), VARIANTS.length - 1);
+  const isProof = body.proof === true;
   let remaining = null;
 
-  if (vi === 0) {
+  if (isProof) {
+    // Proof mode: one watermarked combination set, no credit spent now —
+    // max 3 per user per 2 hours; credits are charged when a photo is
+    // downloaded/emailed (see /api/unlock-photo).
+    const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const q = await sbService(`/rest/v1/headshots?user_id=eq.${authUser.id}&variant=eq.9&created_at=gte.${encodeURIComponent(since)}&select=id`);
+    const rows = q.ok ? await q.json() : [];
+    if (rows.length >= 3) return Response.json({ error: "You already created 3 combination sets — download your favourite, or try again later." }, { status: 409, headers });
+  } else if (vi === 0) {
     // variant 0 spends exactly one credit for the whole 4-variant generation
     const r = await sbService(`/rest/v1/rpc/consume_credit`, { method: "POST", body: JSON.stringify({ uid: authUser.id }) });
     const val = r.ok ? await r.json() : -1;
@@ -302,7 +311,8 @@ const handler = async (req) => {
     try {
       const outMime = d.mimeType || d.mime_type || "image/png";
       const ext = outMime.includes("jpeg") ? "jpg" : "png";
-      const path = `${authUser.id}/${Date.now()}_v${vi}.${ext}`;
+      const outVi = isProof ? 9 : vi; // 9 marks a proof/combination set
+      const path = `${authUser.id}/${Date.now()}_v${outVi}.${ext}`;
       const sbKey = env.SUPABASE_SECRET_KEY;
       const up = await fetch(`${SB_URL}/storage/v1/object/headshots/${path}`, {
         method: "POST",
@@ -311,7 +321,7 @@ const handler = async (req) => {
       });
       if (up.ok) {
         await sbService(`/rest/v1/headshots`, { method: "POST", headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path }) });
+          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: outVi, path }) });
       }
     } catch {}
     const payload = JSON.stringify({ image: `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`, variant: vi, remaining, mode: "gemini" });

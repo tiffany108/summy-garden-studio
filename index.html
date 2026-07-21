@@ -390,7 +390,8 @@ html,body{overflow-x:clip}
           <div class="swatch-grid" id="swatchGrid"></div>
           <div class="sel-bg-info" id="selBgInfo"></div>
           <div class="combo-summary" id="comboSummary"></div>
-          <button type="button" id="prevBtn" onclick="quickPreview()" style="width:100%;margin:14px 0 12px;background:rgba(255,255,255,.08);color:#dff1fb;font-weight:700;font-size:14px;border:none;border-radius:13px;padding:13px 18px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(125,211,252,.4);font-family:inherit">👁 Free preview — see yourself in this scene first</button>
+          <button type="button" id="autoBtn" onclick="openAutoGallery()" style="width:100%;margin:14px 0 0;background:rgba(255,255,255,.08);color:#dff1fb;font-weight:700;font-size:14px;border:none;border-radius:13px;padding:13px 18px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(74,222,128,.45);font-family:inherit">✨ Ready-made looks — pick from our gallery</button>
+          <button type="button" id="prevBtn" onclick="quickPreview()" style="width:100%;margin:10px 0 12px;background:rgba(255,255,255,.08);color:#dff1fb;font-weight:700;font-size:14px;border:none;border-radius:13px;padding:13px 18px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(125,211,252,.4);font-family:inherit">📸 Create your photo sets — preview &amp; confirm combinations</button>
           <button class="gen-btn" id="genBtn">✨ Generate my headshots</button>
         </div>
         <div class="look-col">
@@ -431,9 +432,9 @@ html,body{overflow-x:clip}
             <b style="font-size:15px;color:#fff">💬 How were your headshots?</b>
             <p style="font-size:12.5px;color:#b8d4e3;margin:5px 0 10px">We'd love to hear what you think — it helps us make the studio better for you.</p>
             <textarea id="fbText" placeholder="Tell us anything — the results, the scenes, ideas…" style="width:100%;min-height:76px;padding:11px 13px;border:none;border-radius:11px;background:rgba(4,26,41,.6);box-shadow:inset 0 0 0 1px rgba(125,211,252,.25);color:#eaf6fc;font-family:inherit;font-size:13.5px;outline:none;resize:vertical;box-sizing:border-box;margin-bottom:10px"></textarea>
-            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-              <button class="btn-primary" style="justify-content:center" onclick="sendGenFeedback()">Send feedback</button>
-              <button type="button" onclick="hideFbCard()" style="background:none;border:none;padding:0;margin:0;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;color:#8fa6b3;text-decoration:underline">Not this moment</button>
+            <div style="display:flex;align-items:stretch;gap:10px">
+              <button class="btn-primary" style="flex:1.4;justify-content:center" onclick="sendGenFeedback()">Send feedback</button>
+              <button type="button" onclick="hideFbCard()" style="flex:1;cursor:pointer;border:none;border-radius:13px;padding:13px 16px;font-family:inherit;font-size:14px;font-weight:700;background:#0a3a5c;color:#dff1fb;box-shadow:inset 0 0 0 1.5px rgba(125,211,252,.35)">Not this moment</button>
             </div>
           </div>
           </div>
@@ -1562,8 +1563,8 @@ async function tryServerGenerate(bg){
 document.getElementById('genBtn').onclick=()=>{
   if(!cropImg){toast('Please upload a selfie first 📷');return;}
   if(!user){ toast('Create your free account to generate — 1 free credit on sign-up'); accountClick(); return; }
-  if(!(user&&user.tester) && getCredits()<=0){openModal('paywall');return;}
-  runGeneration();
+  quickPreview();
+  toast('Adjust your combination, then ✅ Confirm — up to '+PROOF_MAX+' sets; pay only for the photos you download');
 };
 /* Free instant preview: browser cut-out of the person composited onto the chosen
    scene backdrop with the current Enhance level — no AI call, no credits used.
@@ -1602,7 +1603,7 @@ function comboControlsHTML(){
     <select class="pv-sel" id="pvExpr" onchange="prevCombo('expr',this.value)">${pvOptions('expr','Auto · '+xl(LOOK_DEFAULTS.expr))}</select>
     <span class="pv-lbl">✨ Natural look — <b id="pvEnhVal" style="color:#4ade80">${ev}%</b> enhance</span>
     <input type="range" min="0" max="100" step="10" id="pvEnh" value="${ev}" oninput="prevEnh(this.value)" style="width:100%;accent-color:#4ade80">
-    <p style="font-size:11.5px;color:#9fc0d3;margin:7px 0 0;line-height:1.55">Lower % = more natural — <b style="color:#fff">0% keeps your original skin tone &amp; face shapes</b>. The preview picture shows your scene, framing &amp; enhance level; your outfit, style, pose &amp; expression choices are locked in here and applied by the AI when you ✨ Generate.</p>`;
+    <p style="font-size:11.5px;color:#9fc0d3;margin:7px 0 0;line-height:1.55">Lower % = more natural — <b style="color:#fff">0% keeps your original skin tone &amp; face shapes</b>. When you ✅ Confirm, the AI creates a real photo of you with exactly this combination — clothes, background, pose &amp; expression.</p>`;
 }
 function syncPvCtrls(){
   if(!document.getElementById('pvCtrls')) return;
@@ -1619,47 +1620,119 @@ function prevCombo(kind,val){ SETSEL[kind](val||null); renderLook(); updateCombo
 function prevScene(id){ if(bgById(id)) selectBg(id,{fromStudio:false}); }
 function prevEnh(v){ const s=document.getElementById('enhSlider'); if(s) s.value=v; const pv=document.getElementById('pvEnhVal'); if(pv) pv.textContent=Math.round(+v)+'%'; enhChanged(); }
 async function quickPreview(){
-  if(!cropImg){ toast('Upload your photo first, then preview'); document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'}); return; }
-  if(prevBusy){ prevPending=true; return; }
-  prevBusy=true;
-  const bg=bgById(selectedBg);
+  if(!cropImg){ toast('Upload your photo first'); document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   showResultsPanel();
   const zone=document.getElementById('resultZone');
   if(!document.getElementById('pvLayout')){
     zone.innerHTML=`<div id="pvLayout" style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;justify-content:center;text-align:left">
-      <div id="pvImgBox" style="flex:1 1 240px;max-width:320px;min-width:200px"><div class="result-empty" style="display:block;padding-top:60px"><div class="progress-label">👁 Building your free preview…</div></div></div>
+      <p style="flex-basis:100%;margin:0;font-size:13.5px;color:#eaf6fc"><b>📸 Create up to ${PROOF_MAX} combination sets</b> — confirm each one, then choose the best to download. <b style="color:#4ade80">Credits are only charged for the photos you download or email (watermark removed).</b></p>
+      <div id="pvImgBox" style="flex:1 1 240px;max-width:320px;min-width:200px"></div>
       <div id="pvCtrls" style="flex:1 1 230px;max-width:300px;min-width:214px">${comboControlsHTML()}</div>
+      <div id="proofStrip" style="flex-basis:100%"></div>
     </div>`;
   } else syncPvCtrls();
-  try{
-    const pc=getPortraitCanvas();
-    const mask=await segmentPortrait(pc);
-    const person=personLayer(pc,mask);
-    const p=(+document.getElementById('enhSlider')?.value||0)/100;
-    const extra=p===0?'':`brightness(${(1+p*0.07).toFixed(3)}) contrast(${(1-p*0.08).toFixed(3)}) saturate(${(1+p*0.07).toFixed(3)}) blur(${(p*0.7).toFixed(2)}px)`;
-    const url=await composeVariant(bg,person,extra,true);
-    previewActive=true;
-    const box=document.getElementById('pvImgBox');
-    const oI=selectedOutfit?OPTLABELS.outfit.indexOf(selectedOutfit):-1;
-    const chip=t=>'<span style="background:rgba(6,44,69,.78);backdrop-filter:blur(6px);color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;padding:4px 9px;white-space:nowrap">'+t+'</span>';
-    const combos=[];
-    if(oI>=0) combos.push(chip('👔 '+xl(selectedOutfit)));
-    if(selectedStyle) combos.push(chip('🎨 '+xl(selectedStyle)));
-    if(selectedPose) combos.push(chip('🧍 '+xl(selectedPose)));
-    if(selectedExpr) combos.push(chip('🙂 '+xl(selectedExpr)));
-    const overlay=combos.length||oI>=0?`
-      <div style="position:absolute;left:8px;right:8px;bottom:34px;display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-start;align-items:flex-end">
-        ${oI>=0?'<img src="'+optImg('outfit',oI)+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:9px;box-shadow:0 0 0 2px rgba(255,255,255,.85),0 4px 12px rgba(0,0,0,.4)">':''}
-        <div style="display:flex;flex-wrap:wrap;gap:5px;max-width:calc(100% - 66px)">${combos.join('')}${chip('<span style=\"color:#4ade80\">applied at ✨ Generate</span>')}</div>
-      </div>`:'';
-    if(box) box.innerHTML=`<div class="headshot-frame"><img class="comp" src="${url}" alt="Free preview"><span class="tag">👁 Free preview</span>${overlay}</div>
-      <p class="sim-note" style="margin-top:12px;text-align:left">Free watermarked preview — no credits used. Scene: <b style="color:#fff">${bgName(bg)}</b>${selectedOutfit?' · <b style="color:#fff">'+xl(selectedOutfit)+'</b>':''} · <b style="color:#4ade80">${Math.round(p*100)}%</b> enhance. The picture shows your scene &amp; enhance level; the badges on it are your look choices — the AI applies them when you hit ✨ Generate (no watermark, far more polished).</p>`;
-  }catch(e){ zone.innerHTML='<p class="sim-note" style="padding-top:40px">Preview is unavailable on this device — you can still Generate normally.</p>'; }
-  prevBusy=false;
-  if(prevPending){ prevPending=false; clearTimeout(prevTimer); prevTimer=setTimeout(quickPreview,120); }
+  previewActive=true;
+  renderPvBox(); renderProofStrip();
 }
-/* after the first preview, any change of scene / look / enhance refreshes it automatically */
-function maybeRefreshPreview(){ if(!previewActive||!cropImg) return; clearTimeout(prevTimer); prevTimer=setTimeout(quickPreview,450); }
+/* combo changes refresh the panel state (controls + counter) — no AI call */
+function maybeRefreshPreview(){ if(!previewActive) return; clearTimeout(prevTimer); prevTimer=setTimeout(()=>{ syncPvCtrls(); renderPvBox(); },200); }
+/* ---------- Photo sets: real AI proofs, watermarked until download ---------- */
+let proofShots=[], proofBusy=false; const PROOF_MAX=3;
+function wmFromDataURL(src){
+  return new Promise(res=>{ const im=new Image(); im.onload=()=>{
+    const W=480,H=600; const c=document.createElement('canvas'); c.width=W; c.height=H;
+    const x=c.getContext('2d'); const sc=Math.max(W/im.width,H/im.height);
+    x.drawImage(im,(W-im.width*sc)/2,(H-im.height*sc)/2,im.width*sc,im.height*sc);
+    x.save(); x.globalAlpha=.18; x.fillStyle='#fff'; x.font='700 26px Inter,Arial,sans-serif'; x.textAlign='center';
+    x.translate(W/2,H/2); x.rotate(-Math.PI/7);
+    for(let r=-3;r<=3;r++) x.fillText('SUMMY GARDEN · PREVIEW',0,r*88);
+    x.restore();
+    x.save(); x.globalAlpha=.85; x.fillStyle='rgba(6,44,69,.75)'; x.fillRect(0,H-34,W,34);
+    x.fillStyle='#7dd3fc'; x.font='700 14px Inter,Arial,sans-serif'; x.textAlign='center';
+    x.fillText('Photo set · watermark clears when you download',W/2,H-12); x.restore();
+    res(c.toDataURL('image/png'));
+  }; im.src=src; });
+}
+function renderPvBox(){
+  const box=document.getElementById('pvImgBox'); if(!box) return;
+  const n=proofShots.length, last=n?proofShots[n-1]:null, canMore=n<PROOF_MAX;
+  box.innerHTML=(last
+    ? `<div class="headshot-frame"><img class="comp" src="${last.unlocked?last.clean:last.wm}" alt="Photo set ${n}"><span class="tag">📸 Photo set ${n}</span></div>`
+    : `<div style="aspect-ratio:4/5;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,58,92,.45);box-shadow:inset 0 0 0 1.5px rgba(125,211,252,.25);color:#b8d4e3;font-size:13px;text-align:center;padding:18px"><span style="font-size:34px">📸</span>Choose your combination on the right,<br>then confirm — the AI creates your photo<br>with the clothes, background &amp; expression you picked.</div>`)+
+    `<button type="button" onclick="confirmCombo()" ${(!canMore||proofBusy)?'disabled':''} style="width:100%;margin-top:12px;border:none;border-radius:12px;padding:13px 14px;font-family:inherit;font-size:14px;font-weight:800;cursor:${(canMore&&!proofBusy)?'pointer':'default'};color:#fff;background:${proofBusy?'#39566b':canMore?'linear-gradient(135deg,#0369a1,#059669)':'#39566b'}">${proofBusy?'✨ Creating your photo… (15–40s)':canMore?'✅ Confirm this combination ('+n+'/'+PROOF_MAX+')':'All '+PROOF_MAX+' sets created — download below'}</button>
+    <p class="sim-note" style="margin-top:10px;text-align:left">Each confirmation creates a real AI photo of your exact combination (watermarked). Downloading or emailing a photo removes the watermark and uses 1 credit.</p>`;
+}
+async function confirmCombo(){
+  if(!cropImg){ toast('Upload your photo first'); return; }
+  if(!user){ toast('Create your free account first — 1 free credit on sign-up'); accountClick(); return; }
+  if(proofShots.length>=PROOF_MAX){ toast('You already have '+PROOF_MAX+' sets — download your favourite below'); return; }
+  if(proofBusy) return; proofBusy=true; renderPvBox();
+  const bg=bgById(selectedBg);
+  try{
+    const pc=getPortraitCanvas(); const selfie=pc.toDataURL('image/jpeg',.85);
+    const oIdx=(selectedOutfit&&OPTLABELS.outfit.indexOf(selectedOutfit)>=0)?OPTLABELS.outfit.indexOf(selectedOutfit):null;
+    const [sceneRef,outfitRef]=await Promise.all([
+      refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
+      oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null)
+    ]);
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({selfie, proof:true, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, token: sbSession?sbSession.access_token:null})});
+    const d=await res.json().catch(()=>({}));
+    if(!res.ok||!d.image){ toast('⚠️ Could not create this set: '+(d.error||('server '+res.status))); proofBusy=false; renderPvBox(); return; }
+    const wm=await wmFromDataURL(d.image);
+    proofShots.push({clean:d.image, wm, unlocked:false, label:bgName(bg)+(selectedOutfit?' · '+xl(selectedOutfit):' · your own clothes')});
+    toast('✓ Photo set '+proofShots.length+' saved below — create another or download');
+  }catch(e){ toast('Could not create this set — please try again'); }
+  proofBusy=false; renderPvBox(); renderProofStrip();
+}
+function renderProofStrip(){
+  const s=document.getElementById('proofStrip'); if(!s) return;
+  if(!proofShots.length){ s.innerHTML=''; return; }
+  s.innerHTML=`<div class="pv-lbl" style="margin-top:16px">📸 Your photo sets (${proofShots.length}/${PROOF_MAX}) — download 1 or all · 1 credit per photo, watermark removed</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">`+
+    proofShots.map((p,i)=>`<div style="width:150px">
+      <div style="position:relative;border-radius:12px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.35)">
+        <img src="${p.unlocked?p.clean:p.wm}" alt="Photo ${i+1}" style="width:100%;display:block">
+        <span style="position:absolute;top:6px;left:6px;background:rgba(6,44,69,.78);color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:3px 8px">${p.unlocked?'✓ unlocked · ':''}Photo ${i+1}</span>
+      </div>
+      <div style="font-size:10.5px;color:#b8d4e3;margin:5px 0 6px;line-height:1.3">${p.label}</div>
+      <div style="display:flex;gap:6px">
+        <button onclick="dlProof(${i})" style="flex:1;cursor:pointer;border:none;border-radius:9px;padding:7px 4px;font-family:inherit;font-size:11px;font-weight:800;background:linear-gradient(135deg,#22d3ee,#4ade80);color:#06283f">⤓ ${p.unlocked?'Save':'Download'}</button>
+        <button onclick="emailProof(${i})" style="flex:1;cursor:pointer;border:none;border-radius:9px;padding:7px 4px;font-family:inherit;font-size:11px;font-weight:800;background:#0a3a5c;color:#dff1fb;box-shadow:inset 0 0 0 1px rgba(125,211,252,.3)">✉️ Email</button>
+      </div></div>`).join('')+`</div>`;
+}
+async function unlockProof(i){
+  const p=proofShots[i]; if(!p) return false;
+  if(p.unlocked) return true;
+  if(user&&user.tester){ p.unlocked=true; renderProofStrip(); renderPvBox(); return true; }
+  if(!sbSession){ toast('Sign in first'); return false; }
+  const r=await fetch('/api/unlock-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:sbSession.access_token})});
+  if(r.status===402){ openModal('paywall'); return false; }
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){ toast('Could not unlock: '+(d.error||r.status)); return false; }
+  if(typeof d.remaining==='number') setCredits(d.remaining);
+  p.unlocked=true; renderProofStrip(); renderPvBox();
+  return true;
+}
+async function dlProof(i){
+  if(!(await unlockProof(i))) return;
+  const a=document.createElement('a'); a.download='summy-garden-photo-'+(i+1)+'.png'; a.href=proofShots[i].clean; a.click();
+  toast('✓ Downloaded without watermark'+(user&&user.tester?'':' — 1 credit used'));
+}
+async function emailProof(i){
+  if(!(await unlockProof(i))) return;
+  if(!sbSession){ toast('Sign in to email your photo'); return; }
+  toast('✉️ Sending to '+user.email+'…');
+  try{
+    const r=await fetch('/api/send-photo',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:sbSession.access_token,image:proofShots[i].clean,scene:proofShots[i].label,look:'',variant:i})});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===501){ toast('Email delivery is not set up yet — use ⤓ Download instead'); return; }
+    if(!r.ok){ toast('Could not send: '+(d.error||r.status)); return; }
+    toast('✓ Sent! Check your inbox');
+  }catch(e){ toast('Could not send — please try again'); }
+}
+function openAutoGallery(){ modeStep(1); openModal('modeModal'); }
 function runGeneration(){
   previewActive=false; prevPending=false; clearTimeout(prevTimer);
   showResultsPanel();

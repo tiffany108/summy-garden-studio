@@ -192,6 +192,7 @@ const handler = async (req) => {
 
   let body = {}; try { body = await req.json(); } catch {}
   const { selfie, scene, category, outfit, style, pose, expr, frame, token, scene_id } = body;
+  const enhance = Math.max(0, Math.min(100, parseInt(body.enhance ?? 60, 10) || 0)); // % facial enhancement
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
@@ -225,9 +226,15 @@ const handler = async (req) => {
   const b64 = selfie.split(",")[1];
   const mime = selfie.slice(5, selfie.indexOf(";"));
   const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
+  // Retouch intensity chosen by the user (0% = keep the face exactly as-is; 100% = full studio polish)
+  const retouch =
+    enhance < 20 ? `Apply NO facial retouching at all: keep the skin texture, pores, marks, skin tone and all facial shapes exactly as they appear in the original photo — change only the clothing, background, lighting and framing. ` :
+    enhance < 50 ? `Apply only very light retouching (about ${enhance}% intensity): keep the original skin texture, tone and all facial shapes untouched; at most soften harsh shadows and reduce temporary shine — the face must look unedited and completely natural. ` :
+    enhance < 80 ? `Apply moderate professional retouching (about ${enhance}% intensity): even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten the eyes subtly — while faithfully preserving the original skin tone, skin texture and every facial shape and proportion (no slimming, no reshaping, no plastic look). ` :
+    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). `;
   const prompt =
     `Transform this photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
-    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). ` +
+    retouch +
     `Style: ${styleDesc}. Dress them in ${outfitDesc}. The person is ${poseDesc}, with ${exprDesc}. ` +
     `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
     `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;

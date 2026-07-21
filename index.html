@@ -109,6 +109,9 @@ section{padding:72px 0}
 .crop-hint{font-size:11px;color:rgba(255,255,255,.5)}
 .zoom-row{display:flex;align-items:center;gap:10px;width:100%;max-width:240px;color:rgba(255,255,255,.6);font-size:13px}
 .zoom-row input[type=range]{flex:1;accent-color:#38bdf8}
+.enh-chip{display:inline-flex;align-items:center;gap:7px;margin-left:auto;background:rgba(8,48,72,.55);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;color:#cfe3f0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.enh-chip input[type=range]{width:110px;accent-color:#4ade80;cursor:pointer}
+.enh-chip b{color:#4ade80;min-width:34px;text-align:right}
 .change-photo{background:none;color:#7dd3fc;font-size:12px;text-decoration:underline}
 .studio-label{font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:22px 0 10px}
 .chip-row{display:flex;gap:8px;flex-wrap:wrap}
@@ -373,6 +376,11 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
               <button class="look-tab" data-tab="outfit">Outfit</button>
               <button class="look-tab" data-tab="pose">Pose</button>
               <button class="look-tab" data-tab="expr">Expression</button>
+              <span class="enh-chip" title="How much AI facial enhancement to apply. 0% keeps your skin tone, texture and face shapes exactly as in your photo — only the scene, outfit and lighting change.">
+                ✨ <span id="enhLbl">Enhance</span>
+                <input type="range" id="enhSlider" min="0" max="100" step="10" value="60" oninput="enhChanged()">
+                <b id="enhVal">60%</b>
+              </span>
             </div>
             <div class="look-filter" id="outfitFilter" style="display:none"><button class="look-chip active" data-g="all">All</button><button class="look-chip" data-g="w">Women's</button><button class="look-chip" data-g="m">Men's</button><button class="look-chip" data-g="u">Unisex</button></div>
               <div class="look-grid" id="lookGrid"></div>
@@ -545,6 +553,17 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
       <button class="signout" onclick="signOut()">Sign out on this device</button>
       <button class="signout" onclick="openPwModal()">Change password</button>
     </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="fbModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('fbModal')">×</button>
+    <div class="icon-tile tile-teal">💬</div>
+    <h3>How were your headshots?</h3>
+    <p>We'd love to hear what you think — it helps us make the studio better for you.</p>
+    <textarea id="fbText" placeholder="Tell us anything — the results, the scenes, ideas…" style="width:100%;min-height:96px;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14.5px;outline:none;resize:vertical;box-sizing:border-box;margin-bottom:12px"></textarea>
+    <button class="btn-primary" style="width:100%;justify-content:center" onclick="sendGenFeedback()">Send feedback</button>
+    <button type="button" onclick="closeModal('fbModal')" style="background:none;border:none;padding:10px 0 0;margin:0;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#8fa6b3;text-decoration:underline">Not this moment</button>
   </div>
 </div>
 <div class="modal-backdrop" id="pwModal">
@@ -1005,6 +1024,24 @@ let selectedBg = BACKGROUNDS[30].id;
 let selectedOutfit=null, selectedStyle=null, selectedPose=null, selectedExpr=null, selectedFrame='Head & shoulders', currency='USD';
 const LOOK_DEFAULTS={style:'Formal', outfit:'Auto', pose:'Straight on', expr:'Natural smile'};
 function resetLookSelections(){ selectedStyle=null; selectedOutfit=null; selectedPose=null; selectedExpr=null; if(typeof renderLook==='function'){ renderLook(); updateCombo(); } }
+function enhChanged(){ const v=document.getElementById('enhSlider').value; document.getElementById('enhVal').textContent=v+'%';
+  document.getElementById('enhLbl').textContent = v==0?'Original face':v<50?'Light touch':v<80?'Enhance':'Full polish'; }
+/* Ask for feedback once per session, a moment after the first successful generation */
+function maybeAskFeedback(){
+  try{ if(sessionStorage.getItem('sgsFbAsked')) return; sessionStorage.setItem('sgsFbAsked','1'); }catch(e){}
+  setTimeout(()=>{ const open=document.querySelector('.modal-backdrop.open'); if(!open) openModal('fbModal'); },2500);
+}
+async function sendGenFeedback(){
+  const msg=document.getElementById('fbText').value.trim();
+  if(!msg){ toast('Write a little something first — or tap "Not this moment"'); return; }
+  try{
+    const {error}=await sb.from('contact_messages').insert({ name:user?user.name:'Studio guest', email:user?user.email:'guest@summygarden.com',
+      topic:'📸 Generation feedback', message:msg, user_id: sbSession?sbSession.user.id:null });
+    if(error) throw error;
+    closeModal('fbModal'); document.getElementById('fbText').value='';
+    toast('💚 Thank you — your feedback landed in our studio inbox!');
+  }catch(e){ toast('Could not send feedback: '+(e.message||e)); }
+}
 let studioCat = 'Park & Garden', galleryCat = 'All', searchTerm='';
 const LOOKS = {'Business formal':'contrast(1.07) saturate(.96)','Smart casual':'brightness(1.05) saturate(1.06)','Creative':'saturate(1.16) contrast(1.05)','Tech casual':'brightness(1.06) saturate(1.0)','Sportswear':'saturate(1.12) brightness(1.05)','Uniform':'contrast(1.06) saturate(.98)'};
 const PACKS = {Starter:{credits:5,usd:'$9.99',gbp:'£7.99',hkd:'HK$78',eur:'€8.99',cny:'¥69'},Pro:{credits:15,usd:'$19.99',gbp:'£15.99',hkd:'HK$156',eur:'€17.99',cny:'¥138'},'Career+':{credits:40,usd:'$34.99',gbp:'£27.99',hkd:'HK$273',eur:'€31.99',cny:'¥248'}};
@@ -1312,7 +1349,7 @@ async function tryServerGenerate(bg){
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
     const res=await fetch('/api/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
     if(res.status===402){ openModal('paywall'); throw new Error('no credits'); }
     if(!res.ok) throw new Error('server '+res.status);
@@ -1381,6 +1418,7 @@ async function showResults(tick){
     `</div><p class="sim-note" style="margin-top:18px">${TX('res_scene')}: <b style="color:#fff">${bgName(bg)}</b> · ${TX('res_look')}: <b style="color:#fff">${xl(selectedOutfit||LOOK_DEFAULTS.outfit)}</b> · ${aiNote} · ${TX('left_t').replace('{n}',getCredits())}${user?' · '+TX('savedTo'):''}${joinCta}</p>`;
   if(!(user&&user.tester) && getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
   else toast('Headshots ready! Click ⤓ PNG to download'+(user?' · saved to your dashboard':''));
+  maybeAskFeedback();
   try{
     if(navigator.vibrate) navigator.vibrate([120,60,120]);
     if('Notification' in window && Notification.permission==='granted' && document.hidden){

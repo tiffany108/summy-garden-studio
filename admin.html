@@ -182,6 +182,24 @@ tbody tr:hover{background:#e8f4fd}
 
 <div class="toast" id="toast"></div>
 
+<!-- Message reader + reply composer -->
+<div id="msgModal" style="display:none;position:fixed;inset:0;background:rgba(4,26,41,.62);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;max-width:720px;width:100%;max-height:92vh;overflow:auto;padding:28px 30px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.35)">
+    <button onclick="closeMsgModal()" style="position:absolute;top:14px;right:16px;background:#eef0f4;border-radius:10px;width:34px;height:34px;font-size:17px;font-weight:700;color:#334">×</button>
+    <h3 style="font-size:19px;font-weight:800;margin:0 0 4px" id="mmTopic"></h3>
+    <p style="font-size:13px;color:#54707e;margin:0 0 16px" id="mmMeta"></p>
+    <div id="mmBody" style="background:#f4f9fc;border-radius:14px;padding:18px 20px;font-size:15.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:42vh;overflow:auto;box-shadow:inset 0 0 0 1px rgba(7,44,69,.08);margin-bottom:20px"></div>
+    <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#54707e;margin-bottom:8px">Reply from support@summygarden.com</div>
+    <textarea id="mmReply" placeholder="Write your reply to the customer…" style="width:100%;min-height:120px;padding:14px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14.5px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <label class="btn dark" style="cursor:pointer;margin:0">📎 Attach files<input type="file" id="mmFiles" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" style="display:none" onchange="mmFilesChanged()"></label>
+      <span id="mmFileList" style="font-size:12.5px;color:#54707e;flex:1"></span>
+      <button class="btn" id="mmSend" onclick="sendReply()">✉️ Send reply</button>
+    </div>
+    <p id="mmStatus" style="font-size:12.5px;color:#54707e;margin:10px 0 0"></p>
+  </div>
+</div>
+
 <script>
 const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
 const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
@@ -326,18 +344,14 @@ async function loadMessages(){
     const tr=document.createElement('tr');
     const long=(m.message||'').length>80;
     const short=long?esc(m.message.slice(0,80))+'…':esc(m.message);
-    tr.innerHTML=`<td style="white-space:nowrap">${esc((m.created_at||'').slice(0,10))}</td><td>${esc(m.topic)}</td><td>${esc(m.name)||'—'}</td><td><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></td>
-      <td style="max-width:360px${long?';cursor:pointer':''}"${long?' title="'+AT('msg_expand')+'"':''}><span class="msgShort">${short}${long?' <b style="color:#0284c7">▾</b>':''}</span>${long?'<span class="msgFull" style="display:none;white-space:pre-wrap">'+esc(m.message)+' <b style="color:#0284c7">▴</b></span>':''}</td>`;
-    if(long){ const td=tr.lastElementChild;
-      td.onclick=()=>{ const s=td.querySelector('.msgShort'), f=td.querySelector('.msgFull');
-        const open=f.style.display!=='none';
-        f.style.display=open?'none':'block'; s.style.display=open?'inline':'none'; };
-    }
+    const replied=m.replied_at?' <span style="color:#16a34a;font-weight:700;font-size:11px">✓ replied</span>':'';
+    tr.innerHTML=`<td style="white-space:nowrap">${esc((m.created_at||'').slice(0,10))}${replied}</td><td>${esc(m.topic)}</td><td>${esc(m.name)||'—'}</td><td><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></td>
+      <td style="max-width:360px;cursor:pointer" title="Click to read the full message and reply"><span class="msgShort">${short} <b style="color:#0284c7">⤢</b></span></td>`;
+    tr.lastElementChild.onclick=()=>openMsgModal(m);
     const act=document.createElement('td'); act.style.whiteSpace='nowrap';
-    const quoted=('> '+String(m.message||'').split('\n').join('\n> '));
-    const reply=document.createElement('a'); reply.className='btn dark'; reply.style.cssText='padding:5px 10px;font-size:11.5px;text-decoration:none;margin-right:6px';
+    const reply=document.createElement('button'); reply.className='btn dark'; reply.style.cssText='padding:5px 10px;font-size:11.5px;margin-right:6px';
     reply.textContent=AT('act_reply');
-    reply.href='mailto:'+encodeURIComponent(m.email)+'?subject='+encodeURIComponent('Re: ['+m.topic+'] Summy Garden Studio')+'&body='+encodeURIComponent('\n\n'+quoted);
+    reply.onclick=()=>openMsgModal(m,true);
     const fwd=document.createElement('a'); fwd.className='btn dark'; fwd.style.cssText='padding:5px 10px;font-size:11.5px;text-decoration:none';
     fwd.textContent=AT('act_fwd');
     fwd.href='mailto:gogonewnews@gmail.com?subject='+encodeURIComponent('Fwd: ['+m.topic+'] from '+(m.name||m.email))+'&body='+encodeURIComponent('From: '+(m.name||'—')+' <'+m.email+'>\nDate: '+(m.created_at||'')+'\nTopic: '+m.topic+'\n\n'+m.message);
@@ -346,6 +360,50 @@ async function loadMessages(){
     tb.appendChild(tr);
   });
   if(!data||!data.length) tb.innerHTML='<tr><td colspan="6" style="color:#8fa6b3">No messages yet</td></tr>';
+}
+/* ---------- Message reader + reply ---------- */
+let mmCurrent=null;
+function openMsgModal(m,focusReply){
+  mmCurrent=m;
+  document.getElementById('mmTopic').textContent=(m.topic||'Message');
+  document.getElementById('mmMeta').textContent=(m.name||'—')+' · '+(m.email||'')+' · '+String(m.created_at||'').slice(0,16).replace('T',' ')+(m.replied_at?' · ✓ replied '+String(m.replied_at).slice(0,10):'');
+  document.getElementById('mmBody').textContent=m.message||'';
+  document.getElementById('mmReply').value='';
+  document.getElementById('mmFiles').value='';
+  document.getElementById('mmFileList').textContent='';
+  document.getElementById('mmStatus').textContent='';
+  document.getElementById('mmSend').disabled=false;
+  const mod=document.getElementById('msgModal'); mod.style.display='flex';
+  if(focusReply) setTimeout(()=>document.getElementById('mmReply').focus(),80);
+}
+function closeMsgModal(){ document.getElementById('msgModal').style.display='none'; mmCurrent=null; }
+document.getElementById('msgModal').addEventListener('click',e=>{ if(e.target===document.getElementById('msgModal')) closeMsgModal(); });
+function mmFilesChanged(){
+  const fs=[...document.getElementById('mmFiles').files];
+  const total=fs.reduce((s,f)=>s+f.size,0);
+  document.getElementById('mmFileList').textContent=fs.length?fs.map(f=>f.name+' ('+(f.size/1024/1024).toFixed(2)+'MB)').join(', '):'';
+  if(total>15*1024*1024){ toast('Attachments too large — keep the total under 15MB'); document.getElementById('mmFiles').value=''; document.getElementById('mmFileList').textContent=''; }
+}
+const fileB64=f=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(f); });
+async function sendReply(){
+  if(!mmCurrent||!session) return;
+  const text=document.getElementById('mmReply').value.trim();
+  if(!text){ toast('Write a reply first'); return; }
+  const btn=document.getElementById('mmSend'); btn.disabled=true;
+  const st=document.getElementById('mmStatus'); st.textContent='Sending…';
+  try{
+    const fs=[...document.getElementById('mmFiles').files];
+    const attachments=[];
+    for(const f of fs) attachments.push({filename:f.name, type:f.type||'application/octet-stream', content:await fileB64(f)});
+    const r=await fetch('/api/reply-message',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:session.access_token, message_id:mmCurrent.id, to:mmCurrent.email,
+        subject:'Re: ['+(mmCurrent.topic||'Message')+'] Summy Garden Studio', body:text, attachments})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error||('server '+r.status));
+    st.textContent='✓ Sent to '+mmCurrent.email;
+    toast('✉️ Reply sent from support@summygarden.com');
+    closeMsgModal(); loadMessages();
+  }catch(e){ st.textContent='⚠️ '+e.message; btn.disabled=false; }
 }
 async function loadStats(){
   try{

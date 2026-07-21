@@ -882,7 +882,7 @@ async function registerAccount(){
     toast('This email is already registered — please sign in');
     return;
   }
-  if(data.session){ sbSession=data.session; await loadProfile(); closeModal('register'); updateCreditLabel(); updateAccountBtn();
+  if(data.session){ sbSession=data.session; await loadProfile(); clearAuthFields(); closeModal('register'); updateCreditLabel(); updateAccountBtn();
     toast('🌿 Welcome '+name+'!'); }
   else { authMsg('📧 Almost there — check your inbox and click the confirmation link, then sign in.'); toast('Confirmation email sent to '+email); }
 }
@@ -893,10 +893,11 @@ async function signInAccount(){
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
   if(error){ toast(error.message.includes('confirm') ? 'Please confirm your email first — check your inbox' : 'Sign-in failed: '+error.message); return; }
   sbSession=data.session; await loadProfile();
-  closeModal('register'); updateCreditLabel(); updateAccountBtn();
+  clearAuthFields(); closeModal('register'); updateCreditLabel(); updateAccountBtn();
   toast('🌿 Welcome back, '+(user?user.name.split(' ')[0]:'')+'!');
 }
-async function signOut(){ if(sb) await sb.auth.signOut(); sbSession=null; user=null; resetLookSelections(); closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out'); }
+function clearAuthFields(){ ['inEmail','inPw','regName','regEmail','regPw','regPw2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); const m=document.getElementById('authMsg'); if(m) m.textContent=''; }
+async function signOut(){ if(sb) await sb.auth.signOut(); sbSession=null; user=null; resetLookSelections(); clearAuthFields(); closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out'); }
 function showForgot(on){
   document.getElementById('pwRow').style.display = on?'none':'block';
   document.getElementById('resetRow').style.display = on?'block':'none';

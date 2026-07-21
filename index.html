@@ -261,7 +261,8 @@ section{padding:72px 0}
 .dash-empty{font-size:13px;color:var(--muted);background:#f4f9fc;border-radius:12px;padding:18px;text-align:center}
 .dash-dl{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(6,44,69,.65);color:#fff;font-size:13px;font-weight:800;place-items:center;text-decoration:none;cursor:pointer;transition:.15s}
 .dash-dl:hover{background:var(--accent-bright,#38bdf8)}
-.signout{background:none;color:var(--muted);font-size:12.5px;text-decoration:underline;margin-top:16px}
+.signout{background:#f0f6fa;color:var(--ink);font-weight:700;font-size:13.5px;font-family:inherit;border:none;border-radius:12px;padding:12px 20px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(7,44,69,.14);margin-top:16px;transition:background .15s,box-shadow .15s}
+.signout:hover{background:#e2eef6;box-shadow:inset 0 0 0 1.5px rgba(7,44,69,.24)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);color:#fff;font-size:14px;font-weight:600;border-radius:999px;padding:13px 24px;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:.35s cubic-bezier(.2,.8,.2,1);z-index:120}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .cookie-bar{position:fixed;left:16px;right:16px;bottom:16px;max-width:940px;margin:0 auto;background:rgba(6,44,69,.97);backdrop-filter:blur(14px);color:#fff;border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1);padding:18px 22px;z-index:130;display:none;align-items:center;gap:16px;flex-wrap:wrap}
@@ -581,8 +582,8 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
 <div class="cookie-bar" id="cookieBar">
   <p id="cookieText">We use <b>essential cookies</b> to run the studio (sign-in and credits) and, with your consent, <b>optional analytics</b> to improve the service. See our <a onclick="openModal('privacyModal')">Privacy Policy</a>.</p>
   <div class="ck-btns">
-    <button class="ck-essential" id="ckEssential" onclick="setCookie('essential')">Essential only</button>
-    <button class="ck-accept" id="ckAccept" onclick="setCookie('all')">Accept all</button>
+    <button class="ck-essential" id="ckEssential" onclick="setCookie('essential')">Reject</button>
+    <button class="ck-accept" id="ckAccept" onclick="setCookie('all')">Accept</button>
   </div>
 </div>
 
@@ -888,7 +889,7 @@ async function signInAccount(){
   closeModal('register'); updateCreditLabel(); updateAccountBtn();
   toast('🌿 Welcome back, '+(user?user.name.split(' ')[0]:'')+'!');
 }
-async function signOut(){ if(sb) await sb.auth.signOut(); sbSession=null; user=null; closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out'); }
+async function signOut(){ if(sb) await sb.auth.signOut(); sbSession=null; user=null; resetLookSelections(); closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out'); }
 async function forgotPassword(){
   if(!sb){ toast('Account service unavailable — try again shortly'); return; }
   const email=document.getElementById('inEmail').value.trim().toLowerCase();
@@ -984,7 +985,11 @@ async function submitContact(){
 
 /* ---------- State ---------- */
 let selectedBg = BACKGROUNDS[30].id;
-let selectedOutfit='Navy suit', selectedStyle='Formal', selectedPose='Straight on', selectedExpr='Natural smile', selectedFrame='Head & shoulders', currency='USD';
+/* Look choices start empty — the tick appears only when the user actively picks one.
+   Defaults are applied at generation time (LOOK_DEFAULTS) and cleared on sign-out. */
+let selectedOutfit=null, selectedStyle=null, selectedPose=null, selectedExpr=null, selectedFrame='Head & shoulders', currency='USD';
+const LOOK_DEFAULTS={style:'Formal', outfit:'Auto', pose:'Straight on', expr:'Natural smile'};
+function resetLookSelections(){ selectedStyle=null; selectedOutfit=null; selectedPose=null; selectedExpr=null; if(typeof renderLook==='function'){ renderLook(); updateCombo(); } }
 let studioCat = 'Park & Garden', galleryCat = 'All', searchTerm='';
 const LOOKS = {'Business formal':'contrast(1.07) saturate(.96)','Smart casual':'brightness(1.05) saturate(1.06)','Creative':'saturate(1.16) contrast(1.05)','Tech casual':'brightness(1.06) saturate(1.0)','Sportswear':'saturate(1.12) brightness(1.05)','Uniform':'contrast(1.06) saturate(.98)'};
 const PACKS = {Starter:{credits:5,usd:'$9.99',gbp:'£7.99',hkd:'HK$78',eur:'€8.99',cny:'¥69'},Pro:{credits:15,usd:'$19.99',gbp:'£15.99',hkd:'HK$156',eur:'€17.99',cny:'¥138'},'Career+':{credits:40,usd:'$34.99',gbp:'£27.99',hkd:'HK$273',eur:'€31.99',cny:'¥248'}};
@@ -1282,7 +1287,7 @@ document.querySelectorAll('#lookTabs .look-tab').forEach(t=>t.onclick=()=>{
 function showLookPanel(){ document.getElementById('resultWrap').style.display='none'; document.getElementById('lookPanel').style.display='flex'; }
 function showResultsPanel(){ document.getElementById('lookPanel').style.display='none'; document.getElementById('resultWrap').style.display='flex'; }
 function updateCombo(){ const b=bgById(selectedBg); const el=document.getElementById('comboSummary');
-  if(el) el.innerHTML='✨ <b>'+xl(selectedStyle)+'</b> · <b>'+xl(selectedOutfit)+'</b> · <b>'+xl(selectedPose)+'</b> · <b>'+xl(selectedExpr)+'</b>'+(b?' · <b>'+bgName(b)+'</b>':'')+'<br><span style="opacity:.7">'+TX('combo_tail')+'</span>'; }
+  if(el) el.innerHTML='✨ <b>'+xl(selectedStyle||LOOK_DEFAULTS.style)+'</b> · <b>'+xl(selectedOutfit||LOOK_DEFAULTS.outfit)+'</b> · <b>'+xl(selectedPose||LOOK_DEFAULTS.pose)+'</b> · <b>'+xl(selectedExpr||LOOK_DEFAULTS.expr)+'</b>'+(b?' · <b>'+bgName(b)+'</b>':'')+'<br><span style="opacity:.7">'+TX('combo_tail')+'</span>'; }
 
 /* ---------- Server generation (identity-preserving, when API key is configured) ---------- */
 async function tryServerGenerate(bg){
@@ -1292,7 +1297,7 @@ async function tryServerGenerate(bg){
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
     const res=await fetch('/api/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit, style:selectedStyle, pose:selectedPose, expr:selectedExpr, frame:selectedFrame, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
     if(res.status===402){ openModal('paywall'); throw new Error('no credits'); }
     if(!res.ok) throw new Error('server '+res.status);
@@ -1349,16 +1354,16 @@ async function showResults(tick){
   }
   clearInterval(tick);
   if(mode!=='server' && !(user&&user.tester)) setCredits(Math.max(getCredits()-1,0));
-  if(user) user.history.unshift({bg:bg.id, attire:selectedOutfit, date:new Date().toISOString().slice(5,10)});
+  if(user) user.history.unshift({bg:bg.id, attire:selectedOutfit||LOOK_DEFAULTS.outfit, date:new Date().toISOString().slice(5,10)});
   if(mode==='server') setTimeout(loadShots, 2500); // pick up freshly saved headshots for the dashboard
   const zone=document.getElementById('resultZone');
   const joinCta='';
   const aiNote = mode==='server' ? TX('note_ai') : (usedAI ? 'AI cut-out + skin & tone enhanced' : 'soft-blend mode + tone enhanced');
-  window._lastShots={urls:urls.slice(0,4), scene:bg.name, look:selectedOutfit};
+  window._lastShots={urls:urls.slice(0,4), scene:bg.name, look:selectedOutfit||LOOK_DEFAULTS.outfit};
   zone.innerHTML='<div class="result-grid">'+defs.map((d,i)=>
     `<div class="headshot-frame"><img class="comp" src="${urls[i]}" alt="Headshot variant ${d[0]}">
      <span class="tag">Variant ${d[0]}</span><a class="dl mail" onclick="emailShot(${i})">✉️ Email</a><a class="dl" download="summy-garden-headshot-${d[0]}.png" href="${urls[i]}">⤓ PNG</a></div>`).join('')+
-    `</div><p class="sim-note" style="margin-top:18px">${TX('res_scene')}: <b style="color:#fff">${bgName(bg)}</b> · ${TX('res_look')}: <b style="color:#fff">${xl(selectedOutfit)}</b> · ${aiNote} · ${TX('left_t').replace('{n}',getCredits())}${user?' · '+TX('savedTo'):''}${joinCta}</p>`;
+    `</div><p class="sim-note" style="margin-top:18px">${TX('res_scene')}: <b style="color:#fff">${bgName(bg)}</b> · ${TX('res_look')}: <b style="color:#fff">${xl(selectedOutfit||LOOK_DEFAULTS.outfit)}</b> · ${aiNote} · ${TX('left_t').replace('{n}',getCredits())}${user?' · '+TX('savedTo'):''}${joinCta}</p>`;
   if(!(user&&user.tester) && getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
   else toast('Headshots ready! Click ⤓ PNG to download'+(user?' · saved to your dashboard':''));
   try{

@@ -1077,14 +1077,13 @@ function enhChanged(){ const v=document.getElementById('enhSlider').value; docum
 /* Instant, free preview: a browser-side smoothing/glow approximation of the chosen
    Enhance level, applied to the uploaded selfie (no AI calls, no cost). */
 function applyEnhPreview(){
-  const cv=document.getElementById('cropCanvas'); if(!cv) return;
+  /* the crop always shows the photo SHARP and unfiltered — the enhance level
+     is applied by the AI at generation, not simulated here */
+  const cv=document.getElementById('cropCanvas'); if(cv) cv.style.filter='none';
   const p=(+document.getElementById('enhSlider')?.value||0)/100;
-  cv.style.filter=p===0?'none':
-    `brightness(${(1+p*0.09).toFixed(3)}) contrast(${(1-p*0.10).toFixed(3)}) saturate(${(1+p*0.09).toFixed(3)}) blur(${(p*1.8).toFixed(2)}px)`;
-  cv.style.transition='filter .15s';
   const n=document.getElementById('enhPrevNote');
-  if(n) n.textContent = p===0 ? '✨ Enhance 0% — your original face, exactly as photographed'
-    : `✨ Live preview at ${Math.round(p*100)}% Enhance — move the slider to compare, 0% = original`;
+  if(n) n.textContent = p===0 ? '✨ Natural look 0% — your face exactly as photographed'
+    : `✨ Natural look ${Math.round(p*100)}% — the AI polishes skin & lighting only; your face shapes stay yours`;
 }
 /* Feedback card sits inline below the generation section — shown once per session */
 function maybeAskFeedback(){
@@ -1221,15 +1220,16 @@ document.getElementById('fileInput').addEventListener('change',e=>{
 function setupCropper(){
   const zone=document.getElementById('uploadZone');
   zone.classList.remove('clickable'); zone.onclick=null;
-  zone.innerHTML=`<canvas id="cropCanvas" width="${CW}" height="${CH}"></canvas>
+  zone.innerHTML=`<canvas id="cropCanvas" width="${CW*2}" height="${CH*2}" style="width:${CW}px;height:${CH}px"></canvas>
    <div class="zoom-row">🔍<input type="range" id="zoomSlider" min="100" max="320" value="100"></div>
    <div class="crop-hint">Drag to frame your head & shoulders · slide to zoom</div>
-   <div class="crop-hint" style="color:#fbbf24;font-weight:700">📸 Zoom in until your face fills the oval — a small face in the frame will NOT look like you in the result</div>
-   <div class="crop-hint" id="enhPrevNote" style="color:#4ade80">✨ Live preview: this photo simulates your Enhance level — move the slider to compare</div>
+   <div class="crop-hint" style="color:#fbbf24;font-weight:700">📸 Drag the photo / zoom in until your face fills the oval — a small face in the frame will NOT look like you in the result</div>
+   <div class="crop-hint" id="enhPrevNote" style="color:#4ade80">✨ Natural look — the AI polishes skin &amp; lighting only; your face shapes stay yours</div>
    <button class="change-photo" onclick="document.getElementById('fileInput').click()">Change photo</button>`;
   cropMin=Math.max(CW/cropImg.width, CH/cropImg.height); cropScale=cropMin;
   cropOX=(CW-cropImg.width*cropScale)/2; cropOY=(CH-cropImg.height*cropScale)/2;
   const cv=document.getElementById('cropCanvas');
+  cv.getContext('2d').setTransform(2,0,0,2,0,0); /* 2x internal resolution — sharp display */
   cv.addEventListener('pointerdown',ev=>{dragging=true;lastX=ev.clientX;lastY=ev.clientY;cv.setPointerCapture(ev.pointerId);});
   cv.addEventListener('pointermove',ev=>{if(!dragging)return; cropOX+=ev.clientX-lastX; cropOY+=ev.clientY-lastY; lastX=ev.clientX; lastY=ev.clientY; clampCrop(); drawCrop();});
   cv.addEventListener('pointerup',()=>dragging=false);

@@ -218,7 +218,9 @@ const handler = async (req) => {
     if (!rows.length) return Response.json({ error: "no active generation" }, { status: 402, headers });
   }
 
-  const outfitDesc = OUTFITS[outfit] || OUTFITS["Navy suit"];
+  // No outfit chosen ("Auto") → keep whatever the person is wearing in their photo.
+  const keepOriginalOutfit = !outfit || outfit === "Auto" || outfit === "Original";
+  const outfitDesc = keepOriginalOutfit ? OUTFITS["Original"] : (OUTFITS[outfit] || OUTFITS["Navy suit"]);
   const styleDesc = STYLES[style] || STYLES["Formal"];
   const poseDesc = POSES[pose] || POSES["Straight on"];
   const exprDesc = EXPRESSIONS[expr] || EXPRESSIONS["Natural smile"];
@@ -262,7 +264,9 @@ const handler = async (req) => {
     `Style: ${styleDesc}. ` +
     (outfitOrd
       ? `Outfit: the ${outfitOrd} attached image shows the exact outfit to use (${outfitDesc}). Dress the person in exactly this clothing — same garment, colour, fabric, neckline and details — fitted naturally to their body. `
-      : `Dress them in ${outfitDesc}. `) +
+      : keepOriginalOutfit
+        ? `Outfit: keep the person's OWN clothing exactly as worn in the FIRST photo — same garment, colours, neckline and fabric, just neatly presented. Do not replace their clothes. `
+        : `Dress them in ${outfitDesc}. `) +
     `The person is ${poseDesc}, with ${exprDesc}. ` +
     (sceneOrd
       ? `Background: the ${sceneOrd} attached image shows the exact background location (${scene || "professional setting"}). Place the person standing in exactly this environment — reproduce its architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind them. `

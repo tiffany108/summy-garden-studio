@@ -114,6 +114,8 @@ section{padding:72px 0}
 .enh-chip b{color:#4ade80;min-width:34px;text-align:right}
 .enh-hint{font-size:12px;color:#9fc0d3;margin:8px 2px 10px;line-height:1.5}
 .enh-hint b{color:#4ade80}
+.pv-lbl{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9fc0d3;margin:12px 0 5px}
+.pv-sel{width:100%;background:#0a3a5c;color:#fff;border:none;border-radius:10px;padding:9px 11px;font-family:inherit;font-size:13px;font-weight:600;outline:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(125,211,252,.25)}
 .change-photo{background:none;color:#7dd3fc;font-size:12px;text-decoration:underline}
 .studio-label{font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:22px 0 10px}
 .chip-row{display:flex;gap:8px;flex-wrap:wrap}
@@ -1265,7 +1267,8 @@ function renderSwatches(){
   BACKGROUNDS.filter(b=>b.cat===studioCat).forEach(b=>{
     const sw=document.createElement('div');
     sw.className='swatch'+(b.id===selectedBg?' active':'');
-    sw.style.backgroundImage=`url("${aiSampleURL(b,bgIndex(b.id))}"), url("${b.image}")`; sw.title=bgName(b);
+    /* show the actual empty backdrop (what the AI + preview use), not a sample person */
+    sw.style.backgroundImage=`url("${aiSceneURL(b,bgIndex(b.id))}"), url("${b.image}")`; sw.title=bgName(b);
     sw.onclick=()=>selectBg(b.id,{fromStudio:true});
     grid.appendChild(sw);
   });
@@ -1427,15 +1430,71 @@ document.getElementById('genBtn').onclick=()=>{
   runGeneration();
 };
 /* Free instant preview: browser cut-out of the person composited onto the chosen
-   scene backdrop with the current Enhance level — no AI call, no credits used. */
-let previewActive=false, prevTimer=null, prevBusy=false;
+   scene backdrop with the current Enhance level — no AI call, no credits used.
+   The preview panel shows ALL the options (scene / style / outfit / pose /
+   expression / natural-look %) so the combination can be tuned in realtime. */
+let previewActive=false, prevTimer=null, prevBusy=false, prevPending=false;
+const pvq=s=>String(s).replace(/"/g,'&quot;');
+function pvOptions(kind,autoLabel){
+  const cur=SEL[kind]();
+  let h='<option value="">'+autoLabel+'</option>';
+  OPTLABELS[kind].forEach(l=>{h+='<option value="'+pvq(l)+'"'+(cur===l?' selected':'')+'>'+xl(l)+'</option>';});
+  return h;
+}
+function pvOutfitThumbHTML(){
+  const oIdx=selectedOutfit?OPTLABELS.outfit.indexOf(selectedOutfit):-1;
+  return oIdx>=0?'<img src="'+optImg('outfit',oIdx)+'" alt="'+pvq(xl(selectedOutfit))+'" style="width:62px;height:62px;object-fit:cover;border-radius:9px;margin-top:7px;box-shadow:0 0 0 1px rgba(125,211,252,.35)">':'';
+}
+function comboControlsHTML(){
+  const ev=Math.round(+(document.getElementById('enhSlider')?.value??60));
+  let scenes='';
+  CATEGORIES.forEach((cat,ci)=>{
+    scenes+='<optgroup label="'+pvq(TX('c'+(ci+1))||cat)+'">';
+    BACKGROUNDS.forEach(bb=>{ if(bb.cat===cat) scenes+='<option value="'+bb.id+'"'+(bb.id===selectedBg?' selected':'')+'>'+pvq(bgName(bb))+'</option>'; });
+    scenes+='</optgroup>';
+  });
+  return `<span class="pv-lbl" style="margin-top:0">🌿 ${TX('sc_pick')}</span>
+    <select class="pv-sel" id="pvScene" onchange="prevScene(this.value)">${scenes}</select>
+    <span class="pv-lbl">🎨 ${TX('tab_style')}</span>
+    <select class="pv-sel" id="pvStyle" onchange="prevCombo('style',this.value)">${pvOptions('style','Auto · '+xl(LOOK_DEFAULTS.style))}</select>
+    <span class="pv-lbl">👔 ${TX('tab_outfit')}</span>
+    <select class="pv-sel" id="pvOutfit" onchange="prevCombo('outfit',this.value)">${pvOptions('outfit','👤 Keep my own clothes')}</select>
+    <div id="pvOutfitThumb">${pvOutfitThumbHTML()}</div>
+    <span class="pv-lbl">🧍 ${TX('tab_pose')}</span>
+    <select class="pv-sel" id="pvPose" onchange="prevCombo('pose',this.value)">${pvOptions('pose','Auto · '+xl(LOOK_DEFAULTS.pose))}</select>
+    <span class="pv-lbl">🙂 ${TX('tab_expr')}</span>
+    <select class="pv-sel" id="pvExpr" onchange="prevCombo('expr',this.value)">${pvOptions('expr','Auto · '+xl(LOOK_DEFAULTS.expr))}</select>
+    <span class="pv-lbl">✨ Natural look — <b id="pvEnhVal" style="color:#4ade80">${ev}%</b> enhance</span>
+    <input type="range" min="0" max="100" step="10" id="pvEnh" value="${ev}" oninput="prevEnh(this.value)" style="width:100%;accent-color:#4ade80">
+    <p style="font-size:11.5px;color:#9fc0d3;margin:7px 0 0;line-height:1.55">Lower % = more natural — <b style="color:#fff">0% keeps your original skin tone &amp; face shapes</b>. The preview picture shows your scene, framing &amp; enhance level; your outfit, style, pose &amp; expression choices are locked in here and applied by the AI when you ✨ Generate.</p>`;
+}
+function syncPvCtrls(){
+  if(!document.getElementById('pvCtrls')) return;
+  const ev=Math.round(+(document.getElementById('enhSlider')?.value??60));
+  const set=(id,v)=>{const el=document.getElementById(id); if(el&&el.value!==v) el.value=v;};
+  set('pvScene',selectedBg);
+  set('pvStyle',selectedStyle||''); set('pvOutfit',selectedOutfit||'');
+  set('pvPose',selectedPose||''); set('pvExpr',selectedExpr||'');
+  const pe=document.getElementById('pvEnh'); if(pe&&document.activeElement!==pe) pe.value=ev;
+  const pv=document.getElementById('pvEnhVal'); if(pv) pv.textContent=ev+'%';
+  const th=document.getElementById('pvOutfitThumb'); if(th) th.innerHTML=pvOutfitThumbHTML();
+}
+function prevCombo(kind,val){ SETSEL[kind](val||null); renderLook(); updateCombo(); clearTimeout(prevTimer); quickPreview(); }
+function prevScene(id){ if(bgById(id)) selectBg(id,{fromStudio:false}); }
+function prevEnh(v){ const s=document.getElementById('enhSlider'); if(s) s.value=v; const pv=document.getElementById('pvEnhVal'); if(pv) pv.textContent=Math.round(+v)+'%'; enhChanged(); }
 async function quickPreview(){
   if(!cropImg){ toast('Upload your photo first, then preview'); document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'}); return; }
-  if(prevBusy) return; prevBusy=true;
+  if(prevBusy){ prevPending=true; return; }
+  prevBusy=true;
   const bg=bgById(selectedBg);
   showResultsPanel();
   const zone=document.getElementById('resultZone');
-  if(!previewActive) zone.innerHTML=`<div class="result-empty" style="display:block;padding-top:60px"><div class="progress-label">👁 Building your free preview…</div></div>`;
+  if(!document.getElementById('pvLayout')){
+    zone.innerHTML=`<div id="pvLayout" style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;justify-content:center;text-align:left">
+      <div id="pvImgBox" style="flex:1 1 240px;max-width:320px;min-width:200px"><div class="result-empty" style="display:block;padding-top:60px"><div class="progress-label">👁 Building your free preview…</div></div></div>
+      <div id="pvCtrls" style="flex:1 1 230px;max-width:300px;min-width:214px">${comboControlsHTML()}</div>
+    </div>`;
+  } else syncPvCtrls();
   try{
     const pc=getPortraitCanvas();
     const mask=await segmentPortrait(pc);
@@ -1444,15 +1503,17 @@ async function quickPreview(){
     const extra=p===0?'':`brightness(${(1+p*0.07).toFixed(3)}) contrast(${(1-p*0.08).toFixed(3)}) saturate(${(1+p*0.07).toFixed(3)}) blur(${(p*0.7).toFixed(2)}px)`;
     const url=await composeVariant(bg,person,extra,true);
     previewActive=true;
-    zone.innerHTML=`<div class="result-grid" style="grid-template-columns:minmax(200px,300px)"><div class="headshot-frame"><img class="comp" src="${url}" alt="Free preview"><span class="tag">👁 Free preview</span></div></div>
-      <p class="sim-note" style="margin-top:16px">Free watermarked preview — no credits used. Now try different <b style="color:#fff">scenes, outfits, looks and the ✨ Enhance slider</b>: the preview updates by itself. Currently: <b style="color:#fff">${bgName(bg)}</b>${selectedOutfit?' · <b style="color:#fff">'+xl(selectedOutfit)+'</b>':''} · <b style="color:#4ade80">${Math.round(p*100)}% Enhance</b>. Happy? Hit ✨ Generate — the real AI result is far more polished and has <b style="color:#4ade80">no watermark</b>.</p>`;
+    const box=document.getElementById('pvImgBox');
+    if(box) box.innerHTML=`<div class="headshot-frame"><img class="comp" src="${url}" alt="Free preview"><span class="tag">👁 Free preview</span></div>
+      <p class="sim-note" style="margin-top:12px;text-align:left">Free watermarked preview — no credits used. Scene: <b style="color:#fff">${bgName(bg)}</b>${selectedOutfit?' · <b style="color:#fff">'+xl(selectedOutfit)+'</b>':''} · <b style="color:#4ade80">${Math.round(p*100)}%</b> enhance. Change any option on the right — the preview refreshes by itself. Happy? Hit ✨ Generate — the real AI result is far more polished and has <b style="color:#4ade80">no watermark</b>.</p>`;
   }catch(e){ zone.innerHTML='<p class="sim-note" style="padding-top:40px">Preview is unavailable on this device — you can still Generate normally.</p>'; }
   prevBusy=false;
+  if(prevPending){ prevPending=false; clearTimeout(prevTimer); prevTimer=setTimeout(quickPreview,120); }
 }
 /* after the first preview, any change of scene / look / enhance refreshes it automatically */
 function maybeRefreshPreview(){ if(!previewActive||!cropImg) return; clearTimeout(prevTimer); prevTimer=setTimeout(quickPreview,450); }
 function runGeneration(){
-  previewActive=false; clearTimeout(prevTimer);
+  previewActive=false; prevPending=false; clearTimeout(prevTimer);
   showResultsPanel();
   try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
   const zone=document.getElementById('resultZone');

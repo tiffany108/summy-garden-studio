@@ -1504,8 +1504,20 @@ async function quickPreview(){
     const url=await composeVariant(bg,person,extra,true);
     previewActive=true;
     const box=document.getElementById('pvImgBox');
-    if(box) box.innerHTML=`<div class="headshot-frame"><img class="comp" src="${url}" alt="Free preview"><span class="tag">👁 Free preview</span></div>
-      <p class="sim-note" style="margin-top:12px;text-align:left">Free watermarked preview — no credits used. Scene: <b style="color:#fff">${bgName(bg)}</b>${selectedOutfit?' · <b style="color:#fff">'+xl(selectedOutfit)+'</b>':''} · <b style="color:#4ade80">${Math.round(p*100)}%</b> enhance. Change any option on the right — the preview refreshes by itself. Happy? Hit ✨ Generate — the real AI result is far more polished and has <b style="color:#4ade80">no watermark</b>.</p>`;
+    const oI=selectedOutfit?OPTLABELS.outfit.indexOf(selectedOutfit):-1;
+    const chip=t=>'<span style="background:rgba(6,44,69,.78);backdrop-filter:blur(6px);color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;padding:4px 9px;white-space:nowrap">'+t+'</span>';
+    const combos=[];
+    if(oI>=0) combos.push(chip('👔 '+xl(selectedOutfit)));
+    if(selectedStyle) combos.push(chip('🎨 '+xl(selectedStyle)));
+    if(selectedPose) combos.push(chip('🧍 '+xl(selectedPose)));
+    if(selectedExpr) combos.push(chip('🙂 '+xl(selectedExpr)));
+    const overlay=combos.length||oI>=0?`
+      <div style="position:absolute;left:8px;right:8px;bottom:34px;display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-start;align-items:flex-end">
+        ${oI>=0?'<img src="'+optImg('outfit',oI)+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:9px;box-shadow:0 0 0 2px rgba(255,255,255,.85),0 4px 12px rgba(0,0,0,.4)">':''}
+        <div style="display:flex;flex-wrap:wrap;gap:5px;max-width:calc(100% - 66px)">${combos.join('')}${chip('<span style=\"color:#4ade80\">applied at ✨ Generate</span>')}</div>
+      </div>`:'';
+    if(box) box.innerHTML=`<div class="headshot-frame"><img class="comp" src="${url}" alt="Free preview"><span class="tag">👁 Free preview</span>${overlay}</div>
+      <p class="sim-note" style="margin-top:12px;text-align:left">Free watermarked preview — no credits used. Scene: <b style="color:#fff">${bgName(bg)}</b>${selectedOutfit?' · <b style="color:#fff">'+xl(selectedOutfit)+'</b>':''} · <b style="color:#4ade80">${Math.round(p*100)}%</b> enhance. The picture shows your scene &amp; enhance level; the badges on it are your look choices — the AI applies them when you hit ✨ Generate (no watermark, far more polished).</p>`;
   }catch(e){ zone.innerHTML='<p class="sim-note" style="padding-top:40px">Preview is unavailable on this device — you can still Generate normally.</p>'; }
   prevBusy=false;
   if(prevPending){ prevPending=false; clearTimeout(prevTimer); prevTimer=setTimeout(quickPreview,120); }

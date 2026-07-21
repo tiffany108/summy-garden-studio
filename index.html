@@ -1218,6 +1218,7 @@ function applyAutoScene(bgId){
   enhChanged();
   closeModal('modeModal');
   selectBg(bgId,{fromStudio:false});
+  swapSampleIdx=bgIndex(bgId); /* Auto = face-swap onto this exact sample photo */
   renderLook(); updateCombo();
   quickPreview();
   toast(TX('t_applied').replace('{s}',bgName(bgc)));
@@ -1525,7 +1526,7 @@ function makeOptCard(kind,label,i,special){
   const c=document.createElement('div'); c.className='look-card'+(cur?' sel':'');
   if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+disp+'"></div><div class="look-label">'+disp+'</div>'; }
   else { c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(kind,i)+'" onerror="retryOpt(this)" alt="'+disp+'"></div><div class="look-label">'+disp+'</div>'; }
-  c.onclick=()=>{ SETSEL[kind](SEL[kind]()===label?null:label); renderLook(); updateCombo(); maybeRefreshPreview(); }; /* click again (or double-click) to unselect */
+  c.onclick=()=>{ swapSampleIdx=null; SETSEL[kind](SEL[kind]()===label?null:label); renderLook(); updateCombo(); maybeRefreshPreview(); }; /* click again (or double-click) to unselect */
   return c;
 }
 function renderLook(){
@@ -1548,7 +1549,7 @@ function renderLook(){
       const gi=bgIndex(b.id);
       const c=document.createElement('div'); c.className='look-card'+(b.id===selectedBg?' sel':'');
       c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+aiSceneURL(b,gi)+'" onerror="retryOpt(this)" alt=""></div><div class="look-label">'+bgName(b)+'</div>';
-      c.onclick=()=>{ if(b.id===selectedBg) unselectBg(); else selectBg(b.id,{fromStudio:false}); renderLook(); }; /* click again to unselect */
+      c.onclick=()=>{ swapSampleIdx=null; if(b.id===selectedBg) unselectBg(); else selectBg(b.id,{fromStudio:false}); renderLook(); }; /* click again to unselect */
       g.appendChild(c);
     });
     g.style.gridTemplateColumns='repeat(auto-fill,minmax(108px,1fr))';
@@ -1681,7 +1682,7 @@ function syncPvCtrls(){
   const pv=document.getElementById('pvEnhVal'); if(pv) pv.textContent=ev+'%';
   const th=document.getElementById('pvOutfitThumb'); if(th) th.innerHTML=pvOutfitThumbHTML();
 }
-function prevCombo(kind,val){ SETSEL[kind](val||null); renderLook(); updateCombo(); clearTimeout(prevTimer); quickPreview(); }
+function prevCombo(kind,val){ swapSampleIdx=null; SETSEL[kind](val||null); renderLook(); updateCombo(); clearTimeout(prevTimer); quickPreview(); }
 function prevScene(id){ if(bgById(id)) selectBg(id,{fromStudio:false}); }
 function prevEnh(v){ const s=document.getElementById('enhSlider'); if(s) s.value=v; const pv=document.getElementById('pvEnhVal'); if(pv) pv.textContent=Math.round(+v)+'%'; enhChanged(); }
 async function quickPreview(){
@@ -1701,7 +1702,7 @@ async function quickPreview(){
 /* combo changes refresh the panel state (controls + counter) — no AI call */
 function maybeRefreshPreview(){ if(!previewActive) return; clearTimeout(prevTimer); prevTimer=setTimeout(()=>{ syncPvCtrls(); renderPvBox(); },200); }
 /* ---------- Photo sets: real AI proofs, watermarked until download ---------- */
-let proofShots=[], proofBusy=false; const PROOF_MAX=3;
+let proofShots=[], proofBusy=false, swapSampleIdx=null; const PROOF_MAX=3;
 function wmFromDataURL(src){
   return new Promise(res=>{ const im=new Image(); im.onload=()=>{
     const W=480,H=600; const c=document.createElement('canvas'); c.width=W; c.height=H;
@@ -1773,14 +1774,29 @@ async function confirmCombo(){
   try{
     const pc=getPortraitCanvas(); const selfie=pc.toDataURL('image/jpeg',.85);
     const oIdx=(selectedOutfit&&OPTLABELS.outfit.indexOf(selectedOutfit)>=0)?OPTLABELS.outfit.indexOf(selectedOutfit):null;
-    let [sceneRef,outfitRef,faceRef]=await Promise.all([
-      refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
-      oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null),
-      faceRefDataURL()
-    ]);
-    if(!sceneRef) sceneRef=await refDataURL(bg.image,512,640,.9); /* solid/gradient backdrops render from the SVG */
+    const swapping = swapSampleIdx!==null;
+    let payload;
+    if(swapping){
+      /* Auto mode: face-swap the customer onto the exact sample photo */
+      const [baseRef,fRef]=await Promise.all([
+        refDataURL(aiSampleURL(bg,swapSampleIdx),768,960,.85),
+        faceRefDataURL()
+      ]);
+      if(baseRef){
+        payload={selfie, proof:true, swap:true, scene:bg.name, category:bg.cat, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, base_ref:baseRef, face_ref:fRef, token: sbSession?sbSession.access_token:null};
+      }
+    }
+    if(!payload){
+      let [sceneRef,outfitRef,faceRef]=await Promise.all([
+        refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
+        oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null),
+        faceRefDataURL()
+      ]);
+      if(!sceneRef) sceneRef=await refDataURL(bg.image,512,640,.9); /* solid/gradient backdrops render from the SVG */
+      payload={selfie, proof:true, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, face_ref:faceRef, token: sbSession?sbSession.access_token:null};
+    }
     const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, proof:true, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, face_ref:faceRef, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify(payload)});
     const d=await res.json().catch(()=>({}));
     if(!res.ok||!d.image){ toast(TX('t_fail')+(d.error||('server '+res.status))); proofBusy=false; renderPvBox(); return; }
     const wm=await wmFromDataURL(d.image);

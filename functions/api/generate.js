@@ -256,6 +256,7 @@ const handler = async (req) => {
   const sceneRef = parseDataImg(body.scene_ref, 2_500_000);
   const outfitRef = parseDataImg(body.outfit_ref, 2_000_000);
   const faceRef = parseDataImg(body.face_ref, 2_000_000);
+  const baseRef = parseDataImg(body.base_ref, 2_500_000); // sample portrait for face-swap mode
   // If the Gemini call fails after the credit was consumed, give the credit back.
   const refundCredit = async () => {
     if (vi !== 0 || remaining === null) return;
@@ -277,10 +278,26 @@ const handler = async (req) => {
   const faceOrd = faceRef ? ords[imgN++] : null;
   const sceneOrd = sceneRef ? ords[imgN++] : null;
   const outfitOrd = outfitRef ? ords[imgN++] : null;
-  const prompt =
+  let prompt, parts;
+  if (body.swap === true && baseRef) {
+    // FACE-SWAP mode (Auto / sample pick): keep the sample photo identical,
+    // replace only the model's head with the customer's.
+    prompt =
+      `Face replacement task. Edit the FIRST attached image — a professional studio portrait photograph of a model. ` +
+      `Replace ONLY the model's head (face and hair) with the person shown in the ${faceRef ? "SECOND" : "SECOND"} attached image${faceRef ? " (a sharp face close-up; the THIRD image shows the same person for extra reference)" : ""}. ` +
+      `1) IDENTITY — MOST IMPORTANT: the output face must be instantly recognisable as this person. Copy their facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle exactly. Use their images ONLY for the face and hair — never copy their framing, clothing or background. ` +
+      `2) FACE RETOUCH: ${retouch}Never change the shape or proportions of any facial feature. ` +
+      `3) KEEP EVERYTHING ELSE IDENTICAL: the FIRST image's clothing, body, pose, hands, background, lighting, colours and framing must remain exactly unchanged outside the head region. ` +
+      `4) BLEND: match the neck and skin tone naturally and relight the new head to the FIRST image's lighting direction. Photorealistic, seamless, high-end professional photography.`;
+    parts = [{ inline_data: { mime_type: baseRef.mime || "image/jpeg", data: baseRef.data } }];
+    if (faceRef) parts.push({ inline_data: { mime_type: faceRef.mime || "image/jpeg", data: faceRef.data } });
+    parts.push({ inline_data: { mime_type: mime, data: b64 } });
+    parts.push({ text: prompt });
+  } else {
+  prompt =
     `Professional headshot creation task. Edit the FIRST attached photo. Follow ALL numbered instructions: ` +
     `1) IDENTITY — MOST IMPORTANT: the output must show the SAME person as the FIRST photo. ` +
-    (faceOrd ? `The ${faceOrd} attached image is a sharp close-up of this person's face — it is the DEFINITIVE face reference: copy it exactly, feature by feature. ` : ``) +
+    (faceOrd ? `The ${faceOrd} attached image is a sharp close-up of this person's face — it is the DEFINITIVE face reference: copy it exactly, feature by feature. Use it ONLY for facial identity — do NOT copy its crop, zoom or framing; the composition is set by instruction 5. ` : ``) +
     `Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle. Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
     `2) FACE RETOUCH: ${retouch}At EVERY retouch level: never change the shape or proportions of any facial feature — no slimming, reshaping, enlarging eyes or altering the nose, jaw or lips. Only skin texture, blemishes and lighting may be adjusted. The sole permitted shape change is the facial EXPRESSION requested in instruction 5 (e.g. a natural or big smile). ` +
     `3) CLOTHING: ` +
@@ -296,11 +313,12 @@ const handler = async (req) => {
     `5) POSE & FRAMING: the person is ${poseDesc}, with ${exprDesc}. Compose the shot as ${frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance), keeping the person horizontally centred similarly to the FIRST photo. ` +
     `6) STYLE & LIGHT: ${styleDesc}. ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
-  const parts = [{ inline_data: { mime_type: mime, data: b64 } }];
+  parts = [{ inline_data: { mime_type: mime, data: b64 } }];
   if (faceRef) parts.push({ inline_data: { mime_type: faceRef.mime || "image/jpeg", data: faceRef.data } });
   if (sceneRef) parts.push({ inline_data: { mime_type: sceneRef.mime || "image/jpeg", data: sceneRef.data } });
   if (outfitRef) parts.push({ inline_data: { mime_type: outfitRef.mime || "image/jpeg", data: outfitRef.data } });
   parts.push({ text: prompt });
+  }
 
   stage = "gemini";
   try {

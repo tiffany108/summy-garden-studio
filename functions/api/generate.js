@@ -287,7 +287,7 @@ const handler = async (req) => {
         : `REMOVE the person's current clothing and dress them in ${outfitDesc}. The original clothing must not remain visible. `) +
     `4) BACKGROUND: ` +
     (sceneOrd
-      ? `COMPLETELY REPLACE the FIRST photo's background with the environment shown in the ${sceneOrd} attached image (${scene || "professional setting"}). None of the FIRST photo's original surroundings, ground or sky may remain visible. Reproduce the reference environment's architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind the person. `
+      ? `COMPLETELY REPLACE the FIRST photo's background with the environment shown in the ${sceneOrd} attached image (${scene || "professional setting"}). None of the FIRST photo's original surroundings, ground or sky may remain visible. The result must look as if the person was photographed standing IN the ${sceneOrd} image's exact location: match that reference image's composition, architecture, objects, colours, season and lighting as closely as possible — near pixel-faithful apart from a soft depth-of-field blur behind the person. `
       : `COMPLETELY REPLACE the background with ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
     `5) POSE & FRAMING: the person is ${poseDesc}, with ${exprDesc}. Compose the shot as ${frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance), keeping the person horizontally centred similarly to the FIRST photo. ` +
     `6) STYLE & LIGHT: ${styleDesc}. ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;

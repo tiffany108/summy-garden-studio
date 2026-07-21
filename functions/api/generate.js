@@ -301,7 +301,7 @@ const handler = async (req) => {
       body: JSON.stringify({ contents: [{ parts }],
         generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
-    if (!res.ok) { const t = await res.text(); await refundCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 500, headers }); }
+    if (!res.ok) { const t = await res.text(); await refundCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 900)}` }, { status: 500, headers }); }
     const data = await res.json();
     const outParts = data?.candidates?.[0]?.content?.parts || [];
     const img = outParts.find((p) => p.inlineData || p.inline_data);

@@ -133,7 +133,7 @@ section{padding:72px 0}
 .swatch.active::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
 .sel-bg-info{margin-top:12px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;font-size:12.5px;color:rgba(255,255,255,.75)}
 .sel-bg-info b{color:#fff}
-.gen-btn{width:100%;margin-top:26px;background:var(--grad-attn);color:#fff;font-weight:800;font-size:16px;padding:16px;border-radius:14px;box-shadow:var(--brand-glow);animation:cvpulse 2.4s infinite;transition:.2s}
+.gen-btn{width:100%;margin-top:12px;background:var(--grad-attn);color:#fff;font-weight:800;font-size:16px;padding:16px;border-radius:14px;box-shadow:var(--brand-glow);animation:cvpulse 2.4s infinite;transition:.2s}
 .gen-btn:hover{transform:translateY(-2px)}
 @keyframes cvpulse{0%,100%{box-shadow:0 8px 22px rgba(14,165,233,.4)}50%{box-shadow:0 8px 30px rgba(251,191,36,.55)}}
 .result-zone{border-radius:16px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);min-height:420px;padding:24px;display:flex;flex-direction:column}
@@ -392,8 +392,8 @@ html,body{overflow-x:clip}
           <div class="swatch-grid" id="swatchGrid"></div>
           <div class="sel-bg-info" id="selBgInfo"></div>
           <div class="combo-summary" id="comboSummary"></div>
-          <button type="button" id="autoBtn" onclick="openAutoGallery()" style="width:100%;margin:14px 0 0;background:rgba(255,255,255,.08);color:#dff1fb;font-weight:700;font-size:14px;border:none;border-radius:13px;padding:13px 18px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(74,222,128,.45);font-family:inherit">✨ Ready-made looks — pick from our gallery</button>
-          <button type="button" id="prevBtn" onclick="quickPreview()" style="width:100%;margin:10px 0 14px;background:linear-gradient(135deg,#059669,#0284c7);color:#fff;font-weight:800;font-size:14.5px;border:none;border-radius:13px;padding:14px 18px;cursor:pointer;font-family:inherit">📸 Create your photo sets — preview &amp; confirm combinations</button>
+          <button type="button" id="autoBtn" onclick="openAutoGallery()" style="width:100%;margin:12px 0 0;background:rgba(255,255,255,.08);color:#dff1fb;font-weight:700;font-size:14px;border:none;border-radius:13px;padding:13px 18px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(74,222,128,.45);font-family:inherit">✨ Ready-made looks — pick from our gallery</button>
+          <button type="button" id="prevBtn" onclick="quickPreview()" style="width:100%;margin:12px 0 0;background:linear-gradient(135deg,#059669,#0284c7);color:#fff;font-weight:800;font-size:14.5px;border:none;border-radius:13px;padding:14px 18px;cursor:pointer;font-family:inherit">📸 Create your photo sets — preview &amp; confirm combinations</button>
           <button class="gen-btn" id="genBtn">✅ Confirm — generate my final headshots</button>
         </div>
         <div class="look-col">

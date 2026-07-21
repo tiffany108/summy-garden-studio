@@ -255,6 +255,7 @@ const handler = async (req) => {
   };
   const sceneRef = parseDataImg(body.scene_ref, 2_500_000);
   const outfitRef = parseDataImg(body.outfit_ref, 2_000_000);
+  const faceRef = parseDataImg(body.face_ref, 2_000_000);
   // If the Gemini call fails after the credit was consumed, give the credit back.
   const refundCredit = async () => {
     if (vi !== 0 || remaining === null) return;
@@ -272,12 +273,15 @@ const handler = async (req) => {
     enhance < 50 ? `Apply only very light retouching (about ${enhance}% intensity): keep the original skin texture, tone and all facial shapes untouched; at most soften harsh shadows and reduce temporary shine — the face must look unedited and completely natural. ` :
     enhance < 80 ? `Apply moderate professional retouching (about ${enhance}% intensity): even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten the eyes subtly — while faithfully preserving the original skin tone, skin texture and every facial shape and proportion (no slimming, no reshaping, no plastic look). ` :
     `Apply flattering professional retouching to SKIN AND LIGHTING ONLY: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, keeping the result realistic and recognisable (no plastic or over-smoothed look). `;
-  const ords = ["FIRST", "SECOND", "THIRD"]; let imgN = 1;
+  const ords = ["FIRST", "SECOND", "THIRD", "FOURTH"]; let imgN = 1;
+  const faceOrd = faceRef ? ords[imgN++] : null;
   const sceneOrd = sceneRef ? ords[imgN++] : null;
   const outfitOrd = outfitRef ? ords[imgN++] : null;
   const prompt =
     `Professional headshot creation task. Edit the FIRST attached photo. Follow ALL numbered instructions: ` +
-    `1) IDENTITY — MOST IMPORTANT: the output must show the SAME person as the FIRST photo. Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle. Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
+    `1) IDENTITY — MOST IMPORTANT: the output must show the SAME person as the FIRST photo. ` +
+    (faceOrd ? `The ${faceOrd} attached image is a sharp close-up of this person's face — it is the DEFINITIVE face reference: copy it exactly, feature by feature. ` : ``) +
+    `Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle. Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
     `2) FACE RETOUCH: ${retouch}At EVERY retouch level: never change the shape or proportions of any facial feature — no slimming, reshaping, enlarging eyes or altering the nose, jaw or lips. Only skin texture, blemishes and lighting may be adjusted. The sole permitted shape change is the facial EXPRESSION requested in instruction 5 (e.g. a natural or big smile). ` +
     `3) CLOTHING: ` +
     (outfitOrd
@@ -293,6 +297,7 @@ const handler = async (req) => {
     `6) STYLE & LIGHT: ${styleDesc}. ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   const parts = [{ inline_data: { mime_type: mime, data: b64 } }];
+  if (faceRef) parts.push({ inline_data: { mime_type: faceRef.mime || "image/jpeg", data: faceRef.data } });
   if (sceneRef) parts.push({ inline_data: { mime_type: sceneRef.mime || "image/jpeg", data: sceneRef.data } });
   if (outfitRef) parts.push({ inline_data: { mime_type: outfitRef.mime || "image/jpeg", data: outfitRef.data } });
   parts.push({ text: prompt });

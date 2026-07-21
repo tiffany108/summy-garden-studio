@@ -1709,6 +1709,36 @@ function renderPvBox(){
     `<button type="button" onclick="confirmCombo()" ${(!canMore||proofBusy)?'disabled':''} style="width:100%;margin-top:12px;border:none;border-radius:12px;padding:13px 14px;font-family:inherit;font-size:14px;font-weight:800;cursor:${(canMore&&!proofBusy)?'pointer':'default'};color:#fff;background:${proofBusy?'#39566b':canMore?'linear-gradient(135deg,#0369a1,#059669)':'#39566b'}">${proofBusy?TX('pv_creating'):canMore?TX('pv_confirm').replace('{n}',n).replace('{m}',PROOF_MAX):TX('pv_done').replace('{m}',PROOF_MAX)}</button>
     <p class="sim-note" style="margin-top:10px;text-align:left">${TX('pv_note')}</p>`;
 }
+async function faceRefDataURL(){
+  /* auto-crop a sharp close-up of the face from the ORIGINAL photo (native
+     resolution) so the AI always has a high-detail face reference, even when
+     the user framed a wide shot */
+  try{
+    const pc=getPortraitCanvas();
+    const mask=await segmentPortrait(pc);
+    if(!mask) return null;
+    const W=pc.width,H=pc.height;
+    const d=mask.getContext('2d').getImageData(0,0,W,H).data;
+    let minX=W,maxX=0,minY=H;
+    for(let y=0;y<H;y+=3)for(let x=0;x<W;x+=3){ if(d[(y*W+x)*4+3]>128){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; } }
+    if(maxX<=minX) return null;
+    const cx=(minX+maxX)/2;
+    const fh=Math.max((maxX-minX)*0.9, H*0.22), fw=fh*0.85;
+    const sy=Math.max(0,minY-fh*0.10), sx=Math.max(0,cx-fw/2);
+    const sw=Math.min(fw,W-sx), sh=Math.min(fh,H-sy);
+    /* map canvas-space box back to the original image's native pixels */
+    const k=480/CW, s=cropScale*k;
+    let ox=(sx-cropOX*k)/s, oy=(sy-cropOY*k)/s, ow=sw/s, oh=sh/s;
+    ox=Math.max(0,ox); oy=Math.max(0,oy);
+    ow=Math.min(ow,cropImg.width-ox); oh=Math.min(oh,cropImg.height-oy);
+    if(ow<40||oh<40) return null;
+    const c=document.createElement('canvas');
+    const outW=Math.min(720,Math.round(ow)); c.width=outW; c.height=Math.round(outW*oh/ow);
+    const x=c.getContext('2d'); x.imageSmoothingQuality='high';
+    x.drawImage(cropImg,ox,oy,ow,oh,0,0,c.width,c.height);
+    return c.toDataURL('image/jpeg',.92);
+  }catch(e){ return null; }
+}
 async function confirmCombo(){
   if(!cropImg){ toast(TX('t_upload')); return; }
   if(!bgById(selectedBg)){ toast(TX('t_scene')); return; }
@@ -1726,13 +1756,14 @@ async function confirmCombo(){
   try{
     const pc=getPortraitCanvas(); const selfie=pc.toDataURL('image/jpeg',.85);
     const oIdx=(selectedOutfit&&OPTLABELS.outfit.indexOf(selectedOutfit)>=0)?OPTLABELS.outfit.indexOf(selectedOutfit):null;
-    let [sceneRef,outfitRef]=await Promise.all([
+    let [sceneRef,outfitRef,faceRef]=await Promise.all([
       refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
-      oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null)
+      oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null),
+      faceRefDataURL()
     ]);
     if(!sceneRef) sceneRef=await refDataURL(bg.image,512,640,.9); /* solid/gradient backdrops render from the SVG */
     const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, proof:true, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify({selfie, proof:true, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, face_ref:faceRef, token: sbSession?sbSession.access_token:null})});
     const d=await res.json().catch(()=>({}));
     if(!res.ok||!d.image){ toast(TX('t_fail')+(d.error||('server '+res.status))); proofBusy=false; renderPvBox(); return; }
     const wm=await wmFromDataURL(d.image);

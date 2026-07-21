@@ -1218,10 +1218,12 @@ function applyAutoScene(bgId){
   enhChanged();
   closeModal('modeModal');
   selectBg(bgId,{fromStudio:false});
-  /* Auto = recreate the sample's look around the CUSTOMER's photo (scene backdrop
-     + recipe outfit/pose/expression refs). A literal face-swap onto the sample is
-     blocked by the image model's anti-deepfake guardrails — verified 2026-07-21. */
-  swapSampleIdx=null;
+  /* Auto = recreate the sample's look around the CUSTOMER's photo. The backdrop
+     sent to the AI is DERIVED from the tapped sample card itself (person removed,
+     cached once per scene) so the background matches what the customer chose.
+     A literal face-swap onto the sample is blocked by the image model's
+     anti-deepfake guardrails — verified 2026-07-21. */
+  swapSampleIdx=bgIndex(bgId);
   renderLook(); updateCombo();
   quickPreview();
   toast(TX('t_applied').replace('{s}',bgName(bgc)));
@@ -1819,28 +1821,34 @@ async function confirmCombo(){
   try{
     const pc=getPortraitCanvas(); const selfie=pc.toDataURL('image/jpeg',.85);
     const oIdx=(selectedOutfit&&OPTLABELS.outfit.indexOf(selectedOutfit)>=0)?OPTLABELS.outfit.indexOf(selectedOutfit):null;
-    const swapping = swapSampleIdx!==null;
-    let payload;
-    if(swapping){
-      /* Auto mode: face-swap the customer onto the exact sample photo */
-      const [baseRef,fRef]=await Promise.all([
-        refDataURL(aiSampleURL(bg,swapSampleIdx),768,960,.85),
-        faceRefDataURL()
-      ]);
-      if(baseRef){
-        payload={selfie, proof:true, swap:true, scene:bg.name, category:bg.cat, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, base_ref:baseRef, face_ref:fRef, token: sbSession?sbSession.access_token:null};
+    let sceneRef=null;
+    if(swapSampleIdx!==null){
+      /* Auto: the AI backdrop is DERIVED from the tapped sample card (person
+         removed by the AI once, then cached for everyone) — so the generated
+         background matches the exact card the customer chose. */
+      sceneRef=await refDataURL('/api/sample?kind=bs&i='+swapSampleIdx,512,640,.82);
+      if(!sceneRef){
+        const sm=await refDataURL(aiSampleURL(bg,swapSampleIdx),640,800,.85);
+        if(sm){
+          try{
+            const dr=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({derive:true, scene_i:swapSampleIdx, base_ref:sm, token: sbSession?sbSession.access_token:null})});
+            const dd=await dr.json().catch(()=>({}));
+            if(dd&&dd.image) sceneRef=await refDataURL(dd.image,512,640,.82);
+            else if(dd&&dd.cached) sceneRef=await refDataURL('/api/sample?kind=bs&i='+swapSampleIdx,512,640,.82);
+          }catch(e){}
+        }
       }
     }
-    if(!payload){
-      let [sceneRef,outfitRef,headSelfie]=await Promise.all([
-        refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
-        oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null),
-        headSelfieDataURL()
-      ]);
-      if(!sceneRef) sceneRef=await refDataURL(bg.image,512,640,.9); /* solid/gradient backdrops render from the SVG */
-      /* one well-framed head&shoulders base image; no separate face close-up */
-      payload={selfie: headSelfie||selfie, proof:true, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, token: sbSession?sbSession.access_token:null};
-    }
+    const [sceneRef2,outfitRef,headSelfie]=await Promise.all([
+      sceneRef?Promise.resolve(null):refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
+      oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null),
+      headSelfieDataURL()
+    ]);
+    sceneRef=sceneRef||sceneRef2;
+    if(!sceneRef) sceneRef=await refDataURL(bg.image,512,640,.9); /* solid/gradient backdrops render from the SVG */
+    /* one well-framed head&shoulders base image; no separate face close-up */
+    const payload={selfie: headSelfie||selfie, proof:true, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, token: sbSession?sbSession.access_token:null};
     const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)});
     const d=await res.json().catch(()=>({}));

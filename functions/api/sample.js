@@ -151,8 +151,8 @@ function buildPrompt(kind, i) {
 
 const handler = async (req) => {
   const url = new URL(req.url);
-  const kind = ["p","b","style","outfit","pose","expr","osp"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
-  const maxI = kind === "p" || kind === "b" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
+  const kind = ["p","b","bs","style","outfit","pose","expr","osp"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
+  const maxI = kind === "p" || kind === "b" || kind === "bs" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
   const i = Math.min(Math.max(parseInt(url.searchParams.get("i") || "0", 10) || 0, 0), maxI - 1);
   const ver = (kind !== "p" && kind !== "b" && OPT[kind] && OPT[kind][i] && OPT[kind][i][2]) ? "-" + OPT[kind][i][2] : "";
   // i>=100 are the Pure Backgrounds added after the Netlify era; versioned keys
@@ -168,7 +168,7 @@ const handler = async (req) => {
   // Migration bridge: the thumbnails were generated once and cached on the old
   // Netlify host. On a cold Cloudflare KV miss, pull the already-generated image
   // from Netlify (no Gemini usage) and store it in KV so it persists going forward.
-  if (!buf && !((kind === "p" || kind === "b") && i >= 100)) { // new scenes never existed on the old host
+  if (!buf && kind !== "bs" && !((kind === "p" || kind === "b") && i >= 100)) { // new scenes / derived backdrops never existed on the old host
     try {
       const nres = await fetch(`https://summy-garden-studio.netlify.app/.netlify/functions/sample?kind=${encodeURIComponent(kind)}&i=${i}`);
       const ct = nres.headers.get("content-type") || "";
@@ -184,6 +184,7 @@ const handler = async (req) => {
   }
 
   if (!buf) {
+    if (kind === "bs") return new Response("not derived yet", { status: 404 }); // filled by /api/generate {derive:true}
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) return new Response("not configured", { status: 501 });
     const prompt = buildPrompt(kind, i);

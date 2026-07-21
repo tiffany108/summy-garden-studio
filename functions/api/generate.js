@@ -199,6 +199,34 @@ const handler = async (req) => {
   stage = "auth";
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
+  stage = "derive";
+  if (body.derive === true) {
+    // Derive an empty backdrop FROM a sample card (person removed) — cached in
+    // KV once per scene so Auto generations reproduce the exact card background.
+    const sIdx = parseInt(body.scene_i, 10);
+    if (!Number.isInteger(sIdx) || sIdx < 0 || sIdx > 500) return Response.json({ error: "bad scene" }, { status: 400, headers });
+    const bsKey = "bs-" + sIdx;
+    if (env.SCENE_CACHE) {
+      const cached = await env.SCENE_CACHE.get(bsKey, { type: "arrayBuffer" });
+      if (cached) return Response.json({ cached: true }, { status: 200, headers });
+    }
+    const parse = (s, cap) => { if (typeof s !== "string" || !s.startsWith("data:image/") || s.length > cap) return null;
+      const c = s.indexOf(","); if (c < 0) return null; return { mime: s.slice(5, s.indexOf(";")), data: s.slice(c + 1) }; };
+    const bRef = parse(body.base_ref, 2_500_000);
+    if (!bRef) return Response.json({ error: "base required" }, { status: 400, headers });
+    const dPrompt = "Remove the person from this photograph completely. Recreate the SAME location as an empty professional backdrop photo: identical framing, architecture, objects, colours and lighting; naturally reconstruct the areas the person covered. Absolutely no people. Photorealistic.";
+    const dres = await fetch(`${API}?key=${gemKey}`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: bRef.mime || "image/jpeg", data: bRef.data } }, { text: dPrompt }] }],
+        generationConfig: { imageConfig: { aspectRatio: "3:4" } } }) });
+    if (!dres.ok) { const t = await dres.text(); return Response.json({ error: `Gemini ${dres.status}: ${t.slice(0, 200)}` }, { status: 500, headers }); }
+    const ddata = await dres.json();
+    const dparts = ddata?.candidates?.[0]?.content?.parts || [];
+    const dimg = dparts.find((p) => p.inlineData || p.inline_data);
+    if (!dimg) return Response.json({ error: "no image in response" }, { status: 500, headers });
+    const dd = dimg.inlineData || dimg.inline_data;
+    try { if (env.SCENE_CACHE) await env.SCENE_CACHE.put(bsKey, Uint8Array.from(atob(dd.data), (c) => c.charCodeAt(0)).buffer); } catch {}
+    return Response.json({ image: `data:${dd.mimeType || dd.mime_type || "image/png"};base64,${dd.data}`, derived: true }, { status: 200, headers });
+  }
   stage = "credit";
   if (!selfie || !selfie.startsWith("data:image/")) return Response.json({ error: "selfie required" }, { status: 400, headers });
   if (selfie.length > 6_000_000) return Response.json({ error: "image too large" }, { status: 413, headers });

@@ -508,11 +508,17 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
       <button class="btn-primary" style="width:100%;justify-content:center" onclick="registerAccount()">Create my free account</button>
     </div>
     <div id="inFields" style="display:none">
-      <p style="margin-bottom:16px">Welcome back — sign in to your studio.</p>
+      <p style="margin-bottom:16px" id="inIntro">Welcome back — sign in to your studio.</p>
       <input type="email" id="inEmail" placeholder="Email address">
-      <input type="password" id="inPw" placeholder="Password">
-      <button class="btn-primary" style="width:100%;justify-content:center" onclick="signInAccount()">Sign in</button>
-      <button type="button" onclick="forgotPassword()" style="background:none;border:none;padding:8px 0 0;margin:0;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#0284c7;text-decoration:underline">Forgot password?</button>
+      <div id="pwRow">
+        <input type="password" id="inPw" placeholder="Password">
+        <button class="btn-primary" style="width:100%;justify-content:center" onclick="signInAccount()">Sign in</button>
+        <button type="button" onclick="showForgot(true)" style="background:none;border:none;padding:8px 0 0;margin:0;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#0284c7;text-decoration:underline">Forgot password?</button>
+      </div>
+      <div id="resetRow" style="display:none">
+        <button class="btn-primary" style="width:100%;justify-content:center" onclick="forgotPassword()">Email me a reset link</button>
+        <button type="button" onclick="showForgot(false)" style="background:none;border:none;padding:8px 0 0;margin:0;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#0284c7;text-decoration:underline">← Back to sign in</button>
+      </div>
     </div>
     <p style="font-size:11.5px;margin-top:14px;margin-bottom:0;color:#8fa6b3">Your account is stored securely with email verification; passwords are kept only as secure hashes. See our <a onclick="openModal('privacyModal')" style="color:#0284c7;cursor:pointer;text-decoration:underline">Privacy Policy</a>.</p>
   </div>
@@ -890,13 +896,20 @@ async function signInAccount(){
   toast('🌿 Welcome back, '+(user?user.name.split(' ')[0]:'')+'!');
 }
 async function signOut(){ if(sb) await sb.auth.signOut(); sbSession=null; user=null; resetLookSelections(); closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out'); }
+function showForgot(on){
+  document.getElementById('pwRow').style.display = on?'none':'block';
+  document.getElementById('resetRow').style.display = on?'block':'none';
+  document.getElementById('inIntro').textContent = on?'Enter your email and we’ll send you a link to reset your password.':'Welcome back — sign in to your studio.';
+  document.getElementById('authTitle').textContent = on?'Reset your password':TX('a_in_t');
+  const m=document.getElementById('authMsg'); if(m) m.textContent='';
+}
 async function forgotPassword(){
   if(!sb){ toast('Account service unavailable — try again shortly'); return; }
   const email=document.getElementById('inEmail').value.trim().toLowerCase();
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast('Type your email in the box above, then tap "Forgot password?"'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast('Please enter a valid email address'); return; }
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
-  if(error){ toast('Could not send reset email: '+error.message); return; }
-  authMsg('📧 Password reset link sent to '+email+' — open it on this device to set a new password.');
+  if(error){ toast('Could not send reset email: '+error.message); authMsg('⚠️ '+error.message); return; }
+  authMsg('📧 Reset link sent to '+email+' — check your inbox (and spam folder). Open the link on this device to set a new password.');
   toast('Reset email sent — check your inbox');
 }
 function openPwModal(){ document.getElementById('npPw').value=''; document.getElementById('npPw2').value=''; openModal('pwModal'); }

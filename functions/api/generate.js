@@ -215,7 +215,7 @@ const handler = async (req) => {
     const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const q = await sbService(`/rest/v1/headshots?user_id=eq.${authUser.id}&variant=eq.9&created_at=gte.${encodeURIComponent(since)}&select=id`);
     const rows = q.ok ? await q.json() : [];
-    if (!isAdmin && rows.length >= 3) return Response.json({ error: "You already created 3 combination sets — download your favourite, or try again later." }, { status: 409, headers });
+    if (!isAdmin && rows.length >= 6) return Response.json({ error: "Preview limit reached for now — download your favourite set, or try again in a couple of hours." }, { status: 409, headers });
   } else if (vi === 0) {
     // variant 0 spends exactly one credit for the whole 4-variant generation
     const r = await sbService(`/rest/v1/rpc/consume_credit`, { method: "POST", body: JSON.stringify({ uid: authUser.id }) });

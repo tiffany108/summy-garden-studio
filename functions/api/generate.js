@@ -227,41 +227,51 @@ const handler = async (req) => {
   const mime = selfie.slice(5, selfie.indexOf(";"));
   const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
 
-  // Fetch the actual backdrop image for the chosen scene so the AI reproduces THAT
-  // exact environment instead of imagining one from the text description.
-  let sceneRefB64 = null;
-  const sceneIdx = parseInt(body.scene_i, 10);
-  if (Number.isInteger(sceneIdx) && sceneIdx >= 0 && sceneIdx < 200) {
+  // Fetch reference images so the AI reproduces the EXACT chosen scene and outfit
+  // instead of imagining them from text descriptions.
+  const abToB64 = (ab) => { const u = new Uint8Array(ab); let s = "";
+    for (let o = 0; o < u.length; o += 8192) s += String.fromCharCode.apply(null, u.subarray(o, o + 8192));
+    return btoa(s); };
+  const fetchRef = async (kind, idx, kvKey) => {
     try {
-      let ab = env.SCENE_CACHE ? await env.SCENE_CACHE.get("b-" + sceneIdx, { type: "arrayBuffer" }) : null;
+      let ab = (kvKey && env.SCENE_CACHE) ? await env.SCENE_CACHE.get(kvKey, { type: "arrayBuffer" }) : null;
       if (!ab) {
-        const r = await fetch(`https://summy-garden-studio.pages.dev/api/sample?kind=b&i=${sceneIdx}`, { cf: { cacheTtl: 86400 } });
+        const r = await fetch(`https://summy-garden-studio.pages.dev/api/sample?kind=${kind}&i=${idx}`, { cf: { cacheTtl: 86400 } });
         if (r.ok) ab = await r.arrayBuffer();
       }
-      if (ab && ab.byteLength > 1000) {
-        const u = new Uint8Array(ab); let s = "";
-        for (let o = 0; o < u.length; o += 8192) s += String.fromCharCode.apply(null, u.subarray(o, o + 8192));
-        sceneRefB64 = btoa(s);
-      }
-    } catch (e) { /* fall back to text-only scene description */ }
-  }
+      return (ab && ab.byteLength > 1000) ? abToB64(ab) : null;
+    } catch (e) { return null; }
+  };
+  let sceneRefB64 = null, outfitRefB64 = null;
+  const sceneIdx = parseInt(body.scene_i, 10);
+  if (Number.isInteger(sceneIdx) && sceneIdx >= 0 && sceneIdx < 200) sceneRefB64 = await fetchRef("b", sceneIdx, "b-" + sceneIdx);
+  const outfitIdx = parseInt(body.outfit_i, 10);
+  if (Number.isInteger(outfitIdx) && outfitIdx >= 0 && outfitIdx < 200) outfitRefB64 = await fetchRef("outfit", outfitIdx, null);
   // Retouch intensity chosen by the user (0% = keep the face exactly as-is; 100% = full studio polish)
   const retouch =
     enhance < 20 ? `Apply NO facial retouching at all: keep the skin texture, pores, marks, skin tone and all facial shapes exactly as they appear in the original photo — change only the clothing, background, lighting and framing. ` :
     enhance < 50 ? `Apply only very light retouching (about ${enhance}% intensity): keep the original skin texture, tone and all facial shapes untouched; at most soften harsh shadows and reduce temporary shine — the face must look unedited and completely natural. ` :
     enhance < 80 ? `Apply moderate professional retouching (about ${enhance}% intensity): even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten the eyes subtly — while faithfully preserving the original skin tone, skin texture and every facial shape and proportion (no slimming, no reshaping, no plastic look). ` :
     `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). `;
+  const ords = ["FIRST", "SECOND", "THIRD"]; let imgN = 1;
+  const sceneOrd = sceneRefB64 ? ords[imgN++] : null;
+  const outfitOrd = outfitRefB64 ? ords[imgN++] : null;
   const prompt =
-    `Transform this photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
+    `Transform the FIRST attached photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
     retouch +
-    `Style: ${styleDesc}. Dress them in ${outfitDesc}. The person is ${poseDesc}, with ${exprDesc}. ` +
-    (sceneRefB64
-      ? `Background: the SECOND attached image shows the exact background location (${scene || "professional setting"}). Place the person standing in exactly this environment — reproduce its architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind them. `
+    `Style: ${styleDesc}. ` +
+    (outfitOrd
+      ? `Outfit: the ${outfitOrd} attached image shows the exact outfit to use (${outfitDesc}). Dress the person in exactly this clothing — same garment, colour, fabric, neckline and details — fitted naturally to their body. `
+      : `Dress them in ${outfitDesc}. `) +
+    `The person is ${poseDesc}, with ${exprDesc}. ` +
+    (sceneOrd
+      ? `Background: the ${sceneOrd} attached image shows the exact background location (${scene || "professional setting"}). Place the person standing in exactly this environment — reproduce its architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind them. `
       : `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
     `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   const parts = [{ inline_data: { mime_type: mime, data: b64 } }];
   if (sceneRefB64) parts.push({ inline_data: { mime_type: "image/png", data: sceneRefB64 } });
+  if (outfitRefB64) parts.push({ inline_data: { mime_type: "image/png", data: outfitRefB64 } });
   parts.push({ text: prompt });
 
   try {

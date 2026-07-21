@@ -288,6 +288,30 @@ footer{background:var(--bg-deep);color:var(--on-dark-muted);padding:44px 0;font-
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
 footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
 @media(max-width:880px){.look-inner{position:static;inset:auto}.look-grid{max-height:430px;flex:none}.result-zone{flex:none}}
+/* ---------- Mobile alignment: keep every section tidy on phones ---------- */
+html,body{overflow-x:clip}
+@media(max-width:760px){
+  .wrap{padding:0 16px}
+  .nav-inner{gap:8px 10px;flex-wrap:wrap;justify-content:space-between}
+  .nav-links{display:none}
+  .logo{font-size:15px;gap:7px}
+  .logo-mark{width:36px;height:36px}
+  .lang-sel{font-size:12px;padding:7px 10px}
+  .credit-pill{font-size:11.5px;padding:6px 10px}
+  .nav-cta{font-size:12.5px;padding:8px 14px}
+  .hero{padding-top:44px}
+  .look-tabs{flex-wrap:wrap;row-gap:8px}
+  .enh-chip{margin-left:0;width:100%;box-sizing:border-box;justify-content:space-between}
+  .enh-chip input[type=range]{flex:1;width:auto;min-width:90px}
+  .cookie-bar{flex-direction:column;align-items:stretch;gap:12px;left:10px;right:10px;bottom:10px}
+  .cookie-bar .ck-btns{justify-content:flex-end}
+  .modal{padding:26px 20px;border-radius:18px}
+  .dash-stats{gap:10px}
+  .dash-stat{flex:1 1 calc(33% - 10px);min-width:90px}
+  .ref-box{flex-wrap:nowrap}
+  footer .wrap{flex-direction:column;align-items:flex-start;gap:12px}
+  footer a{margin-left:0;margin-right:16px;display:inline-block;margin-top:4px}
+}
 </style>
 </head>
 <body>
@@ -1036,8 +1060,11 @@ function applyEnhPreview(){
   const cv=document.getElementById('cropCanvas'); if(!cv) return;
   const p=(+document.getElementById('enhSlider')?.value||0)/100;
   cv.style.filter=p===0?'none':
-    `brightness(${(1+p*0.055).toFixed(3)}) contrast(${(1-p*0.055).toFixed(3)}) saturate(${(1+p*0.06).toFixed(3)}) blur(${(p*1.05).toFixed(2)}px)`;
+    `brightness(${(1+p*0.09).toFixed(3)}) contrast(${(1-p*0.10).toFixed(3)}) saturate(${(1+p*0.09).toFixed(3)}) blur(${(p*1.8).toFixed(2)}px)`;
   cv.style.transition='filter .15s';
+  const n=document.getElementById('enhPrevNote');
+  if(n) n.textContent = p===0 ? '✨ Enhance 0% — your original face, exactly as photographed'
+    : `✨ Live preview at ${Math.round(p*100)}% Enhance — move the slider to compare, 0% = original`;
 }
 /* Ask for feedback once per session, a moment after the first successful generation */
 function maybeAskFeedback(){
@@ -1363,7 +1390,7 @@ async function tryServerGenerate(bg){
     const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
     const res=await fetch('/api/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:vi, scene_id:bg.id, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:vi, scene_id:bg.id, scene_i:bgIndex(bg.id), token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
     if(res.status===402){ openModal('paywall'); throw new Error('no credits'); }
     if(!res.ok) throw new Error('server '+res.status);

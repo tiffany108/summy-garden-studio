@@ -226,6 +226,25 @@ const handler = async (req) => {
   const b64 = selfie.split(",")[1];
   const mime = selfie.slice(5, selfie.indexOf(";"));
   const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
+
+  // Fetch the actual backdrop image for the chosen scene so the AI reproduces THAT
+  // exact environment instead of imagining one from the text description.
+  let sceneRefB64 = null;
+  const sceneIdx = parseInt(body.scene_i, 10);
+  if (Number.isInteger(sceneIdx) && sceneIdx >= 0 && sceneIdx < 200) {
+    try {
+      let ab = env.SCENE_CACHE ? await env.SCENE_CACHE.get("b-" + sceneIdx, { type: "arrayBuffer" }) : null;
+      if (!ab) {
+        const r = await fetch(`https://summy-garden-studio.pages.dev/api/sample?kind=b&i=${sceneIdx}`, { cf: { cacheTtl: 86400 } });
+        if (r.ok) ab = await r.arrayBuffer();
+      }
+      if (ab && ab.byteLength > 1000) {
+        const u = new Uint8Array(ab); let s = "";
+        for (let o = 0; o < u.length; o += 8192) s += String.fromCharCode.apply(null, u.subarray(o, o + 8192));
+        sceneRefB64 = btoa(s);
+      }
+    } catch (e) { /* fall back to text-only scene description */ }
+  }
   // Retouch intensity chosen by the user (0% = keep the face exactly as-is; 100% = full studio polish)
   const retouch =
     enhance < 20 ? `Apply NO facial retouching at all: keep the skin texture, pores, marks, skin tone and all facial shapes exactly as they appear in the original photo — change only the clothing, background, lighting and framing. ` :
@@ -236,13 +255,19 @@ const handler = async (req) => {
     `Transform this photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
     retouch +
     `Style: ${styleDesc}. Dress them in ${outfitDesc}. The person is ${poseDesc}, with ${exprDesc}. ` +
-    `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
+    (sceneRefB64
+      ? `Background: the SECOND attached image shows the exact background location (${scene || "professional setting"}). Place the person standing in exactly this environment — reproduce its architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind them. `
+      : `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
     `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
+
+  const parts = [{ inline_data: { mime_type: mime, data: b64 } }];
+  if (sceneRefB64) parts.push({ inline_data: { mime_type: "image/png", data: sceneRefB64 } });
+  parts.push({ text: prompt });
 
   try {
     const res = await fetch(`${API}?key=${gemKey}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }],
+      body: JSON.stringify({ contents: [{ parts }],
         generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
     if (!res.ok) { const t = await res.text(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }

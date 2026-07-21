@@ -120,8 +120,8 @@ section{padding:72px 0}
 .look-card{transition:box-shadow .18s ease,transform .18s ease,filter .18s ease}
 .look-card:hover{box-shadow:inset 0 0 0 2px #7dd3fc,0 0 0 2px #7dd3fc,0 0 18px 4px rgba(125,211,252,.55);transform:translateY(-2px);filter:brightness(1.12)}
 .look-grid{padding:4px 6px 6px 4px}
-.swatch{transition:box-shadow .18s ease}
-.swatch:hover{box-shadow:0 0 0 2px #7dd3fc,0 0 16px 4px rgba(125,211,252,.55)}
+.swatch{transition:box-shadow .18s ease,transform .18s ease}
+.swatch:hover{box-shadow:0 0 0 2.5px var(--accent-bright),0 6px 14px rgba(56,189,248,.4),0 0 18px 5px rgba(74,222,128,.45)}
 .bg-card{transition:box-shadow .18s ease}
 .bg-card:hover{box-shadow:0 0 0 2px #7dd3fc,0 0 18px 4px rgba(125,211,252,.5)}
 .pv-sel{width:100%;background:#0a3a5c;color:#fff;border:none;border-radius:10px;padding:9px 11px;font-family:inherit;font-size:13px;font-weight:600;outline:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(125,211,252,.25)}
@@ -1066,7 +1066,7 @@ async function submitContact(){
 }
 
 /* ---------- State ---------- */
-let selectedBg = BACKGROUNDS[30].id;
+let selectedBg = null; /* no default — a scene is highlighted only when the user picks it */
 /* Look choices start empty — the tick appears only when the user actively picks one.
    Defaults are applied at generation time (LOOK_DEFAULTS) and cleared on sign-out. */
 let selectedOutfit=null, selectedStyle=null, selectedPose=null, selectedExpr=null, selectedFrame='Head & shoulders', currency='USD';
@@ -1701,6 +1701,7 @@ async function confirmCombo(){
     const wm=await wmFromDataURL(d.image);
     proofShots.push({clean:d.image, wm, unlocked:false, label:bgName(bg)+(selectedOutfit?' · '+xl(selectedOutfit):' · your own clothes')});
     toast('✓ Photo set '+proofShots.length+' saved below — create another or download');
+    maybeAskFeedback();
   }catch(e){ toast('Could not create this set — please try again'); }
   proofBusy=false; renderPvBox(); renderProofStrip();
 }

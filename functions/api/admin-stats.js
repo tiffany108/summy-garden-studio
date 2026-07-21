@@ -37,7 +37,7 @@ const handler = async (req) => {
 
   const profiles = await get(`${SB_URL}/rest/v1/profiles?select=id,name,credits,ref_count,created_at&limit=5000`) || [];
   const generations = await get(`${SB_URL}/rest/v1/generations?select=user_id,created_at&order=created_at.desc&limit=20000`) || [];
-  const purchases = await get(`${SB_URL}/rest/v1/purchases?select=user_id,session_id,pack,credits,amount,currency,created_at&order=created_at.desc&limit=10000`) || [];
+  const purchases = await get(`${SB_URL}/rest/v1/purchases?select=user_id,session_id,pack,credits,amount,currency,created_at,credits_reversed&order=created_at.desc&limit=10000`) || [];
 
   return Response.json({ users, profiles, generations, purchases, generated_at: new Date().toISOString() }, { status: 200, headers });
 };

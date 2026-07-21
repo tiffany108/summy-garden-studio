@@ -7,6 +7,9 @@
 <meta name="robots" content="noindex,nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
 :root{
   --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
@@ -43,6 +46,9 @@ input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
 .sec-title{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:28px 0 14px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
 .stat{background:#fff;border-radius:15px;box-shadow:var(--card);padding:20px 22px}
+/* yellow luminous highlight on hover — stats, cards and charts */
+.stat,.card,.chart-box{transition:box-shadow .22s ease}
+.stat:hover,.card:hover,.chart-box:hover{box-shadow:0 0 0 2.5px #facc15,0 0 22px 4px rgba(250,204,21,.5)}
 .stat .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:19px;color:#fff;margin-bottom:12px}
 .stat b{display:block;font-size:28px;font-weight:800;letter-spacing:-.02em}
 .stat span{font-size:12.5px;color:var(--muted)}
@@ -106,8 +112,8 @@ tbody tr:hover{background:#e8f4fd}
     <div class="sec-title" data-i18n="t_biz">Business dashboard</div>
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_from">From</span> <input type="date" id="bdFrom" style="width:auto;margin:0 8px 0 4px"></label>
-        <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_to">To</span> <input type="date" id="bdTo" style="width:auto;margin:0 8px 0 4px"></label>
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">📅 Date range <input type="text" id="bdRange" placeholder="Pick a date range…" readonly style="width:215px;margin:0 8px 0 6px;cursor:pointer;background:#f0f6fa"></label>
+        <input type="hidden" id="bdFrom"><input type="hidden" id="bdTo">
         <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_cost">Cost per AI image (US$)</span> <input type="number" step="0.001" id="bdCost" value="0.039" style="width:90px;margin:0 8px 0 4px"></label>
         <button class="btn" onclick="renderBiz()" data-i18n="btn_apply">Apply</button>
         <button class="btn dark" onclick="exportUsersCSV()" data-i18n="btn_export">⬇ Export users CSV</button>
@@ -124,7 +130,12 @@ tbody tr:hover{background:#e8f4fd}
       <div class="stats" style="margin-top:14px">
         <div class="stat"><div class="ico i4">💰</div><b id="bdRev">–</b><span id="bdRevNote" data-i18n="b_rev">Revenue in range (≈US$)</span></div>
         <div class="stat"><div class="ico i3">🤖</div><b id="bdTok">–</b><span data-i18n="b_tok">AI token cost in range (est., US$)</span></div>
+        <div class="stat"><div class="ico i2">↩️</div><b id="bdRefund">–</b><span>Refunds in range (≈US$)</span></div>
         <div class="stat"><div class="ico i1">📈</div><b id="bdNet">–</b><span data-i18n="b_net">Net profit in range (≈US$)</span></div>
+      </div>
+      <div class="chart-box" style="margin-top:18px;background:#fff;border-radius:15px;box-shadow:var(--card);padding:18px 20px">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Revenue · Cost · Refunds by date (≈US$)</div>
+        <div style="position:relative;height:260px"><canvas id="bizChart"></canvas></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:6px;overflow-x:auto">
@@ -259,8 +270,46 @@ async function loadBiz(){
     const today=new Date(), past=new Date(Date.now()-29*86400000);
     if(!document.getElementById('bdFrom').value) document.getElementById('bdFrom').value=past.toISOString().slice(0,10);
     if(!document.getElementById('bdTo').value) document.getElementById('bdTo').value=today.toISOString().slice(0,10);
+    initRangePicker();
     renderBiz();
   }catch(e){ document.getElementById('bdNote').textContent='Business data failed to load'; }
+}
+/* one calendar for the whole range: click start date, then end date */
+let bdPicker=null;
+function initRangePicker(){
+  if(bdPicker||!window.flatpickr) return;
+  bdPicker=flatpickr('#bdRange',{
+    mode:'range', dateFormat:'Y-m-d',
+    defaultDate:[document.getElementById('bdFrom').value, document.getElementById('bdTo').value],
+    onChange:(dates)=>{ if(dates.length===2){
+      document.getElementById('bdFrom').value=bdPicker.formatDate(dates[0],'Y-m-d');
+      document.getElementById('bdTo').value=bdPicker.formatDate(dates[1],'Y-m-d');
+      renderBiz();
+    }}
+  });
+}
+let bizChart=null;
+function renderBizChart(from,to,purch,gens,costPer){
+  if(!window.Chart) return;
+  const days=[]; const f=new Date(from), t=new Date(to.slice(0,10));
+  for(let d=new Date(f); d<=t && days.length<370; d.setDate(d.getDate()+1)) days.push(d.toISOString().slice(0,10));
+  const rev={}, ref={}, cost={};
+  purch.forEach(p=>{ const d=(p.created_at||'').slice(0,10);
+    rev[d]=(rev[d]||0)+toUSD(p.amount,p.currency);
+    if((p.credits_reversed||0)>0 && (p.credits||0)>0) ref[d]=(ref[d]||0)+toUSD(p.amount,p.currency)*Math.min(1,p.credits_reversed/p.credits); });
+  gens.forEach(g=>{ const d=(g.created_at||'').slice(0,10); cost[d]=(cost[d]||0)+4*costPer; });
+  const ctx=document.getElementById('bizChart'); if(!ctx) return;
+  if(bizChart) bizChart.destroy();
+  bizChart=new Chart(ctx,{type:'bar',
+    data:{labels:days.map(d=>d.slice(5)),datasets:[
+      {label:'Revenue',data:days.map(d=>+(rev[d]||0).toFixed(2)),backgroundColor:'rgba(74,222,128,.75)',borderRadius:4},
+      {label:'Cost (est.)',data:days.map(d=>+(cost[d]||0).toFixed(2)),backgroundColor:'rgba(56,189,248,.75)',borderRadius:4},
+      {label:'Refunds',data:days.map(d=>+(ref[d]||0).toFixed(2)),backgroundColor:'rgba(248,113,113,.8)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'top',labels:{boxWidth:14,boxHeight:14,font:{family:'Inter',weight:'700',size:12}}},
+        tooltip:{callbacks:{label:c=>' '+c.dataset.label+': $'+(+c.parsed.y).toFixed(2)}}},
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:16,font:{family:'Inter',size:11}}},
+        y:{beginAtZero:true,ticks:{callback:v=>'$'+v,font:{family:'Inter',size:11}}}}}});
 }
 function renderBiz(){
   if(!BD) return;
@@ -293,8 +342,11 @@ function renderBiz(){
   document.getElementById('bdRev').textContent='$'+revUSD.toFixed(2);
   document.getElementById('bdRevNote').textContent='Revenue in range (≈US$)'+(Object.keys(byCur).length?' · '+Object.entries(byCur).map(([c,v])=>c+' '+v.toFixed(2)).join(' + '):'');
   document.getElementById('bdTok').textContent='$'+tok.toFixed(2);
-  const net=revUSD-tok;
+  const refundUSD=purch.reduce((a,p)=>a+((p.credits_reversed||0)>0&&(p.credits||0)>0?toUSD(p.amount,p.currency)*Math.min(1,p.credits_reversed/p.credits):0),0);
+  const refEl=document.getElementById('bdRefund'); if(refEl){ refEl.textContent='$'+refundUSD.toFixed(2); refEl.style.color=refundUSD>0?'#c0392b':'inherit'; }
+  const net=revUSD-tok-refundUSD;
   const netEl=document.getElementById('bdNet'); netEl.textContent=(net<0?'-$':'$')+Math.abs(net).toFixed(2); netEl.style.color=net<0?'#c0392b':'#0f6e56';
+  renderBizChart(from, to, purch, (BD.generations||[]).filter(g=>inRange(g.created_at)), cost);
   document.getElementById('bdNote').textContent='Data as of '+new Date(BD.generated_at).toLocaleTimeString()+' · '+gensRange+' generations ('+gensRange*4+' AI images) in range';
   renderBizTable();
 }

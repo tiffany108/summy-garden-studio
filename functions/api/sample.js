@@ -160,7 +160,8 @@ const handler = async (req) => {
   // portraits with proper headroom framing (-v3).
   const isNewB = kind === "b" && i >= 100 && i <= 105;
   const isNewP = kind === "p" && i >= 100;
-  const key = `${kind}-${i}${ver}${isNewB ? "-v2" : isNewP ? "-v3" : ""}`;
+  const pRetake = isNewP && (i === 106 || i === 108); // reframed retakes
+  const key = `${kind}-${i}${ver}${isNewB ? "-v2" : pRetake ? "-v4" : isNewP ? "-v3" : ""}`;
 
   let buf = (env.SCENE_CACHE ? await env.SCENE_CACHE.get(key, { type: "arrayBuffer" }) : null);
 

@@ -898,7 +898,7 @@ async function getSceneImg(bg){
   return sceneCache[bg.id];
 }
 function aiSampleURL(bg,i){
-  return '/api/sample?kind=p&i='+i+(i>=100?'&v=3':'');
+  return '/api/sample?kind=p&i='+i+(i===106||i===108?'&v=4':i>=100?'&v=3':'');
 }
 
 /* ---------- Storage & membership ---------- */

@@ -1270,7 +1270,7 @@ function makeOptCard(kind,label,i,special){
   const c=document.createElement('div'); c.className='look-card'+(cur?' sel':'');
   if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
   else { c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(kind,i)+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
-  c.onclick=()=>{ SETSEL[kind](label); renderLook(); updateCombo(); };
+  c.onclick=()=>{ SETSEL[kind](SEL[kind]()===label?null:label); renderLook(); updateCombo(); }; /* click again (or double-click) to unselect */
   return c;
 }
 function renderLook(){

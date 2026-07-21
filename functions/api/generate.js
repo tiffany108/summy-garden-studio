@@ -271,14 +271,14 @@ const handler = async (req) => {
     enhance < 20 ? `Apply NO facial retouching at all: keep the skin texture, pores, marks, skin tone and all facial shapes exactly as they appear in the original photo — change only the clothing, background, lighting and framing. ` :
     enhance < 50 ? `Apply only very light retouching (about ${enhance}% intensity): keep the original skin texture, tone and all facial shapes untouched; at most soften harsh shadows and reduce temporary shine — the face must look unedited and completely natural. ` :
     enhance < 80 ? `Apply moderate professional retouching (about ${enhance}% intensity): even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten the eyes subtly — while faithfully preserving the original skin tone, skin texture and every facial shape and proportion (no slimming, no reshaping, no plastic look). ` :
-    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). `;
+    `Apply flattering professional retouching to SKIN AND LIGHTING ONLY: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, keeping the result realistic and recognisable (no plastic or over-smoothed look). `;
   const ords = ["FIRST", "SECOND", "THIRD"]; let imgN = 1;
   const sceneOrd = sceneRef ? ords[imgN++] : null;
   const outfitOrd = outfitRef ? ords[imgN++] : null;
   const prompt =
     `Professional headshot creation task. Edit the FIRST attached photo. Follow ALL numbered instructions: ` +
     `1) IDENTITY — MOST IMPORTANT: the output must show the SAME person as the FIRST photo. Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle. Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
-    `2) FACE RETOUCH: ${retouch}` +
+    `2) FACE RETOUCH: ${retouch}At EVERY retouch level: never change the shape or proportions of any facial feature — no slimming, reshaping, enlarging eyes or altering the nose, jaw or lips. Only skin texture, blemishes and lighting may be adjusted. The sole permitted shape change is the facial EXPRESSION requested in instruction 5 (e.g. a natural or big smile). ` +
     `3) CLOTHING: ` +
     (outfitOrd
       ? `REMOVE the person's current clothing and dress them in EXACTLY the outfit shown in the ${outfitOrd} attached image (${outfitDesc}) — same garment, colour, fabric, neckline and details, fitted naturally to their body. The original clothing must not remain visible. `

@@ -636,7 +636,7 @@ html,body{overflow-x:clip}
   </div>
 </div>
 <div class="modal-backdrop" id="modeModal">
-  <div class="modal" style="max-width:460px">
+  <div class="modal" style="max-width:580px">
     <button class="close-x" onclick="closeModal('modeModal')">×</button>
     <div class="icon-tile tile-teal">🪄</div>
     <h3>How would you like your headshot?</h3>
@@ -1130,16 +1130,21 @@ document.getElementById('camInput').addEventListener('change',e=>{
 });
 
 /* ---------- Auto (ready-made looks) vs Customize — asked right after upload ---------- */
-const PRESETS=[
- {n:'Executive Office', d:'Corner office · navy suit · confident',    bg:'bg-0-1', outfit:'Navy suit',        style:'Executive',   pose:'Straight on',   expr:'Confident',     enh:60},
- {n:'Studio Classic',   d:'Grey studio · white shirt · timeless',     bg:'bg-8-0', outfit:'White shirt',      style:'Studio',      pose:'Straight on',   expr:'Natural smile', enh:50},
- {n:'Summer Garden',    d:'Signature garden · your own clothes',      bg:'bg-3-0', outfit:null,               style:'Natural',     pose:'Straight on',   expr:'Natural smile', enh:30},
- {n:'Golden Hour City', d:'Warm avenue · smart-casual blazer',        bg:'bg-2-1', outfit:'Blazer over tee',  style:'Golden warm', pose:'Slight angle',  expr:'Friendly',      enh:50},
- {n:'Harbour Corporate',d:'Sea view · charcoal suit',                 bg:'bg-4-5', outfit:'Charcoal suit',    style:'Corporate',   pose:'Three-quarter', expr:'Confident',     enh:60},
- {n:'Editorial Black',  d:'Charcoal spotlight · black turtleneck',    bg:'bg-8-2', outfit:'Black turtleneck', style:'Editorial',   pose:'Head tilt',     expr:'Serious',       enh:70},
- {n:'Campus Scholar',   d:'University hall · smart cardigan',         bg:'bg-7-0', outfit:'Cardigan',         style:'Academic',    pose:'Straight on',   expr:'Neutral',       enh:40},
- {n:'Café Friendly',    d:'Sunlit café · cosy knit',                  bg:'bg-6-0', outfit:'Knit sweater',     style:'Approachable',pose:'Relaxed',       expr:'Friendly',      enh:50},
+/* Every gallery scene is offered, grouped by category; each category carries a
+   curated look recipe (outfit / style / pose / expression / natural-look %). */
+const CAT_RECIPES=[
+ {outfit:'Navy suit',         style:'Executive',   pose:'Straight on',   expr:'Confident',     enh:60},
+ {outfit:'Light blazer',      style:'Corporate',   pose:'Slight angle',  expr:'Natural smile', enh:50},
+ {outfit:'Blazer over tee',   style:'Street',      pose:'Slight angle',  expr:'Friendly',      enh:50},
+ {outfit:null,                style:'Natural',     pose:'Straight on',   expr:'Natural smile', enh:30},
+ {outfit:'Open-collar shirt', style:'Golden warm', pose:'Three-quarter', expr:'Natural smile', enh:50},
+ {outfit:'Polo shirt',        style:'Bold',        pose:'Standing tall', expr:'Friendly',      enh:50},
+ {outfit:'Knit sweater',      style:'Approachable',pose:'Relaxed',       expr:'Friendly',      enh:50},
+ {outfit:'Cardigan',          style:'Academic',    pose:'Straight on',   expr:'Neutral',       enh:40},
+ {outfit:'White shirt',       style:'Studio',      pose:'Straight on',   expr:'Natural smile', enh:50},
+ {outfit:'Black turtleneck',  style:'Tech',        pose:'Straight on',   expr:'Confident',     enh:50},
 ];
+const catRecipe=ci=>CAT_RECIPES[ci]||CAT_RECIPES[8];
 function openModeModal(){ modeStep(0); openModal('modeModal'); }
 function modeStep(s){
   const b=document.getElementById('modeBody'); if(!b) return;
@@ -1154,30 +1159,33 @@ function modeStep(s){
           <span style="font-size:12px;opacity:.85">Pick your own scene, outfit, pose, expression &amp; natural-look level</span></button>
       </div>`;
   } else {
-    b.innerHTML=`<p style="margin-top:0;font-size:13px">Tap a look — you'll get a free watermarked preview first, nothing is charged:</p>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-height:50vh;overflow:auto;padding-right:2px">`+
-      PRESETS.map((p,i)=>{
-        const bgc=bgById(p.bg); const gi=bgIndex(p.bg);
-        const oI=p.outfit?OPTLABELS.outfit.indexOf(p.outfit):-1;
-        return `<div onclick="applyPreset(${i})" style="cursor:pointer;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:4/3;background-image:url('${aiSceneURL(bgc,gi)}'),url('${bgc.image}');background-size:cover;background-position:center;box-shadow:0 4px 14px rgba(0,0,0,.35)">
-          ${oI>=0?`<img src="${optImg('outfit',oI)}" alt="" style="position:absolute;top:6px;right:6px;width:34px;height:34px;object-fit:cover;border-radius:8px;box-shadow:0 0 0 1.5px rgba(255,255,255,.8)">`:''}
-          <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 9px 7px;background:linear-gradient(transparent,rgba(4,26,41,.92));text-align:left">
-            <b style="font-size:12.5px;color:#fff;display:block">${p.n}</b>
-            <span style="font-size:10.5px;color:#b8d4e3">${p.d}</span></div></div>`;
+    b.innerHTML=`<p style="margin-top:0;font-size:13px">Tap any photo from our gallery — the AI recreates that scene &amp; look with your face. Free watermarked preview first, nothing is charged:</p>
+      <div style="max-height:56vh;overflow:auto;padding-right:2px;text-align:left">`+
+      CATEGORIES.map((cat,ci)=>{
+        const scenes=BACKGROUNDS.filter(bb=>bb.cat===cat);
+        return `<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9fc0d3;margin:13px 0 6px">${TX('c'+(ci+1))||cat}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:9px">`+
+          scenes.map(bb=>{
+            const gi=bgIndex(bb.id);
+            return `<div onclick="applyAutoScene('${bb.id}')" style="cursor:pointer;border-radius:11px;overflow:hidden;position:relative;aspect-ratio:4/5;background-image:url('${aiSampleURL(bb,gi)}'),url('${bb.image}');background-size:cover;background-position:center;box-shadow:0 3px 10px rgba(0,0,0,.35)">
+              <div style="position:absolute;left:0;right:0;bottom:0;padding:18px 7px 5px;background:linear-gradient(transparent,rgba(4,26,41,.94))">
+                <b style="font-size:11px;color:#fff;display:block;line-height:1.25">${bgName(bb)}</b></div></div>`;
+          }).join('')+`</div>`;
       }).join('')+
       `</div><p style="font-size:11.5px;color:#8fa6b3;margin:10px 0 0"><a style="cursor:pointer;color:#7dd3fc" onclick="modeStep(0)">← Back</a> · or <a style="cursor:pointer;color:#7dd3fc" onclick="chooseCustomize()">customize instead</a></p>`;
   }
 }
-function applyPreset(i){
-  const p=PRESETS[i];
+function applyAutoScene(bgId){
+  const bgc=bgById(bgId); if(!bgc) return;
+  const p=catRecipe(CATEGORIES.indexOf(bgc.cat));
   selectedStyle=p.style; selectedOutfit=p.outfit; selectedPose=p.pose; selectedExpr=p.expr;
   const s=document.getElementById('enhSlider'); if(s) s.value=p.enh;
   enhChanged();
   closeModal('modeModal');
-  selectBg(p.bg,{fromStudio:false});
+  selectBg(bgId,{fromStudio:false});
   renderLook(); updateCombo();
   quickPreview();
-  toast('✨ '+p.n+' applied — check your free preview, then hit Generate');
+  toast('✨ '+bgName(bgc)+' look applied — check your free preview, then hit Generate');
 }
 function chooseCustomize(){
   closeModal('modeModal');

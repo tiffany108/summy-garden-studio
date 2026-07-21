@@ -1196,10 +1196,19 @@ function segmentPortrait(pc){
     const t=setTimeout(()=>{ if(!done){done=true; resolve(null);} },9000);
     seg.onResults(r=>{
       if(done) return; done=true; clearTimeout(t);
-      const m=document.createElement('canvas'); m.width=pc.width; m.height=pc.height;
+      const W=pc.width,H=pc.height;
+      /* erode the mask a little so no ring of the original background
+         survives around the hair (that ring showed as a bright outline) */
+      const e=document.createElement('canvas'); e.width=W; e.height=H;
+      const ex=e.getContext('2d');
+      ex.drawImage(r.segmentationMask,0,0,W,H);
+      ex.globalCompositeOperation='destination-in';
+      [[2,0],[-2,0],[0,2],[0,-2],[1.5,1.5],[-1.5,1.5],[1.5,-1.5],[-1.5,-1.5]]
+        .forEach(o=>ex.drawImage(r.segmentationMask,o[0],o[1],W,H));
+      const m=document.createElement('canvas'); m.width=W; m.height=H;
       const mx=m.getContext('2d');
-      mx.filter='blur(2px)';
-      mx.drawImage(r.segmentationMask,0,0,pc.width,pc.height);
+      mx.filter='blur(1.2px)';
+      mx.drawImage(e,0,0);
       resolve(m);
     });
     try{ seg.send({image:pc}); }catch(e){ if(!done){done=true; clearTimeout(t); resolve(null);} }
@@ -1232,11 +1241,17 @@ async function composeVariant(bg, person, extra, wm){
     const sc=Math.max(W/sceneImg.width,H/sceneImg.height);
     x.drawImage(sceneImg,(W-sceneImg.width*sc)/2,(H-sceneImg.height*sc)/2,sceneImg.width*sc,sceneImg.height*sc);
     const FX=(LOOKS[selectedOutfit]||'contrast(1.05) saturate(1.02)')+' brightness(1.04) '+extra;
+    /* soft skin blend clipped INSIDE the silhouette — a blurred copy drawn on
+       top used to spill past the edges and create a glow outline on the head */
+    const pl=document.createElement('canvas'); pl.width=W; pl.height=H;
+    const px=pl.getContext('2d');
+    px.drawImage(person,0,0);
+    px.globalCompositeOperation='source-atop'; px.globalAlpha=.28; px.filter='blur(2.5px)';
+    px.drawImage(person,0,0);
+    px.globalCompositeOperation='source-over'; px.globalAlpha=1; px.filter='none';
     x.save();
     x.filter=FX;
-    x.drawImage(person,0,0);
-    x.globalAlpha=.28; x.filter='blur(2.5px) '+FX;
-    x.drawImage(person,0,0);
+    x.drawImage(pl,0,0);
     x.restore(); x.globalAlpha=1; x.filter='none';
     if(wm){ /* preview watermark — cleared only on real AI generation */
       x.save(); x.globalAlpha=.18; x.fillStyle='#ffffff';
@@ -1399,23 +1414,42 @@ function updateCombo(){ const b=bgById(selectedBg); const el=document.getElement
   if(el) el.innerHTML='✨ <b>'+xl(selectedStyle||LOOK_DEFAULTS.style)+'</b> · <b>'+xl(selectedOutfit||LOOK_DEFAULTS.outfit)+'</b> · <b>'+xl(selectedPose||LOOK_DEFAULTS.pose)+'</b> · <b>'+xl(selectedExpr||LOOK_DEFAULTS.expr)+'</b>'+(b?' · <b>'+bgName(b)+'</b>':'')+'<br><span style="opacity:.7">'+TX('combo_tail')+'</span>'; }
 
 /* ---------- Server generation (identity-preserving, when API key is configured) ---------- */
+async function refDataURL(src,w,h,q){
+  /* downscale a reference image to a small JPEG data-URL in the browser
+     (doing this server-side exceeded the worker CPU limit and crashed) */
+  try{
+    const img=await timeoutP(loadImg(src),12000);
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const x=c.getContext('2d'); const sc=Math.max(w/img.width,h/img.height);
+    x.drawImage(img,(w-img.width*sc)/2,(h-img.height*sc)/2,img.width*sc,img.height*sc);
+    return c.toDataURL('image/jpeg',q);
+  }catch(e){ return null; }
+}
 async function tryServerGenerate(bg){
   const pc=getPortraitCanvas();
   const selfie=pc.toDataURL('image/jpeg',.85);
+  const oIdx=(selectedOutfit&&OPTLABELS.outfit.indexOf(selectedOutfit)>=0)?OPTLABELS.outfit.indexOf(selectedOutfit):null;
+  const [sceneRef,outfitRef]=await Promise.all([
+    refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
+    oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null)
+  ]);
   const one=async(vi)=>{
-    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),40000);
+    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),90000);
     const res=await fetch('/api/generate',{method:'POST',signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:vi, scene_id:bg.id, scene_i:bgIndex(bg.id), outfit_i:(selectedOutfit&&OPTLABELS.outfit.indexOf(selectedOutfit)>=0)?OPTLABELS.outfit.indexOf(selectedOutfit):null, token: sbSession?sbSession.access_token:null})});
+      body:JSON.stringify({selfie, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:vi, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, token: sbSession?sbSession.access_token:null})});
     clearTimeout(t);
     if(res.status===402){ openModal('paywall'); throw new Error('no credits'); }
-    if(!res.ok) throw new Error('server '+res.status);
+    if(!res.ok){ let msg='server '+res.status; try{ const d=await res.json(); if(d&&d.error) msg=d.error; }catch(e){} console.warn('generate v'+vi+':',msg); throw new Error(msg); }
     const d=await res.json();
     if(!d.image) throw new Error('no image');
     if(typeof d.remaining==='number') setCredits(d.remaining);
     return d.image;
   };
-  const results=await Promise.allSettled([one(0),one(1),one(2),one(3)]);
+  /* variant 0 records the generation + spends the credit; 1-3 start 3s later
+     so their server-side check can see it (they used to race it and fail) */
+  const delay=ms=>new Promise(r=>setTimeout(r,ms));
+  const results=await Promise.allSettled([one(0),delay(3000).then(()=>one(1)),delay(3000).then(()=>one(2)),delay(3000).then(()=>one(3))]);
   const ok=results.filter(r=>r.status==='fulfilled').map(r=>r.value);
   if(!ok.length) throw new Error('all variants failed');
   while(ok.length<4) ok.push(ok[ok.length-1]);
@@ -1554,20 +1588,21 @@ async function showResults(tick){
       const mask=await segmentPortrait(pc);
       if(!mask) usedAI=false;
       const person=personLayer(pc,mask);
-      urls = await Promise.all(defs.map(d=>composeVariant(bg,person,d[1])));
+      /* fallback stays watermarked — it is NOT the AI product and costs no credit */
+      urls = await Promise.all(defs.map(d=>composeVariant(bg,person,d[1],true)));
     }catch(e){ clearInterval(tick); toast('Something went wrong — try re-uploading your photo'); return; }
   }
   clearInterval(tick);
-  if(mode!=='server' && !(user&&user.tester)) setCredits(Math.max(getCredits()-1,0));
   if(user) user.history.unshift({bg:bg.id, attire:selectedOutfit||LOOK_DEFAULTS.outfit, date:new Date().toISOString().slice(5,10)});
   if(mode==='server') setTimeout(loadShots, 2500); // pick up freshly saved headshots for the dashboard
   const zone=document.getElementById('resultZone');
   const joinCta='';
-  const aiNote = mode==='server' ? TX('note_ai') : (usedAI ? 'AI cut-out + skin & tone enhanced' : 'soft-blend mode + tone enhanced');
+  const aiNote = mode==='server' ? TX('note_ai') : '<b style="color:#fbbf24">AI render was unavailable — these are watermarked browser previews, no credit was used. Your outfit / pose / expression choices need the AI: please try ✨ Generate again in a moment.</b>';
+  const tagWord = mode==='server' ? 'Variant' : '👁 Preview';
   window._lastShots={urls:urls.slice(0,4), scene:bg.name, look:selectedOutfit||LOOK_DEFAULTS.outfit};
   zone.innerHTML='<div class="result-grid">'+defs.map((d,i)=>
     `<div class="headshot-frame"><img class="comp" src="${urls[i]}" alt="Headshot variant ${d[0]}">
-     <span class="tag">Variant ${d[0]}</span><a class="dl mail" onclick="emailShot(${i})">✉️ Email</a><a class="dl" download="summy-garden-headshot-${d[0]}.png" href="${urls[i]}">⤓ PNG</a></div>`).join('')+
+     <span class="tag">${tagWord} ${d[0]}</span><a class="dl mail" onclick="emailShot(${i})">✉️ Email</a><a class="dl" download="summy-garden-headshot-${d[0]}.png" href="${urls[i]}">⤓ PNG</a></div>`).join('')+
     `</div><p class="sim-note" style="margin-top:18px">${TX('res_scene')}: <b style="color:#fff">${bgName(bg)}</b> · ${TX('res_look')}: <b style="color:#fff">${xl(selectedOutfit||LOOK_DEFAULTS.outfit)}</b> · ${aiNote} · ${TX('left_t').replace('{n}',getCredits())}${user?' · '+TX('savedTo'):''}${joinCta}</p>`;
   if(!(user&&user.tester) && getCredits()<=0) setTimeout(()=>openModal('paywall'),1800);
   else toast('Headshots ready! Click ⤓ PNG to download'+(user?' · saved to your dashboard':''));

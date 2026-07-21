@@ -229,26 +229,27 @@ const handler = async (req) => {
   const mime = selfie.slice(5, selfie.indexOf(";"));
   const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
 
-  // Fetch reference images so the AI reproduces the EXACT chosen scene and outfit
-  // instead of imagining them from text descriptions.
-  const abToB64 = (ab) => { const u = new Uint8Array(ab); let s = "";
-    for (let o = 0; o < u.length; o += 8192) s += String.fromCharCode.apply(null, u.subarray(o, o + 8192));
-    return btoa(s); };
-  const fetchRef = async (kind, idx, kvKey) => {
-    try {
-      let ab = (kvKey && env.SCENE_CACHE) ? await env.SCENE_CACHE.get(kvKey, { type: "arrayBuffer" }) : null;
-      if (!ab) {
-        const r = await fetch(`https://summy-garden-studio.pages.dev/api/sample?kind=${kind}&i=${idx}`, { cf: { cacheTtl: 86400 } });
-        if (r.ok) ab = await r.arrayBuffer();
-      }
-      return (ab && ab.byteLength > 1000) ? abToB64(ab) : null;
-    } catch (e) { return null; }
+  // Reference images for the EXACT chosen scene and outfit arrive from the
+  // browser as small data-URLs (encoding them server-side exceeded the CPU
+  // limit and crashed the function — the client does it for free).
+  const parseDataImg = (s, cap) => {
+    if (typeof s !== "string" || !s.startsWith("data:image/") || s.length > cap) return null;
+    const comma = s.indexOf(","); if (comma < 0) return null;
+    return { mime: s.slice(5, s.indexOf(";")), data: s.slice(comma + 1) };
   };
-  let sceneRefB64 = null, outfitRefB64 = null;
-  const sceneIdx = parseInt(body.scene_i, 10);
-  if (Number.isInteger(sceneIdx) && sceneIdx >= 0 && sceneIdx < 200) sceneRefB64 = await fetchRef("b", sceneIdx, "b-" + sceneIdx);
-  const outfitIdx = parseInt(body.outfit_i, 10);
-  if (Number.isInteger(outfitIdx) && outfitIdx >= 0 && outfitIdx < 200) outfitRefB64 = await fetchRef("outfit", outfitIdx, null);
+  const sceneRef = parseDataImg(body.scene_ref, 2_500_000);
+  const outfitRef = parseDataImg(body.outfit_ref, 2_000_000);
+  // If the Gemini call fails after the credit was consumed, give the credit back.
+  const refundCredit = async () => {
+    if (vi !== 0 || remaining === null) return;
+    try {
+      const r = await sbService(`/rest/v1/profiles?id=eq.${authUser.id}&select=credits`);
+      const rows = r.ok ? await r.json() : [];
+      if (rows.length) await sbService(`/rest/v1/profiles?id=eq.${authUser.id}`, {
+        method: "PATCH", headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ credits: (rows[0].credits | 0) + 1 }) });
+    } catch {}
+  };
   // Retouch intensity chosen by the user (0% = keep the face exactly as-is; 100% = full studio polish)
   const retouch =
     enhance < 20 ? `Apply NO facial retouching at all: keep the skin texture, pores, marks, skin tone and all facial shapes exactly as they appear in the original photo — change only the clothing, background, lighting and framing. ` :
@@ -256,8 +257,8 @@ const handler = async (req) => {
     enhance < 80 ? `Apply moderate professional retouching (about ${enhance}% intensity): even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten the eyes subtly — while faithfully preserving the original skin tone, skin texture and every facial shape and proportion (no slimming, no reshaping, no plastic look). ` :
     `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). `;
   const ords = ["FIRST", "SECOND", "THIRD"]; let imgN = 1;
-  const sceneOrd = sceneRefB64 ? ords[imgN++] : null;
-  const outfitOrd = outfitRefB64 ? ords[imgN++] : null;
+  const sceneOrd = sceneRef ? ords[imgN++] : null;
+  const outfitOrd = outfitRef ? ords[imgN++] : null;
   const prompt =
     `Transform the FIRST attached photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
     retouch +
@@ -274,8 +275,8 @@ const handler = async (req) => {
     `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   const parts = [{ inline_data: { mime_type: mime, data: b64 } }];
-  if (sceneRefB64) parts.push({ inline_data: { mime_type: "image/png", data: sceneRefB64 } });
-  if (outfitRefB64) parts.push({ inline_data: { mime_type: "image/png", data: outfitRefB64 } });
+  if (sceneRef) parts.push({ inline_data: { mime_type: sceneRef.mime || "image/jpeg", data: sceneRef.data } });
+  if (outfitRef) parts.push({ inline_data: { mime_type: outfitRef.mime || "image/jpeg", data: outfitRef.data } });
   parts.push({ text: prompt });
 
   try {
@@ -284,11 +285,11 @@ const handler = async (req) => {
       body: JSON.stringify({ contents: [{ parts }],
         generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
-    if (!res.ok) { const t = await res.text(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }
+    if (!res.ok) { const t = await res.text(); await refundCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts || [];
     const img = parts.find((p) => p.inlineData || p.inline_data);
-    if (!img) return Response.json({ error: "no image in response" }, { status: 502, headers });
+    if (!img) { await refundCredit(); return Response.json({ error: "no image in response" }, { status: 502, headers }); }
     const d = img.inlineData || img.inline_data;
     // Save this variant to the user's dashboard (best effort — never blocks the response)
     try {
@@ -311,6 +312,7 @@ const handler = async (req) => {
       for (let i = 0; i < payload.length; i += CH) c.enqueue(enc.encode(payload.slice(i, i + CH))); c.close(); } });
     return new Response(stream, { status: 200, headers: { ...headers, "Content-Type": "application/json" } });
   } catch (e) {
+    await refundCredit();
     return Response.json({ error: String(e?.message || e) }, { status: 502, headers });
   }
 };

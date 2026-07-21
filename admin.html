@@ -309,11 +309,11 @@ function renderBizChart(from,to,purch,gens,costPer){
   gens.forEach(g=>{ const d=(g.created_at||'').slice(0,10); cost[d]=(cost[d]||0)+4*costPer; });
   const ctx=document.getElementById('bizChart'); if(!ctx) return;
   if(bizChart) bizChart.destroy();
-  bizChart=new Chart(ctx,{type:'bar',
+  bizChart=new Chart(ctx,{type:'line',
     data:{labels:days.map(d=>d.slice(5)),datasets:[
-      {label:'Revenue',data:days.map(d=>+(rev[d]||0).toFixed(2)),backgroundColor:'rgba(74,222,128,.75)',borderRadius:4},
-      {label:'Cost (est.)',data:days.map(d=>+(cost[d]||0).toFixed(2)),backgroundColor:'rgba(56,189,248,.75)',borderRadius:4},
-      {label:'Refunds',data:days.map(d=>+(ref[d]||0).toFixed(2)),backgroundColor:'rgba(248,113,113,.8)',borderRadius:4}]},
+      {label:'Revenue',data:days.map(d=>+(rev[d]||0).toFixed(2)),borderColor:'#22c55e',backgroundColor:'rgba(74,222,128,.14)',fill:true,tension:.35,pointRadius:3,pointHoverRadius:5,borderWidth:2.5},
+      {label:'Cost (est.)',data:days.map(d=>+(cost[d]||0).toFixed(2)),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.10)',fill:true,tension:.35,pointRadius:3,pointHoverRadius:5,borderWidth:2.5},
+      {label:'Refunds',data:days.map(d=>+(ref[d]||0).toFixed(2)),borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.10)',fill:true,tension:.35,pointRadius:3,pointHoverRadius:5,borderWidth:2.5}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{position:'top',labels:{boxWidth:14,boxHeight:14,font:{family:'Inter',weight:'700',size:12}}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': $'+(+c.parsed.y).toFixed(2)}}},

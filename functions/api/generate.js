@@ -340,7 +340,7 @@ const handler = async (req) => {
     (sceneOrd
       ? `COMPLETELY REPLACE the FIRST photo's background with the environment shown in the ${sceneOrd} attached image (${scene || "professional setting"}). None of the FIRST photo's original surroundings, ground or sky may remain visible. The result must look as if the person was photographed standing IN the ${sceneOrd} image's exact location: match that reference image's composition, architecture, objects, colours, season and lighting as closely as possible — near pixel-faithful apart from a soft depth-of-field blur behind the person. `
       : `COMPLETELY REPLACE the background with ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
-    `5) POSE & FRAMING: the person is ${poseDesc}, with ${exprDesc}. Compose the shot as ${frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance), keeping the person horizontally centred similarly to the FIRST photo. ` +
+    `5) POSE & FRAMING: the person is ${poseDesc}, with ${exprDesc}. Compose the shot as ${body.auto === true ? "a waist-up half-body corporate portrait — the head occupying roughly ONE QUARTER of the image height, with generous space around the person, matching the body scale visible in the outfit reference image" : frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance, and do NOT zoom into the face), keeping the person horizontally centred. ` +
     `6) STYLE & LIGHT: ${styleDesc}. ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   parts = [{ inline_data: { mime_type: mime, data: b64 } }];

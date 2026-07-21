@@ -143,7 +143,7 @@ const OPT = {
 };
 
 function buildPrompt(kind, i) {
-  if (kind === "p") { const m = META[i]; return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, entire head fully visible with comfortable headroom above the hair, never cropped, professional attire.`; }
+  if (kind === "p") { const m = META[i]; return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, framed like a classic corporate portrait: person horizontally centred, head and shoulders, eyes on the upper-third line, clear empty background filling at least the top 15% of the frame above the hair, entire head fully visible, never cropped, professional attire.`; }
   if (kind === "b") { const m = META[i]; return `Empty professional photography backdrop: ${m.n.toLowerCase()} (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, absolutely no people, photorealistic, soft bokeh, shallow depth of field.`; }
   const set = OPT[kind]; if (!set || !set[i]) return null;
   return set[i][1] + ", photorealistic, high quality, soft professional lighting.";
@@ -155,10 +155,12 @@ const handler = async (req) => {
   const maxI = kind === "p" || kind === "b" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
   const i = Math.min(Math.max(parseInt(url.searchParams.get("i") || "0", 10) || 0, 0), maxI - 1);
   const ver = (kind !== "p" && kind !== "b" && OPT[kind] && OPT[kind][i] && OPT[kind][i][2]) ? "-" + OPT[kind][i][2] : "";
-  // i>=100 are the Pure Backgrounds added after the Netlify era; -v2 keys avoid
-  // entries polluted by the migration bridge's index clamp on the old host.
-  const isNew = (kind === "p" || kind === "b") && i >= 100 && i <= 105;
-  const key = `${kind}-${i}${ver}${isNew ? "-v2" : ""}`;
+  // i>=100 are the Pure Backgrounds added after the Netlify era; versioned keys
+  // avoid entries polluted by the migration clamp (-v2) and regenerate the
+  // portraits with proper headroom framing (-v3).
+  const isNewB = kind === "b" && i >= 100 && i <= 105;
+  const isNewP = kind === "p" && i >= 100;
+  const key = `${kind}-${i}${ver}${isNewB ? "-v2" : isNewP ? "-v3" : ""}`;
 
   let buf = (env.SCENE_CACHE ? await env.SCENE_CACHE.get(key, { type: "arrayBuffer" }) : null);
 

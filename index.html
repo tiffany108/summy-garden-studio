@@ -1228,6 +1228,17 @@ function chooseCustomize(){
   const cs=document.getElementById('catSel');
   if(cs) cs.scrollIntoView({behavior:'smooth',block:'center'});
 }
+/* ---------- New-version detector: an open tab learns when a deploy happened ---------- */
+let _pageEtag=null;
+async function checkNewVersion(){
+  try{
+    const r=await fetch('/',{method:'HEAD',cache:'no-store'});
+    const e=r.headers.get('etag')||r.headers.get('last-modified');
+    if(_pageEtag&&e&&e!==_pageEtag) toast('🔄 The studio was just updated — please refresh this page to get the newest version');
+    if(e) _pageEtag=e;
+  }catch(err){}
+}
+setInterval(checkNewVersion,180000); checkNewVersion();
 /* ---------- Portrait capture (drag + zoom, head & shoulders) ---------- */
 let cropImg=null, cropScale=1, cropMin=1, cropOX=0, cropOY=0, dragging=false, lastX=0, lastY=0;
 const UPLOAD_ZONE_HTML=document.getElementById('uploadZone')?document.getElementById('uploadZone').innerHTML:'';

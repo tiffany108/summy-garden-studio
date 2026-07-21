@@ -1160,22 +1160,24 @@ function modeStep(s){
           <span style="font-size:12px;opacity:.85">Pick your own scene, outfit, pose, expression &amp; natural-look level</span></button>
       </div>`;
   } else {
+    if(!autoCat||CATEGORIES.indexOf(autoCat)<0) autoCat=CATEGORIES[0];
     b.innerHTML=`<p style="margin-top:0;font-size:13px">Tap any photo from our gallery — the AI recreates that scene &amp; look with your face. Free watermarked preview first, nothing is charged:</p>
-      <div style="max-height:56vh;overflow:auto;padding-right:2px;text-align:left">`+
-      CATEGORIES.map((cat,ci)=>{
-        const scenes=BACKGROUNDS.filter(bb=>bb.cat===cat);
-        return `<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9fc0d3;margin:13px 0 6px">${TX('c'+(ci+1))||cat}</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:9px">`+
-          scenes.map(bb=>{
-            const gi=bgIndex(bb.id);
-            return `<div onclick="applyAutoScene('${bb.id}')" style="cursor:pointer;border-radius:11px;overflow:hidden;position:relative;aspect-ratio:4/5;background-image:url('${aiSampleURL(bb,gi)}'),url('${bb.image}');background-size:cover;background-position:center;box-shadow:0 3px 10px rgba(0,0,0,.35)">
-              <div style="position:absolute;left:0;right:0;bottom:0;padding:18px 7px 5px;background:linear-gradient(transparent,rgba(4,26,41,.94))">
-                <b style="font-size:11px;color:#fff;display:block;line-height:1.25">${bgName(bb)}</b></div></div>`;
-          }).join('')+`</div>`;
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:7px;margin-bottom:4px">`+
+      CATEGORIES.map((cat,ci)=>`<button onclick="autoCatPick(${ci})" style="cursor:pointer;flex:0 0 auto;border:none;border-radius:999px;padding:6px 12px;font-family:inherit;font-size:11.5px;font-weight:700;white-space:nowrap;${cat===autoCat?'background:linear-gradient(135deg,#0369a1,#059669);color:#fff':'background:#0a3a5c;color:#b8d4e3;box-shadow:inset 0 0 0 1px rgba(125,211,252,.25)'}">${TX('c'+(ci+1))||cat}</button>`).join('')+
+      `</div>
+      <div style="max-height:48vh;overflow:auto;padding-right:2px;text-align:left">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:9px">`+
+      BACKGROUNDS.filter(bb=>bb.cat===autoCat).map(bb=>{
+        const gi=bgIndex(bb.id);
+        return `<div onclick="applyAutoScene('${bb.id}')" style="cursor:pointer;border-radius:11px;overflow:hidden;position:relative;aspect-ratio:4/5;background-image:url('${aiSampleURL(bb,gi)}'),url('${bb.image}');background-size:cover;background-position:center;box-shadow:0 3px 10px rgba(0,0,0,.35)">
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:18px 7px 5px;background:linear-gradient(transparent,rgba(4,26,41,.94))">
+            <b style="font-size:11px;color:#fff;display:block;line-height:1.25">${bgName(bb)}</b></div></div>`;
       }).join('')+
-      `</div><p style="font-size:11.5px;color:#8fa6b3;margin:10px 0 0"><a style="cursor:pointer;color:#7dd3fc" onclick="modeStep(0)">← Back</a> · or <a style="cursor:pointer;color:#7dd3fc" onclick="chooseCustomize()">customize instead</a></p>`;
+      `</div></div><p style="font-size:11.5px;color:#8fa6b3;margin:10px 0 0"><a style="cursor:pointer;color:#7dd3fc" onclick="modeStep(0)">← Back</a> · or <a style="cursor:pointer;color:#7dd3fc" onclick="chooseCustomize()">customize instead</a></p>`;
   }
 }
+let autoCat=null;
+function autoCatPick(ci){ autoCat=CATEGORIES[ci]; modeStep(1); }
 function applyAutoScene(bgId){
   const bgc=bgById(bgId); if(!bgc) return;
   const p=catRecipe(CATEGORIES.indexOf(bgc.cat));

@@ -284,9 +284,9 @@ const handler = async (req) => {
         : `Dress them in ${outfitDesc}. `) +
     `The person is ${poseDesc}, with ${exprDesc}. ` +
     (sceneOrd
-      ? `Background: the ${sceneOrd} attached image shows the exact background location (${scene || "professional setting"}). Place the person standing in exactly this environment — reproduce its architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind them. `
-      : `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
-    `${frameDesc}, keeping the person anchored at the same position and scale within the frame as in the FIRST photo. ` +
+      ? `Background: the ${sceneOrd} attached image shows the exact background location (${scene || "professional setting"}). COMPLETELY REPLACE the original photo's background with this environment — none of the FIRST photo's original surroundings, ground or sky may remain visible. Reproduce the reference environment's architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind the person. `
+      : `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. Completely replace the original photo's background. `) +
+    `Compose the shot as ${frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance), keeping the person horizontally centred similarly to the FIRST photo. ` +
     `${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   const parts = [{ inline_data: { mime_type: mime, data: b64 } }];

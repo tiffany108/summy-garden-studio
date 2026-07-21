@@ -401,7 +401,8 @@ html,body{overflow-x:clip}
               <span style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-transform:none;letter-spacing:0">Tap to browse & combine</span>
             </div>
             <div class="look-tabs" id="lookTabs">
-              <button class="look-tab active" data-tab="style">Style</button>
+              <button class="look-tab active" data-tab="scene">🌿 Scene</button>
+              <button class="look-tab" data-tab="style">Style</button>
               <button class="look-tab" data-tab="outfit">Outfit</button>
               <button class="look-tab" data-tab="pose">Pose</button>
               <button class="look-tab" data-tab="expr">Expression</button>
@@ -1353,9 +1354,10 @@ function renderSwatches(){
   BACKGROUNDS.filter(b=>b.cat===studioCat).forEach(b=>{
     const sw=document.createElement('div');
     sw.className='swatch'+(b.id===selectedBg?' active':'');
-    /* show the actual empty backdrop (what the AI + preview use), not a sample person */
-    sw.style.backgroundImage=`url("${aiSceneURL(b,bgIndex(b.id))}"), url("${b.image}")`; sw.title=bgName(b);
-    sw.onclick=()=>selectBg(b.id,{fromStudio:true});
+    /* ready-made samples WITH a model — tap one and the whole look (scene +
+       outfit + style + pose + expression) is applied like the gallery photo */
+    sw.style.backgroundImage=`url("${aiSampleURL(b,bgIndex(b.id))}"), url("${b.image}")`; sw.title=bgName(b);
+    sw.onclick=()=>applyAutoScene(b.id);
     grid.appendChild(sw);
   });
   renderSelInfo();
@@ -1444,7 +1446,7 @@ let outfitFilter='all';
 const OPTSPECIAL={ outfit:[['Auto','osp',0],['Original','osp',1]] };
 const SEL={style:()=>selectedStyle,outfit:()=>selectedOutfit,pose:()=>selectedPose,expr:()=>selectedExpr};
 const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>selectedPose=v,expr:v=>selectedExpr=v};
-let lookTab='style';
+let lookTab='scene';
 function optImg(kind,i){ return '/api/sample?kind='+kind+'&i='+i; }
 function retryOpt(el){ const n=(+el.dataset.r||0)+1; el.dataset.r=n; if(n>3){el.parentElement.classList.add('noimg');el.remove();return;} const src=el.src; el.removeAttribute('src'); setTimeout(()=>{el.src=src;},5000*n); }
 function makeOptCard(kind,label,i,special){
@@ -1458,6 +1460,18 @@ function makeOptCard(kind,label,i,special){
 function renderLook(){
   const g=document.getElementById('lookGrid'); if(!g)return; g.innerHTML='';
   const fw=document.getElementById('outfitFilter'); if(fw) fw.style.display = lookTab==='outfit' ? 'flex' : 'none';
+  if(lookTab==='scene'){
+    /* backgrounds as the first customization tab — exact empty backdrops */
+    BACKGROUNDS.forEach(b=>{
+      const gi=bgIndex(b.id);
+      const c=document.createElement('div'); c.className='look-card'+(b.id===selectedBg?' sel':'');
+      c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+aiSceneURL(b,gi)+'" onerror="retryOpt(this)" alt=""></div><div class="look-label">'+bgName(b)+'</div>';
+      c.onclick=()=>{ selectBg(b.id,{fromStudio:false}); renderLook(); };
+      g.appendChild(c);
+    });
+    g.style.gridTemplateColumns='repeat(auto-fill,minmax(108px,1fr))';
+    g.scrollTop=0; return;
+  }
   const spec=OPTSPECIAL[lookTab]||[];
   spec.forEach(sp=>g.appendChild(makeOptCard(lookTab,sp[0],-1,sp)));
   OPTLABELS[lookTab].forEach((label,i)=>{
@@ -1816,7 +1830,7 @@ function applyLang(code){
   sh(Q('#studioP'),t.studio_p);
   sh(Q('#brandTxt'),(t.brand||'').includes(' ')?t.brand.split(' ').join('&nbsp;'):t.brand); st(Q('#footC'),t.foot_c);
   st(Q('#upSub'),t.up_sub); st(Q('#upBtn1'),t.up_b1); st(Q('#upBtn2'),t.up_b2);
-  const _lt=QA('#lookTabs .look-tab'); [t.tab_style,t.tab_outfit,t.tab_pose,t.tab_expr].forEach((v,i)=>st(_lt[i],v));
+  QA('#lookTabs .look-tab').forEach(el=>{ const v={style:t.tab_style,outfit:t.tab_outfit,pose:t.tab_pose,expr:t.tab_expr}[el.dataset.tab]; st(el,v); });
   const _oc=QA('#outfitFilter .look-chip'); [t.of_all,t.of_w,t.of_m,t.of_u].forEach((v,i)=>st(_oc[i],v));
   st(Q('#lookTitle'),t.look_t);
   st(Q('#ctTitle'),t.ct_h); st(Q('#ctDesc'),t.ct_p); st(Q('#ctSend'),t.ct_send);

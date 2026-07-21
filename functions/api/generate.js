@@ -282,16 +282,18 @@ const handler = async (req) => {
   if (body.swap === true && baseRef) {
     // FACE-SWAP mode (Auto / sample pick): keep the sample photo identical,
     // replace only the model's head with the customer's.
-    prompt =
-      `Face replacement task. Edit the FIRST attached image — a professional studio portrait photograph of a model. ` +
-      `Replace ONLY the model's head (face and hair) with the person shown in the ${faceRef ? "SECOND" : "SECOND"} attached image${faceRef ? " (a sharp face close-up; the THIRD image shows the same person for extra reference)" : ""}. ` +
-      `1) IDENTITY — MOST IMPORTANT: the output face must be instantly recognisable as this person. Copy their facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle exactly. Use their images ONLY for the face and hair — never copy their framing, clothing or background. ` +
-      `2) FACE RETOUCH: ${retouch}Never change the shape or proportions of any facial feature. ` +
-      `3) KEEP EVERYTHING ELSE IDENTICAL: the FIRST image's clothing, body, pose, hands, background, lighting, colours and framing must remain exactly unchanged outside the head region. ` +
-      `4) BLEND: match the neck and skin tone naturally and relight the new head to the FIRST image's lighting direction. Photorealistic, seamless, high-end professional photography.`;
+    const promptOverride = (authUser.email === "tiffany123@hotmail.com.hk" && typeof body.swap_prompt === "string" && body.swap_prompt.length < 4000) ? body.swap_prompt : null;
+    prompt = promptOverride ||
+      (`FACE SWAP task — this is a mandatory face replacement, not a suggestion. ` +
+      `The FIRST attached image is a professional portrait of MODEL A. The SECOND attached image shows PERSON B. ` +
+      `Produce the FIRST image again, IDENTICAL in every way — same clothing, same body, same pose, same hands, same background, same lighting, same colours, same framing — EXCEPT the head: MODEL A's face, head and hair must be COMPLETELY REPLACED by PERSON B's face, head and hairstyle. ` +
+      `The output must NOT contain MODEL A's face or hair anywhere. If PERSON B has a different gender, age, ethnicity or hairstyle than MODEL A, the new head MUST still be PERSON B's — adapt nothing about it. ` +
+      `PERSON B's identity is non-negotiable: copy their facial geometry, eyes, nose, mouth, jawline, skin tone and hairstyle exactly so they are instantly recognisable. ` +
+      `${retouch}Never change the shape or proportions of any facial feature. ` +
+      `Blend the new head seamlessly: natural neck transition, skin tone matched to PERSON B, relit to the FIRST image's lighting direction. Photorealistic, high-end professional photography.`);
     parts = [{ inline_data: { mime_type: baseRef.mime || "image/jpeg", data: baseRef.data } }];
     if (faceRef) parts.push({ inline_data: { mime_type: faceRef.mime || "image/jpeg", data: faceRef.data } });
-    parts.push({ inline_data: { mime_type: mime, data: b64 } });
+    else parts.push({ inline_data: { mime_type: mime, data: b64 } });
     parts.push({ text: prompt });
   } else {
   prompt =

@@ -1054,7 +1054,7 @@ const LOOK_DEFAULTS={style:'Formal', outfit:'Auto', pose:'Straight on', expr:'Na
 function resetLookSelections(){ selectedStyle=null; selectedOutfit=null; selectedPose=null; selectedExpr=null; if(typeof renderLook==='function'){ renderLook(); updateCombo(); } }
 function enhChanged(){ const v=document.getElementById('enhSlider').value; document.getElementById('enhVal').textContent=v+'%';
   document.getElementById('enhLbl').textContent = v==0?'Original face':v<50?'Light touch':v<80?'Enhance':'Full polish';
-  applyEnhPreview(); }
+  applyEnhPreview(); if(typeof maybeRefreshPreview==='function') maybeRefreshPreview(); }
 /* Instant, free preview: a browser-side smoothing/glow approximation of the chosen
    Enhance level, applied to the uploaded selfie (no AI calls, no cost). */
 function applyEnhPreview(){
@@ -1222,7 +1222,7 @@ function personLayer(pc, mask){
   }
   return c;
 }
-async function composeVariant(bg, person, extra){
+async function composeVariant(bg, person, extra, wm){
   const W=480,H=600;
   const draw=(sceneImg)=>{
     const c=document.createElement('canvas'); c.width=W; c.height=H;
@@ -1236,6 +1236,17 @@ async function composeVariant(bg, person, extra){
     x.globalAlpha=.28; x.filter='blur(2.5px) '+FX;
     x.drawImage(person,0,0);
     x.restore(); x.globalAlpha=1; x.filter='none';
+    if(wm){ /* preview watermark — cleared only on real AI generation */
+      x.save(); x.globalAlpha=.18; x.fillStyle='#ffffff';
+      x.font='700 26px Inter,Arial,sans-serif'; x.textAlign='center';
+      x.translate(W/2,H/2); x.rotate(-Math.PI/7);
+      for(let r=-3;r<=3;r++) x.fillText('SUMMY GARDEN · PREVIEW', 0, r*88);
+      x.restore();
+      x.save(); x.globalAlpha=.85; x.fillStyle='rgba(6,44,69,.75)';
+      x.fillRect(0,H-34,W,34); x.fillStyle='#7dd3fc'; x.font='700 14px Inter,Arial,sans-serif'; x.textAlign='center';
+      x.fillText('Free preview · watermark clears when you ✨ Generate', W/2, H-12);
+      x.restore();
+    }
     return c;
   };
   const sceneImg=await getSceneImg(bg);
@@ -1316,6 +1327,7 @@ function renderShowcase(){
 }
 function selectBg(id,opts={}){
   selectedBg=id;
+  if(typeof maybeRefreshPreview==='function') maybeRefreshPreview();
   const b=bgById(id);
   if(!opts.fromStudio){ studioCat=b.cat; renderCatStrip(); }
   renderSwatches();
@@ -1351,7 +1363,7 @@ function makeOptCard(kind,label,i,special){
   const c=document.createElement('div'); c.className='look-card'+(cur?' sel':'');
   if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
   else { c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(kind,i)+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
-  c.onclick=()=>{ SETSEL[kind](SEL[kind]()===label?null:label); renderLook(); updateCombo(); }; /* click again (or double-click) to unselect */
+  c.onclick=()=>{ SETSEL[kind](SEL[kind]()===label?null:label); renderLook(); updateCombo(); maybeRefreshPreview(); }; /* click again (or double-click) to unselect */
   return c;
 }
 function renderLook(){
@@ -1416,24 +1428,31 @@ document.getElementById('genBtn').onclick=()=>{
 };
 /* Free instant preview: browser cut-out of the person composited onto the chosen
    scene backdrop with the current Enhance level — no AI call, no credits used. */
+let previewActive=false, prevTimer=null, prevBusy=false;
 async function quickPreview(){
   if(!cropImg){ toast('Upload your photo first, then preview'); document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  if(prevBusy) return; prevBusy=true;
   const bg=bgById(selectedBg);
   showResultsPanel();
   const zone=document.getElementById('resultZone');
-  zone.innerHTML=`<div class="result-empty" style="display:block;padding-top:60px"><div class="progress-label">👁 Building your free preview…</div></div>`;
+  if(!previewActive) zone.innerHTML=`<div class="result-empty" style="display:block;padding-top:60px"><div class="progress-label">👁 Building your free preview…</div></div>`;
   try{
     const pc=getPortraitCanvas();
     const mask=await segmentPortrait(pc);
     const person=personLayer(pc,mask);
     const p=(+document.getElementById('enhSlider')?.value||0)/100;
     const extra=p===0?'':`brightness(${(1+p*0.07).toFixed(3)}) contrast(${(1-p*0.08).toFixed(3)}) saturate(${(1+p*0.07).toFixed(3)}) blur(${(p*0.7).toFixed(2)}px)`;
-    const url=await composeVariant(bg,person,extra);
+    const url=await composeVariant(bg,person,extra,true);
+    previewActive=true;
     zone.innerHTML=`<div class="result-grid" style="grid-template-columns:minmax(200px,300px)"><div class="headshot-frame"><img class="comp" src="${url}" alt="Free preview"><span class="tag">👁 Free preview</span></div></div>
-      <p class="sim-note" style="margin-top:16px">Instant preview — no AI, no credits used: your cut-out placed on <b style="color:#fff">${bgName(bg)}</b> at <b style="color:#4ade80">${Math.round(p*100)}% Enhance</b>. Adjust the scene, outfit or slider and preview again — then hit ✨ Generate for the real AI result (far more polished).</p>`;
+      <p class="sim-note" style="margin-top:16px">Free watermarked preview — no credits used. Now try different <b style="color:#fff">scenes, outfits, looks and the ✨ Enhance slider</b>: the preview updates by itself. Currently: <b style="color:#fff">${bgName(bg)}</b>${selectedOutfit?' · <b style="color:#fff">'+xl(selectedOutfit)+'</b>':''} · <b style="color:#4ade80">${Math.round(p*100)}% Enhance</b>. Happy? Hit ✨ Generate — the real AI result is far more polished and has <b style="color:#4ade80">no watermark</b>.</p>`;
   }catch(e){ zone.innerHTML='<p class="sim-note" style="padding-top:40px">Preview is unavailable on this device — you can still Generate normally.</p>'; }
+  prevBusy=false;
 }
+/* after the first preview, any change of scene / look / enhance refreshes it automatically */
+function maybeRefreshPreview(){ if(!previewActive||!cropImg) return; clearTimeout(prevTimer); prevTimer=setTimeout(quickPreview,450); }
 function runGeneration(){
+  previewActive=false; clearTimeout(prevTimer);
   showResultsPanel();
   try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}
   const zone=document.getElementById('resultZone');

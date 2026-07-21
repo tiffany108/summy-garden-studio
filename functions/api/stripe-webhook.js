@@ -35,7 +35,8 @@ const handler = async (req) => {
         headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json",
                    Prefer: "resolution=ignore-duplicates,return=representation" },
         body: JSON.stringify({ user_id: uid, session_id: s.id, pack: s.metadata?.pack || "",
-          credits: add, amount: (s.amount_total ?? 0) / 100, currency: s.currency || "usd" }),
+          credits: add, amount: (s.amount_total ?? 0) / 100, currency: s.currency || "usd",
+          payment_intent: (typeof s.payment_intent === "string" ? s.payment_intent : s.payment_intent?.id) || null }),
       });
       // NEVER report success on a failed write — return 5xx so Stripe retries and the error is visible.
       if (!rec.ok) {
@@ -62,6 +63,26 @@ const handler = async (req) => {
           const detail = await up.text().catch(() => "");
           return new Response(`credit update failed: ${up.status} ${detail}`.slice(0, 480), { status: 500 });
         }
+      }
+    }
+  } else if (event.type === "charge.refunded") {
+    // A charge was refunded (fully or partially) — reverse the credits we granted for it.
+    const c = event.data.object; // Stripe Charge
+    const pi = typeof c.payment_intent === "string" ? c.payment_intent : c.payment_intent?.id;
+    const chargeAmt = c.amount || 0;
+    const refundedAmt = c.amount_refunded || 0;
+    if (pi && refundedAmt > 0) {
+      // One atomic DB function: find the purchase by payment_intent, reverse credits
+      // proportional to the amount refunded so far, and remember how much we've reversed
+      // (so partial refunds and repeat webhook deliveries never double-deduct).
+      const r = await fetch(`${SB_URL}/rest/v1/rpc/reverse_purchase_credits`, {
+        method: "POST",
+        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ pi, charge_amt: chargeAmt, refunded_amt: refundedAmt }),
+      });
+      if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        return new Response(`refund reversal failed: ${r.status} ${detail}`.slice(0, 480), { status: 500 });
       }
     }
   }

@@ -190,12 +190,16 @@ const handler = async (req) => {
   if (!gemKey) return Response.json({ error: "GEMINI_API_KEY not configured" }, { status: 501, headers });
   if (!env.SUPABASE_SECRET_KEY) return Response.json({ error: "SUPABASE_SECRET_KEY not configured" }, { status: 501, headers });
 
+  let stage = "parse";
+  try {
   let body = {}; try { body = await req.json(); } catch {}
   const { selfie, scene, category, outfit, style, pose, expr, frame, token, scene_id } = body;
   const enhance = Math.max(0, Math.min(100, parseInt(body.enhance ?? 60, 10) || 0)); // % facial enhancement
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
+  stage = "auth";
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
+  stage = "credit";
   if (!selfie || !selfie.startsWith("data:image/")) return Response.json({ error: "selfie required" }, { status: 400, headers });
   if (selfie.length > 6_000_000) return Response.json({ error: "image too large" }, { status: 413, headers });
 
@@ -218,6 +222,7 @@ const handler = async (req) => {
     if (!rows.length) return Response.json({ error: "no active generation" }, { status: 402, headers });
   }
 
+  stage = "prompt";
   // No outfit chosen ("Auto") → keep whatever the person is wearing in their photo.
   const keepOriginalOutfit = !outfit || outfit === "Auto" || outfit === "Original";
   const outfitDesc = keepOriginalOutfit ? OUTFITS["Original"] : (OUTFITS[outfit] || OUTFITS["Navy suit"]);
@@ -279,6 +284,7 @@ const handler = async (req) => {
   if (outfitRef) parts.push({ inline_data: { mime_type: outfitRef.mime || "image/jpeg", data: outfitRef.data } });
   parts.push({ text: prompt });
 
+  stage = "gemini";
   try {
     const res = await fetch(`${API}?key=${gemKey}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -314,6 +320,10 @@ const handler = async (req) => {
   } catch (e) {
     await refundCredit();
     return Response.json({ error: String(e?.message || e) }, { status: 502, headers });
+  }
+  } catch (e) {
+    // top-level guard: report the crash point instead of a blank Cloudflare 502
+    return Response.json({ error: `crash at ${stage}: ${String(e?.stack || e?.message || e).slice(0, 400)}` }, { status: 500, headers });
   }
 };
 

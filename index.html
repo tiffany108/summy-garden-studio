@@ -388,6 +388,7 @@ html,body{overflow-x:clip}
           <div class="swatch-grid" id="swatchGrid"></div>
           <div class="sel-bg-info" id="selBgInfo"></div>
           <div class="combo-summary" id="comboSummary"></div>
+          <button type="button" id="prevBtn" onclick="quickPreview()" style="width:100%;margin-bottom:10px;background:rgba(255,255,255,.08);color:#dff1fb;font-weight:700;font-size:14px;border:none;border-radius:13px;padding:13px 18px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(125,211,252,.4);font-family:inherit">👁 Free preview — see yourself in this scene first</button>
           <button class="gen-btn" id="genBtn">✨ Generate my headshots</button>
         </div>
         <div class="look-col">
@@ -1413,6 +1414,25 @@ document.getElementById('genBtn').onclick=()=>{
   if(!(user&&user.tester) && getCredits()<=0){openModal('paywall');return;}
   runGeneration();
 };
+/* Free instant preview: browser cut-out of the person composited onto the chosen
+   scene backdrop with the current Enhance level — no AI call, no credits used. */
+async function quickPreview(){
+  if(!cropImg){ toast('Upload your photo first, then preview'); document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  const bg=bgById(selectedBg);
+  showResultsPanel();
+  const zone=document.getElementById('resultZone');
+  zone.innerHTML=`<div class="result-empty" style="display:block;padding-top:60px"><div class="progress-label">👁 Building your free preview…</div></div>`;
+  try{
+    const pc=getPortraitCanvas();
+    const mask=await segmentPortrait(pc);
+    const person=personLayer(pc,mask);
+    const p=(+document.getElementById('enhSlider')?.value||0)/100;
+    const extra=p===0?'':`brightness(${(1+p*0.07).toFixed(3)}) contrast(${(1-p*0.08).toFixed(3)}) saturate(${(1+p*0.07).toFixed(3)}) blur(${(p*0.7).toFixed(2)}px)`;
+    const url=await composeVariant(bg,person,extra);
+    zone.innerHTML=`<div class="result-grid" style="grid-template-columns:minmax(200px,300px)"><div class="headshot-frame"><img class="comp" src="${url}" alt="Free preview"><span class="tag">👁 Free preview</span></div></div>
+      <p class="sim-note" style="margin-top:16px">Instant preview — no AI, no credits used: your cut-out placed on <b style="color:#fff">${bgName(bg)}</b> at <b style="color:#4ade80">${Math.round(p*100)}% Enhance</b>. Adjust the scene, outfit or slider and preview again — then hit ✨ Generate for the real AI result (far more polished).</p>`;
+  }catch(e){ zone.innerHTML='<p class="sim-note" style="padding-top:40px">Preview is unavailable on this device — you can still Generate normally.</p>'; }
+}
 function runGeneration(){
   showResultsPanel();
   try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){}

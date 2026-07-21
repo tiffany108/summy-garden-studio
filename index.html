@@ -1472,11 +1472,13 @@ const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>select
 let lookTab='scene', sceneCatFilter='All';
 function optImg(kind,i){ return '/api/sample?kind='+kind+'&i='+i; }
 function retryOpt(el){ const n=(+el.dataset.r||0)+1; el.dataset.r=n; if(n>3){el.parentElement.classList.add('noimg');el.remove();return;} const src=el.src; el.removeAttribute('src'); setTimeout(()=>{el.src=src;},5000*n); }
+const OPTDISPLAY={'Auto':'✨ Best suit — default','Original':'👤 My own clothes'};
 function makeOptCard(kind,label,i,special){
   const cur=SEL[kind]()===label;
+  const disp=OPTDISPLAY[label]||xl(label);
   const c=document.createElement('div'); c.className='look-card'+(cur?' sel':'');
-  if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
-  else { c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(kind,i)+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
+  if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+disp+'"></div><div class="look-label">'+disp+'</div>'; }
+  else { c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(kind,i)+'" onerror="retryOpt(this)" alt="'+disp+'"></div><div class="look-label">'+disp+'</div>'; }
   c.onclick=()=>{ SETSEL[kind](SEL[kind]()===label?null:label); renderLook(); updateCombo(); maybeRefreshPreview(); }; /* click again (or double-click) to unselect */
   return c;
 }
@@ -1588,9 +1590,9 @@ document.getElementById('genBtn').onclick=()=>{
    expression / natural-look %) so the combination can be tuned in realtime. */
 let previewActive=false, prevTimer=null, prevBusy=false, prevPending=false;
 const pvq=s=>String(s).replace(/"/g,'&quot;');
-function pvOptions(kind,autoLabel){
+function pvOptions(kind,autoLabel,extra){
   const cur=SEL[kind]();
-  let h='<option value="">'+autoLabel+'</option>';
+  let h='<option value="">'+autoLabel+'</option>'+(extra||'');
   OPTLABELS[kind].forEach(l=>{h+='<option value="'+pvq(l)+'"'+(cur===l?' selected':'')+'>'+xl(l)+'</option>';});
   return h;
 }
@@ -1611,7 +1613,7 @@ function comboControlsHTML(){
     <span class="pv-lbl">🎨 ${TX('tab_style')}</span>
     <select class="pv-sel" id="pvStyle" onchange="prevCombo('style',this.value)">${pvOptions('style','Auto · '+xl(LOOK_DEFAULTS.style))}</select>
     <span class="pv-lbl">👔 ${TX('tab_outfit')}</span>
-    <select class="pv-sel" id="pvOutfit" onchange="prevCombo('outfit',this.value)">${pvOptions('outfit','👤 Keep my own clothes')}</select>
+    <select class="pv-sel" id="pvOutfit" onchange="prevCombo('outfit',this.value)">${pvOptions('outfit','✨ Best suit — studio default','<option value="Original"'+(selectedOutfit==='Original'?' selected':'')+'>👤 Keep my own clothes</option>')}</select>
     <div id="pvOutfitThumb">${pvOutfitThumbHTML()}</div>
     <span class="pv-lbl">🧍 ${TX('tab_pose')}</span>
     <select class="pv-sel" id="pvPose" onchange="prevCombo('pose',this.value)">${pvOptions('pose','Auto · '+xl(LOOK_DEFAULTS.pose))}</select>
@@ -1697,7 +1699,7 @@ async function confirmCombo(){
     const d=await res.json().catch(()=>({}));
     if(!res.ok||!d.image){ toast('⚠️ Could not create this set: '+(d.error||('server '+res.status))); proofBusy=false; renderPvBox(); return; }
     const wm=await wmFromDataURL(d.image);
-    proofShots.push({clean:d.image, wm, unlocked:false, label:bgName(bg)+(selectedOutfit?' · '+xl(selectedOutfit):' · your own clothes')});
+    proofShots.push({clean:d.image, wm, unlocked:false, label:bgName(bg)+' · '+(selectedOutfit==='Original'?'your own clothes':selectedOutfit?xl(selectedOutfit):'studio suit')});
     toast('✓ Photo set '+proofShots.length+' saved below — create another or download');
     maybeAskFeedback();
   }catch(e){ toast('Could not create this set — please try again'); }

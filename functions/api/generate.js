@@ -13,7 +13,7 @@ const VARIANTS = [
   "relaxed friendly expression, golden-hour rim light",
 ];
 const OUTFITS = {
-  "Auto": "professional attire that best suits the chosen style",
+  "Auto": "a tailored professional business suit chosen by the studio — navy or charcoal with a crisp shirt, whichever flatters the person best",
   "Original": "the same clothing they are wearing in the photo, tidied and professional",
   "Navy suit": "a tailored navy business suit with a crisp white shirt",
   "Charcoal suit": "a tailored charcoal-grey business suit with a shirt",
@@ -233,9 +233,10 @@ const handler = async (req) => {
   }
 
   stage = "prompt";
-  // No outfit chosen ("Auto") → keep whatever the person is wearing in their photo.
-  const keepOriginalOutfit = !outfit || outfit === "Auto" || outfit === "Original";
-  const outfitDesc = keepOriginalOutfit ? OUTFITS["Original"] : (OUTFITS[outfit] || OUTFITS["Navy suit"]);
+  // Default (no outfit chosen / "Auto") → the studio's best suit.
+  // Only the explicit "Original" choice keeps the person's own clothing.
+  const keepOriginalOutfit = outfit === "Original";
+  const outfitDesc = keepOriginalOutfit ? OUTFITS["Original"] : (OUTFITS[outfit] || OUTFITS["Auto"]);
   const styleDesc = STYLES[style] || STYLES["Formal"];
   const poseDesc = POSES[pose] || POSES["Straight on"];
   const exprDesc = EXPRESSIONS[expr] || EXPRESSIONS["Natural smile"];

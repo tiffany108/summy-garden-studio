@@ -1483,7 +1483,7 @@ function applyLang(code){
   st(Q('#pricing .sec-head h2'), t.pr_h2); st(Q('#pricing .sec-head p'), t.pr_p);
   const pb=QA('#pricing .price-btn'); st(pb[0],t.btn_free); st(pb[1],t.buy1); st(pb[2],t.buy2); st(pb[3],t.buy3);
   st(Q('.referral-strip b'), t.rs_b); sh(Q('.referral-strip span'), t.rs_t); st(Q('.referral-strip .btn-primary'), t.rs_btn);
-  st(Q('#register h3'), t.reg_h); st(Q('#register .modal > p'), t.reg_p);
+  st(Q('#register h3'), t.reg_h); st(Q('#regFields > p'), t.reg_p);
   const rn=Q('#regName'); if(rn) rn.placeholder=t.ph_name;
   const re=Q('#regEmail'); if(re) re.placeholder=t.ph_email;
   st(Q('#register .btn-primary'), t.reg_btn);

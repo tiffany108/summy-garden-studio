@@ -209,12 +209,13 @@ const handler = async (req) => {
 
   if (isProof) {
     // Proof mode: one watermarked combination set, no credit spent now —
-    // max 3 per user per 2 hours; credits are charged when a photo is
-    // downloaded/emailed (see /api/unlock-photo).
+    // max 3 per user per 2 hours (admin exempt); credits are charged when
+    // a photo is downloaded/emailed (see /api/unlock-photo).
+    const isAdmin = authUser.email === "tiffany123@hotmail.com.hk";
     const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const q = await sbService(`/rest/v1/headshots?user_id=eq.${authUser.id}&variant=eq.9&created_at=gte.${encodeURIComponent(since)}&select=id`);
     const rows = q.ok ? await q.json() : [];
-    if (rows.length >= 3) return Response.json({ error: "You already created 3 combination sets — download your favourite, or try again later." }, { status: 409, headers });
+    if (!isAdmin && rows.length >= 3) return Response.json({ error: "You already created 3 combination sets — download your favourite, or try again later." }, { status: 409, headers });
   } else if (vi === 0) {
     // variant 0 spends exactly one credit for the whole 4-variant generation
     const r = await sbService(`/rest/v1/rpc/consume_credit`, { method: "POST", body: JSON.stringify({ uid: authUser.id }) });
@@ -274,20 +275,21 @@ const handler = async (req) => {
   const sceneOrd = sceneRef ? ords[imgN++] : null;
   const outfitOrd = outfitRef ? ords[imgN++] : null;
   const prompt =
-    `Transform the FIRST attached photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
-    retouch +
-    `Style: ${styleDesc}. ` +
+    `Professional headshot creation task. Edit the FIRST attached photo. Follow ALL numbered instructions: ` +
+    `1) IDENTITY — MOST IMPORTANT: the output must show the SAME person as the FIRST photo. Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle. Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
+    `2) FACE RETOUCH: ${retouch}` +
+    `3) CLOTHING: ` +
     (outfitOrd
-      ? `Outfit: the ${outfitOrd} attached image shows the exact outfit to use (${outfitDesc}). Dress the person in exactly this clothing — same garment, colour, fabric, neckline and details — fitted naturally to their body. `
+      ? `REMOVE the person's current clothing and dress them in EXACTLY the outfit shown in the ${outfitOrd} attached image (${outfitDesc}) — same garment, colour, fabric, neckline and details, fitted naturally to their body. The original clothing must not remain visible. `
       : keepOriginalOutfit
-        ? `Outfit: keep the person's OWN clothing exactly as worn in the FIRST photo — same garment, colours, neckline and fabric, just neatly presented. Do not replace their clothes. `
-        : `Dress them in ${outfitDesc}. `) +
-    `The person is ${poseDesc}, with ${exprDesc}. ` +
+        ? `keep the person's OWN clothing exactly as worn in the FIRST photo — same garment, colours, neckline and fabric, just neatly presented. Do not replace their clothes. `
+        : `REMOVE the person's current clothing and dress them in ${outfitDesc}. The original clothing must not remain visible. `) +
+    `4) BACKGROUND: ` +
     (sceneOrd
-      ? `Background: the ${sceneOrd} attached image shows the exact background location (${scene || "professional setting"}). COMPLETELY REPLACE the original photo's background with this environment — none of the FIRST photo's original surroundings, ground or sky may remain visible. Reproduce the reference environment's architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind the person. `
-      : `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. Completely replace the original photo's background. `) +
-    `Compose the shot as ${frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance), keeping the person horizontally centred similarly to the FIRST photo. ` +
-    `${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
+      ? `COMPLETELY REPLACE the FIRST photo's background with the environment shown in the ${sceneOrd} attached image (${scene || "professional setting"}). None of the FIRST photo's original surroundings, ground or sky may remain visible. Reproduce the reference environment's architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind the person. `
+      : `COMPLETELY REPLACE the background with ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
+    `5) POSE & FRAMING: the person is ${poseDesc}, with ${exprDesc}. Compose the shot as ${frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance), keeping the person horizontally centred similarly to the FIRST photo. ` +
+    `6) STYLE & LIGHT: ${styleDesc}. ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   const parts = [{ inline_data: { mime_type: mime, data: b64 } }];
   if (sceneRef) parts.push({ inline_data: { mime_type: sceneRef.mime || "image/jpeg", data: sceneRef.data } });

@@ -1218,7 +1218,10 @@ function applyAutoScene(bgId){
   enhChanged();
   closeModal('modeModal');
   selectBg(bgId,{fromStudio:false});
-  swapSampleIdx=bgIndex(bgId); /* Auto = face-swap onto this exact sample photo */
+  /* Auto = recreate the sample's look around the CUSTOMER's photo (scene backdrop
+     + recipe outfit/pose/expression refs). A literal face-swap onto the sample is
+     blocked by the image model's anti-deepfake guardrails — verified 2026-07-21. */
+  swapSampleIdx=null;
   renderLook(); updateCombo();
   quickPreview();
   toast(TX('t_applied').replace('{s}',bgName(bgc)));

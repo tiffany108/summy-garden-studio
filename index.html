@@ -1236,7 +1236,8 @@ function setupCropper(){
   cv.addEventListener('wheel',ev=>{ev.preventDefault(); zoomCrop(cropScale*(ev.deltaY<0?1.06:0.94));},{passive:false});
   document.getElementById('zoomSlider').addEventListener('input',ev=>{ zoomCrop(cropMin*ev.target.value/100); });
   drawCrop(); applyEnhPreview();
-  toast(TX('toast_photo'));
+  if(typeof confirmCombo==='function') confirmCombo._zoomOK=false; /* re-arm the zoom reminder per upload */
+  toast('📸 Zoom until your face fills the oval — this decides how much the result looks like you');
   openModeModal(); /* ask: auto ready-made look, or customize? */
 }
 function zoomCrop(ns){
@@ -1686,6 +1687,13 @@ async function confirmCombo(){
   if(!cropImg){ toast('Upload your photo first'); return; }
   if(!bgById(selectedBg)){ toast('Pick a scene first 🌿'); return; }
   if(!user){ toast('Create your free account first — 1 free credit on sign-up'); accountClick(); return; }
+  /* enforce the likeness reminder once per upload when the crop was never zoomed */
+  if(!confirmCombo._zoomOK && cropScale<=cropMin*1.02){
+    confirmCombo._zoomOK=true;
+    toast('📸 For an accurate face, ZOOM the crop until your face fills the oval. If your face is already large in frame, tap Confirm again.');
+    document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
   if(proofShots.length>=PROOF_MAX){ toast('You already have '+PROOF_MAX+' sets — download your favourite below'); return; }
   if(proofBusy) return; proofBusy=true; renderPvBox();
   const bg=bgById(selectedBg);

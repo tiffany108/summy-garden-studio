@@ -117,6 +117,12 @@ section{padding:72px 0}
 .pv-lbl{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9fc0d3;margin:12px 0 5px}
 @keyframes pvGlow{0%,100%{box-shadow:0 0 12px 2px rgba(74,222,128,.45)}50%{box-shadow:0 0 26px 8px rgba(34,211,238,.6)}}
 #prevBtn{animation:pvGlow 2.2s ease-in-out infinite}
+.look-card{transition:box-shadow .18s ease,transform .18s ease}
+.look-card:hover{box-shadow:0 0 0 2px #7dd3fc,0 0 18px 4px rgba(125,211,252,.55);transform:translateY(-2px)}
+.swatch{transition:box-shadow .18s ease}
+.swatch:hover{box-shadow:0 0 0 2px #7dd3fc,0 0 16px 4px rgba(125,211,252,.55)}
+.bg-card{transition:box-shadow .18s ease}
+.bg-card:hover{box-shadow:0 0 0 2px #7dd3fc,0 0 18px 4px rgba(125,211,252,.5)}
 .pv-sel{width:100%;background:#0a3a5c;color:#fff;border:none;border-radius:10px;padding:9px 11px;font-family:inherit;font-size:13px;font-weight:600;outline:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(125,211,252,.25)}
 .change-photo{background:none;color:#7dd3fc;font-size:12px;text-decoration:underline}
 .studio-label{font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:22px 0 10px}
@@ -1373,7 +1379,9 @@ function renderSwatches(){
 }
 function renderSelInfo(){
   const b=bgById(selectedBg);
-  document.getElementById('selBgInfo').innerHTML=`<b>${bgName(b)}</b> · ${TX('c'+(CATEGORIES.indexOf(b.cat)+1))}<br><span style="opacity:.8">${bgDesc(b)}</span>`;
+  document.getElementById('selBgInfo').innerHTML = b
+    ? `<b>${bgName(b)}</b> · ${TX('c'+(CATEGORIES.indexOf(b.cat)+1))}<br><span style="opacity:.8">${bgDesc(b)}</span>`
+    : `<b>No scene selected</b><br><span style="opacity:.8">Tap a scene in the 🌿 Scene tab or a sample below.</span>`;
 }
 
 /* ---------- Showcase ---------- */
@@ -1424,6 +1432,13 @@ function renderShowcase(){
     fillTrack(document.getElementById('trackB'), filtered.slice(half).length?filtered.slice(half):filtered.slice(0,half), 4.1);
     document.getElementById('galleryCount').textContent=TX('sc_count').replace('{n}',filtered.length).replace('{t}',BACKGROUNDS.length);
   }
+}
+function unselectBg(){
+  selectedBg=null;
+  renderSwatches();
+  if(typeof updateCombo==='function') updateCombo();
+  document.querySelectorAll('.bg-card').forEach(c=>c.classList.remove('selected'));
+  if(typeof maybeRefreshPreview==='function') maybeRefreshPreview();
 }
 function selectBg(id,opts={}){
   selectedBg=id;
@@ -1486,7 +1501,7 @@ function renderLook(){
       const gi=bgIndex(b.id);
       const c=document.createElement('div'); c.className='look-card'+(b.id===selectedBg?' sel':'');
       c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+aiSceneURL(b,gi)+'" onerror="retryOpt(this)" alt=""></div><div class="look-label">'+bgName(b)+'</div>';
-      c.onclick=()=>{ selectBg(b.id,{fromStudio:false}); renderLook(); };
+      c.onclick=()=>{ if(b.id===selectedBg) unselectBg(); else selectBg(b.id,{fromStudio:false}); renderLook(); }; /* click again to unselect */
       g.appendChild(c);
     });
     g.style.gridTemplateColumns='repeat(auto-fill,minmax(108px,1fr))';
@@ -1593,7 +1608,7 @@ function comboControlsHTML(){
     scenes+='</optgroup>';
   });
   return `<span class="pv-lbl" style="margin-top:0">🌿 ${TX('sc_pick')}</span>
-    <select class="pv-sel" id="pvScene" onchange="prevScene(this.value)">${scenes}</select>
+    <select class="pv-sel" id="pvScene" onchange="prevScene(this.value)"><option value=""${selectedBg?'':' selected'}>— pick a scene —</option>${scenes}</select>
     <span class="pv-lbl">🎨 ${TX('tab_style')}</span>
     <select class="pv-sel" id="pvStyle" onchange="prevCombo('style',this.value)">${pvOptions('style','Auto · '+xl(LOOK_DEFAULTS.style))}</select>
     <span class="pv-lbl">👔 ${TX('tab_outfit')}</span>
@@ -1666,6 +1681,7 @@ function renderPvBox(){
 }
 async function confirmCombo(){
   if(!cropImg){ toast('Upload your photo first'); return; }
+  if(!bgById(selectedBg)){ toast('Pick a scene first 🌿'); return; }
   if(!user){ toast('Create your free account first — 1 free credit on sign-up'); accountClick(); return; }
   if(proofShots.length>=PROOF_MAX){ toast('You already have '+PROOF_MAX+' sets — download your favourite below'); return; }
   if(proofBusy) return; proofBusy=true; renderPvBox();

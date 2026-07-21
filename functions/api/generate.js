@@ -277,7 +277,8 @@ const handler = async (req) => {
     (sceneOrd
       ? `Background: the ${sceneOrd} attached image shows the exact background location (${scene || "professional setting"}). Place the person standing in exactly this environment — reproduce its architecture, colours, season and lighting faithfully, softly blurred with shallow depth of field behind them. `
       : `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
-    `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
+    `${frameDesc}, keeping the person anchored at the same position and scale within the frame as in the FIRST photo. ` +
+    `${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
   const parts = [{ inline_data: { mime_type: mime, data: b64 } }];
   if (sceneRef) parts.push({ inline_data: { mime_type: sceneRef.mime || "image/jpeg", data: sceneRef.data } });
@@ -293,8 +294,8 @@ const handler = async (req) => {
     });
     if (!res.ok) { const t = await res.text(); await refundCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 500, headers }); }
     const data = await res.json();
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    const img = parts.find((p) => p.inlineData || p.inline_data);
+    const outParts = data?.candidates?.[0]?.content?.parts || [];
+    const img = outParts.find((p) => p.inlineData || p.inline_data);
     if (!img) { await refundCredit(); return Response.json({ error: "no image in response" }, { status: 500, headers }); }
     const d = img.inlineData || img.inline_data;
     // Save this variant to the user's dashboard (best effort — never blocks the response)

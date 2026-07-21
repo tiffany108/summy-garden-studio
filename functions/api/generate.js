@@ -291,11 +291,11 @@ const handler = async (req) => {
       body: JSON.stringify({ contents: [{ parts }],
         generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
-    if (!res.ok) { const t = await res.text(); await refundCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }
+    if (!res.ok) { const t = await res.text(); await refundCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 500, headers }); }
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts || [];
     const img = parts.find((p) => p.inlineData || p.inline_data);
-    if (!img) { await refundCredit(); return Response.json({ error: "no image in response" }, { status: 502, headers }); }
+    if (!img) { await refundCredit(); return Response.json({ error: "no image in response" }, { status: 500, headers }); }
     const d = img.inlineData || img.inline_data;
     // Save this variant to the user's dashboard (best effort — never blocks the response)
     try {
@@ -319,7 +319,7 @@ const handler = async (req) => {
     return new Response(stream, { status: 200, headers: { ...headers, "Content-Type": "application/json" } });
   } catch (e) {
     await refundCredit();
-    return Response.json({ error: String(e?.message || e) }, { status: 502, headers });
+    return Response.json({ error: String(e?.message || e) }, { status: 500, headers });
   }
   } catch (e) {
     // top-level guard: report the crash point instead of a blank Cloudflare 502

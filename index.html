@@ -384,6 +384,7 @@ html,body{overflow-x:clip}
             <div class="up-icon">⇪</div>
             <p><b id="upTitle">Click to upload a selfie</b></p>
             <small id="upSub">JPG or PNG · face clearly visible · min 512×512</small>
+            <small style="display:block;margin-top:7px;color:#fbbf24;font-weight:700">📸 Use a head-&amp;-shoulders photo — a large, clear face gives the best likeness. Avoid full-body shots.</small>
           </div>
           <div class="up-actions">
             <button type="button" class="up-btn" onclick="document.getElementById('fileInput').click()"><span>⬆</span> <span id="upBtn1">Upload photo</span></button>
@@ -1223,6 +1224,7 @@ function setupCropper(){
   zone.innerHTML=`<canvas id="cropCanvas" width="${CW}" height="${CH}"></canvas>
    <div class="zoom-row">🔍<input type="range" id="zoomSlider" min="100" max="320" value="100"></div>
    <div class="crop-hint">Drag to frame your head & shoulders · slide to zoom</div>
+   <div class="crop-hint" style="color:#fbbf24;font-weight:700">📸 Zoom in until your face fills the oval — a small face in the frame will NOT look like you in the result</div>
    <div class="crop-hint" id="enhPrevNote" style="color:#4ade80">✨ Live preview: this photo simulates your Enhance level — move the slider to compare</div>
    <button class="change-photo" onclick="document.getElementById('fileInput').click()">Change photo</button>`;
   cropMin=Math.max(CW/cropImg.width, CH/cropImg.height); cropScale=cropMin;

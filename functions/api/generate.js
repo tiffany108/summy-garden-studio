@@ -300,7 +300,7 @@ const handler = async (req) => {
     `Professional headshot creation task. Edit the FIRST attached photo. Follow ALL numbered instructions: ` +
     `1) IDENTITY — MOST IMPORTANT: the output must show the SAME person as the FIRST photo. ` +
     (faceOrd ? `The ${faceOrd} attached image is a sharp close-up of this person's face — it is the DEFINITIVE face reference: copy it exactly, feature by feature. Use it ONLY for facial identity — do NOT copy its crop, zoom or framing; the composition is set by instruction 5. ` : ``) +
-    `Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity, apparent age and hairstyle. Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
+    `Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity and apparent age. HAIR: keep their OWN hair colour, length and type, but groom it into a neat, professionally styled version suitable for a studio portrait (smooth flyaways, tidy shape). Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
     `2) FACE RETOUCH: ${retouch}At EVERY retouch level: never change the shape or proportions of any facial feature — no slimming, reshaping, enlarging eyes or altering the nose, jaw or lips. Only skin texture, blemishes and lighting may be adjusted. The sole permitted shape change is the facial EXPRESSION requested in instruction 5 (e.g. a natural or big smile). ` +
     `3) CLOTHING: ` +
     (outfitOrd

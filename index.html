@@ -414,6 +414,7 @@ html,body{overflow-x:clip}
             </div>
             <p class="enh-hint">💡 Prefer a more natural look? Slide <b>✨ Enhance</b> lower — at 0% your skin tone, texture and face shapes stay exactly as photographed.</p>
             <div class="look-filter" id="outfitFilter" style="display:none"><button class="look-chip active" data-g="all">All</button><button class="look-chip" data-g="w">Women's</button><button class="look-chip" data-g="m">Men's</button><button class="look-chip" data-g="u">Unisex</button></div>
+            <div class="look-filter" id="sceneFilter" style="display:none"></div>
               <div class="look-grid" id="lookGrid"></div>
           </div>
           <div id="resultWrap" style="display:none">
@@ -1447,7 +1448,7 @@ let outfitFilter='all';
 const OPTSPECIAL={ outfit:[['Auto','osp',0],['Original','osp',1]] };
 const SEL={style:()=>selectedStyle,outfit:()=>selectedOutfit,pose:()=>selectedPose,expr:()=>selectedExpr};
 const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>selectedPose=v,expr:v=>selectedExpr=v};
-let lookTab='scene';
+let lookTab='scene', sceneCatFilter='All';
 function optImg(kind,i){ return '/api/sample?kind='+kind+'&i='+i; }
 function retryOpt(el){ const n=(+el.dataset.r||0)+1; el.dataset.r=n; if(n>3){el.parentElement.classList.add('noimg');el.remove();return;} const src=el.src; el.removeAttribute('src'); setTimeout(()=>{el.src=src;},5000*n); }
 function makeOptCard(kind,label,i,special){
@@ -1461,9 +1462,20 @@ function makeOptCard(kind,label,i,special){
 function renderLook(){
   const g=document.getElementById('lookGrid'); if(!g)return; g.innerHTML='';
   const fw=document.getElementById('outfitFilter'); if(fw) fw.style.display = lookTab==='outfit' ? 'flex' : 'none';
+  const sf=document.getElementById('sceneFilter'); if(sf) sf.style.display = lookTab==='scene' ? 'flex' : 'none';
   if(lookTab==='scene'){
-    /* backgrounds as the first customization tab — exact empty backdrops */
+    /* backgrounds as the first customization tab, grouped by environment */
+    if(sf){ sf.innerHTML='';
+      ['All',...CATEGORIES].forEach((cat,idx)=>{
+        const btn=document.createElement('button');
+        btn.className='look-chip'+(sceneCatFilter===cat?' active':'');
+        btn.textContent = cat==='All' ? 'All' : (TX('c'+idx)||cat);
+        btn.onclick=()=>{ sceneCatFilter=cat; renderLook(); };
+        sf.appendChild(btn);
+      });
+    }
     BACKGROUNDS.forEach(b=>{
+      if(sceneCatFilter!=='All' && b.cat!==sceneCatFilter) return;
       const gi=bgIndex(b.id);
       const c=document.createElement('div'); c.className='look-card'+(b.id===selectedBg?' sel':'');
       c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+aiSceneURL(b,gi)+'" onerror="retryOpt(this)" alt=""></div><div class="look-label">'+bgName(b)+'</div>';

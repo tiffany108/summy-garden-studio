@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
@@ -152,6 +152,15 @@ tbody tr:hover{background:#e8f4fd}
 
     <div class="sec-title"><span data-i18n="t_msgs">Contact messages</span> <span style="text-transform:none;font-weight:600;color:#8fa6b3" data-i18n="t_msgs_sub">· quotations, feedback & questions from the site</span></div>
     <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <input id="mfSearch" placeholder="🔍 Email or name…" oninput="renderMsgs()" style="width:200px;margin:0">
+        <select id="mfTopic" onchange="renderMsgs()" style="padding:11px 13px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:13.5px;color:var(--ink);outline:none;cursor:pointer"><option value="">All topics</option></select>
+        <input id="mfDate" placeholder="📅 Any date" readonly style="width:200px;margin:0;cursor:pointer">
+        <select id="mfStatus" onchange="renderMsgs()" style="padding:11px 13px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:13.5px;color:var(--ink);outline:none;cursor:pointer">
+          <option value="">All statuses</option><option value="replied">✓ Replied</option><option value="pending">⌛ Not replied</option></select>
+        <button class="btn dark" onclick="clearMsgFilters()">Clear</button>
+        <span id="mfCount" style="font-size:12px;font-weight:600;color:#8fa6b3"></span>
+      </div>
       <table><thead><tr><th data-i18n="th_date">Date</th><th data-i18n="th_topic">Topic</th><th data-i18n="th_name">Name</th><th data-i18n="th_email">Email</th><th data-i18n="th_msg">Message</th><th data-i18n="th_act">Actions</th></tr></thead>
       <tbody id="msgRows"><tr><td colspan="6" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
     </div>
@@ -387,11 +396,33 @@ function exportUsersCSV(){
   toast('CSV exported — '+bizComputed.length+' members');
 }
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let MSGS=[], mfPicker=null, mfRange=null;
 async function loadMessages(){
   const tb=document.getElementById('msgRows');
-  const {data,error}=await sb.from('contact_messages').select('*').order('created_at',{ascending:false}).limit(30);
-  tb.innerHTML='';
+  const {data,error}=await sb.from('contact_messages').select('*').order('created_at',{ascending:false}).limit(200);
   if(error){ tb.innerHTML='<tr><td colspan="6" style="color:#c0392b">'+esc(error.message)+'</td></tr>'; return; }
+  MSGS=data||[];
+  const sel=document.getElementById('mfTopic');
+  sel.length=1; [...new Set(MSGS.map(m=>m.topic).filter(Boolean))].forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o); });
+  if(!mfPicker && window.flatpickr) mfPicker=flatpickr('#mfDate',{mode:'range',dateFormat:'Y-m-d',
+    onChange:d=>{ mfRange = d.length===2 ? [mfPicker.formatDate(d[0],'Y-m-d'), mfPicker.formatDate(d[1],'Y-m-d')] : null; if(d.length!==1) renderMsgs(); }});
+  renderMsgs();
+}
+function clearMsgFilters(){ document.getElementById('mfSearch').value=''; document.getElementById('mfTopic').value=''; document.getElementById('mfStatus').value=''; mfRange=null; if(mfPicker) mfPicker.clear(); renderMsgs(); }
+function renderMsgs(){
+  const tb=document.getElementById('msgRows'); tb.innerHTML='';
+  const q=(document.getElementById('mfSearch').value||'').trim().toLowerCase();
+  const topic=document.getElementById('mfTopic').value;
+  const st=document.getElementById('mfStatus').value;
+  const data=MSGS.filter(m=>{
+    if(q && !(((m.email||'')+' '+(m.name||'')).toLowerCase().includes(q))) return false;
+    if(topic && m.topic!==topic) return false;
+    if(st==='replied' && !m.replied_at) return false;
+    if(st==='pending' && m.replied_at) return false;
+    if(mfRange){ const d=(m.created_at||'').slice(0,10); if(d<mfRange[0]||d>mfRange[1]) return false; }
+    return true;
+  });
+  document.getElementById('mfCount').textContent=data.length+' of '+MSGS.length+' messages';
   (data||[]).forEach(m=>{
     const tr=document.createElement('tr');
     const long=(m.message||'').length>80;
@@ -411,7 +442,7 @@ async function loadMessages(){
     tr.appendChild(act);
     tb.appendChild(tr);
   });
-  if(!data||!data.length) tb.innerHTML='<tr><td colspan="6" style="color:#8fa6b3">No messages yet</td></tr>';
+  if(!data||!data.length) tb.innerHTML='<tr><td colspan="6" style="color:#8fa6b3">'+(MSGS.length?'No messages match these filters':'No messages yet')+'</td></tr>';
 }
 /* ---------- Message reader + reply ---------- */
 let mmCurrent=null;

@@ -1613,6 +1613,7 @@ function selectBg(id,opts={}){
   renderSwatches();
   if(typeof updateCombo==='function') updateCombo();
   document.querySelectorAll('.bg-card').forEach(c=>c.classList.toggle('selected',c.dataset.id===id));
+  try{ showScenePreview(id); }catch(e){}
   if(opts.scroll){document.getElementById('studio').scrollIntoView({behavior:'smooth'});toast('Scene selected: '+b.name);}
 }
 /* ---------- Visual look picker (Style / Outfit / Pose / Expression / Framing) ---------- */
@@ -1705,6 +1706,26 @@ document.querySelectorAll('#lookTabs .look-tab').forEach(t=>t.onclick=()=>{
    showLookPanel keeps the (hidden) lookPanel out of the way and shows the results zone. */
 function showLookPanel(){ const l=document.getElementById('lookPanel'); if(l) l.style.display='none'; const r=document.getElementById('resultWrap'); if(r) r.style.display='flex'; }
 function showResultsPanel(){ document.getElementById('lookPanel').style.display='none'; document.getElementById('resultWrap').style.display='flex'; }
+/* Scene selected -> show a large, clear sample of that scene in the right panel
+   (until the customer generates their own headshot, which then replaces it). */
+function showScenePreview(id){
+  const bg=(typeof bgById==='function')?bgById(id):null; if(!bg) return;
+  if(proofBusy) return;                 /* don't interrupt an active generation */
+  const zone=document.getElementById('resultZone'); if(!zone) return;
+  showResultsPanel(); previewActive=false;
+  const gi=(typeof bgIndex==='function')?bgIndex(id):0;
+  const url=(typeof aiSampleURL==='function')?aiSampleURL(bg,gi):bg.image;
+  const nm=(typeof bgName==='function')?bgName(bg):(bg.name||'');
+  const ds=(typeof bgDesc==='function')?bgDesc(bg):(bg.desc||'');
+  zone.innerHTML=`<div style="width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:4px 0 8px">
+    <div style="width:100%;max-width:360px;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.42)">
+      <img src="${url}" onerror="if(this.src!=='${bg.image}')this.src='${bg.image}'" alt="${nm}" style="width:100%;display:block;aspect-ratio:4/5;object-fit:cover">
+    </div>
+    <div style="font:800 18px system-ui;color:#eaf6fc;margin-top:2px">${nm}</div>
+    ${ds?`<div style="font-size:13px;color:#9fc0d3;max-width:400px;line-height:1.55">${ds}</div>`:''}
+    <div style="font-size:12.5px;color:#7dd3fc;font-weight:700;max-width:400px;line-height:1.5;margin-top:2px">✨ This is a sample model. Tap <b>Confirm — generate</b> to create YOUR headshot in this scene.</div>
+  </div>`;
+}
 function updateCombo(){ const b=bgById(selectedBg); const el=document.getElementById('comboSummary');
   if(el) el.innerHTML='✨ <b>'+dispLabel('style',selectedStyle||'Auto')+'</b> · <b>'+dispLabel('outfit',selectedOutfit||'Auto')+'</b> · <b>'+dispLabel('pose',selectedPose||'Auto')+'</b> · <b>'+dispLabel('expr',selectedExpr||'Auto')+'</b>'+(b?' · <b>'+bgName(b)+'</b>':'')+'<br><span style="opacity:.7">'+TX('combo_tail')+'</span>'; }
 

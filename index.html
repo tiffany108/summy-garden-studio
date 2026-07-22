@@ -1150,7 +1150,7 @@ function snapPhoto(){
   x.drawImage(v,(v.videoWidth-side)/2,(v.videoHeight-side)/2,side,side,0,0,side,side);
   closeCamera();
   const durl=c.toDataURL('image/jpeg',.92);
-  const img=new Image(); img.onload=()=>{ const wasEmpty=photos.length===0; if(photos.length<PHOTO_MAX) photos.push({img,url:durl}); if(wasEmpty&&photos.length){ setActivePhoto(0); openModeModal(); } else renderPhotos(); }; img.src=durl;
+  const img=new Image(); img.onload=()=>{ const wasEmpty=photos.length===0; if(photos.length<PHOTO_MAX) photos.push({img,url:durl}); if(wasEmpty&&photos.length){ setActivePhoto(0); } else renderPhotos(); }; img.src=durl;
 }
 document.getElementById('camInput').addEventListener('change',e=>{ addPhotoFiles(e.target.files); e.target.value=''; });
 
@@ -1286,7 +1286,7 @@ function setupCropper(){
   drawCrop(); applyEnhPreview();
   if(typeof confirmCombo==='function') confirmCombo._zoomOK=false; /* re-arm the zoom reminder per upload */
   toast(TX('t_zoomtip'));
-  openModeModal(); /* ask: auto ready-made look, or customize? */
+  /* mode modal removed — no customization */
 }
 function zoomCrop(ns){
   ns=Math.min(Math.max(ns, cropMin), cropMin*3.2);
@@ -1354,7 +1354,7 @@ function addPhotoFiles(fileList){
   if(!files.length) return;
   const wasEmpty=photos.length===0;
   let pending=files.length;
-  const done=()=>{ if(--pending===0){ if(wasEmpty&&photos.length){ setActivePhoto(0); openModeModal(); } else renderPhotos(); photos.forEach(p=>{ if(p._yaw===undefined) detectPhotoYaw(p); }); } };
+  const done=()=>{ if(--pending===0){ if(wasEmpty&&photos.length){ setActivePhoto(0); } else renderPhotos(); photos.forEach(p=>{ if(p._yaw===undefined) detectPhotoYaw(p); }); } };
   files.forEach(f=>{
     const r=new FileReader();
     r.onload=ev=>{ const img=new Image(); img.onload=()=>{ if(photos.length<PHOTO_MAX) photos.push({img,url:ev.target.result}); done(); }; img.onerror=done; img.src=ev.target.result; };

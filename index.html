@@ -1222,6 +1222,7 @@ function applyAutoScene(bgId){
      A literal face-swap onto the sample is blocked by the image model's
      anti-deepfake guardrails — verified 2026-07-21. */
   swapSampleIdx=bgIndex(bgId);
+  try{ if(photos.length) autoMatchPhotoToScene(swapSampleIdx); }catch(e){}
   renderLook(); updateCombo();
   quickPreview();
   toast(TX('t_applied').replace('{s}',bgName(bgc)));
@@ -1352,13 +1353,79 @@ function addPhotoFiles(fileList){
   if(!files.length) return;
   const wasEmpty=photos.length===0;
   let pending=files.length;
-  const done=()=>{ if(--pending===0){ if(wasEmpty&&photos.length){ setActivePhoto(0); openModeModal(); } else renderPhotos(); } };
+  const done=()=>{ if(--pending===0){ if(wasEmpty&&photos.length){ setActivePhoto(0); openModeModal(); } else renderPhotos(); photos.forEach(p=>{ if(p._yaw===undefined) detectPhotoYaw(p); }); } };
   files.forEach(f=>{
     const r=new FileReader();
     r.onload=ev=>{ const img=new Image(); img.onload=()=>{ if(photos.length<PHOTO_MAX) photos.push({img,url:ev.target.result}); done(); }; img.onerror=done; img.src=ev.target.result; };
     r.onerror=done;
     r.readAsDataURL(f);
   });
+}
+
+/* ===== Auto angle-match: pick the uploaded photo whose face angle best fits the chosen scene model =====
+   We estimate face yaw (turn) with MediaPipe FaceMesh: ~0 = front, ±large = turned, null = profile.
+   On scene select we measure that scene's model and switch the "IN USE" photo to the closest angle,
+   so the swap always gets a source that matches the model's pose. Proven 22 Jul 2026. */
+let _fm=null, _fmReady=null, _fmBusy=Promise.resolve();
+function ensureFaceMesh(){
+  if(_fmReady) return _fmReady;
+  _fmReady=(async()=>{
+    if(typeof FaceMesh==='undefined'){
+      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js'; s.onload=res; s.onerror=()=>rej(new Error('facemesh')); document.head.appendChild(s); });
+    }
+    const fm=new FaceMesh({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/'+f});
+    fm.setOptions({maxNumFaces:1, refineLandmarks:false, minDetectionConfidence:0.3});
+    _fm=fm; return fm;
+  })();
+  return _fmReady;
+}
+function detectYaw(image){
+  const run=async()=>{
+    let fm; try{ fm=await ensureFaceMesh(); }catch(e){ return null; }
+    return await new Promise(res=>{
+      let done=false; const to=setTimeout(()=>{ if(!done){done=true;res(null);} },8000);
+      fm.onResults(r=>{ if(done)return; done=true; clearTimeout(to);
+        const lm=r.multiFaceLandmarks&&r.multiFaceLandmarks[0]; if(!lm) return res(null);
+        const nose=lm[1], L=lm[234], R=lm[454]; const midX=(L.x+R.x)/2, faceW=Math.abs(R.x-L.x)||1e-6;
+        res(+((nose.x-midX)/faceW).toFixed(3));
+      });
+      try{ fm.send({image}); }catch(e){ if(!done){done=true;clearTimeout(to);res(null);} }
+    });
+  };
+  _fmBusy=_fmBusy.then(run, run); return _fmBusy; /* serialize: FaceMesh is single-inflight */
+}
+async function detectPhotoYaw(p){ if(p._yaw!==undefined) return p._yaw; p._yaw=null; p._yaw=await detectYaw(p.img); return p._yaw; }
+const _sampleYawCache={};
+async function sampleYaw(i){
+  if(i in _sampleYawCache) return _sampleYawCache[i];
+  let y=null;
+  try{ const r=await fetch('/api/sample?kind=p&i='+i); const b=await r.blob(); const u=URL.createObjectURL(b);
+    const im=new Image(); await new Promise((res,rej)=>{ im.onload=res; im.onerror=rej; im.src=u; });
+    y=await detectYaw(im); URL.revokeObjectURL(u);
+  }catch(e){}
+  _sampleYawCache[i]=y; return y;
+}
+function bestPhotoIndex(modelYaw){
+  if(!photos.length) return activePhoto;
+  if(modelYaw==null){ /* profile model: pick most-profile photo (undetected counts as strong profile) */
+    let best=activePhoto, bv=-1; photos.forEach((p,i)=>{ const v=(p._yaw==null)?1.0:Math.abs(p._yaw); if(v>bv){bv=v;best=i;} }); return best;
+  }
+  const known=photos.map((p,i)=>({i,y:p._yaw})).filter(o=>typeof o.y==='number');
+  if(!known.length) return activePhoto;
+  let best=known[0]; for(const o of known){ if(Math.abs(o.y-modelYaw)<Math.abs(best.y-modelYaw)) best=o; }
+  return best.i;
+}
+let _matchSeq=0;
+async function autoMatchPhotoToScene(sampleIdx){
+  if(!photos.length || sampleIdx==null || sampleIdx<0) return;
+  const seq=++_matchSeq;
+  try{
+    await Promise.all(photos.map(detectPhotoYaw));       /* measure customer photos (cached) */
+    const my=await sampleYaw(sampleIdx);                  /* measure this scene's model (cached) */
+    if(seq!==_matchSeq) return;                           /* a newer scene pick superseded us */
+    const bi=bestPhotoIndex(my);
+    if(bi!==activePhoto) setActivePhoto(bi);
+  }catch(e){}
 }
 
 /* ---------- On-device person segmentation (MediaPipe) ---------- */
@@ -1538,6 +1605,7 @@ function unselectBg(){
 }
 function selectBg(id,opts={}){
   selectedBg=id;
+  try{ if(typeof autoMatchPhotoToScene==='function' && photos.length && typeof bgIndex==='function') autoMatchPhotoToScene(bgIndex(id)); }catch(e){}
   if(typeof maybeRefreshPreview==='function') maybeRefreshPreview();
   const b=bgById(id);
   if(!opts.fromStudio){ studioCat=b.cat; renderCatStrip(); }

@@ -1806,19 +1806,24 @@ async function headSelfieDataURL(){
 }
 async function sampleTorsoRef(idx){
   /* face-free torso crop of the tapped sample card — carries the EXACT suit
-     colour/fabric and body scale without triggering identity guardrails */
-  try{
-    const bgc=bgById(selectedBg); if(!bgc) return null;
-    const img=await timeoutP(loadImg(aiSampleURL(bgc,idx)),12000);
-    const cutTop=Math.round(img.height*0.34);
-    const c=document.createElement('canvas');
-    c.width=Math.min(640,img.width);
-    const sc=c.width/img.width;
-    c.height=Math.round((img.height-cutTop)*sc);
-    const x=c.getContext('2d'); x.imageSmoothingQuality='high';
-    x.drawImage(img,0,cutTop,img.width,img.height-cutTop,0,0,c.width,c.height);
-    return c.toDataURL('image/jpeg',.85);
-  }catch(e){ return null; }
+     colour/fabric and body scale without triggering identity guardrails.
+     Retries once, because a silent failure here is what causes a wrong suit. */
+  const bgc=bgById(selectedBg); if(!bgc) return null;
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const img=await timeoutP(loadImg(aiSampleURL(bgc,idx)+(attempt?('&r='+attempt):'')),14000);
+      const cutTop=Math.round(img.height*0.34);
+      const c=document.createElement('canvas');
+      c.width=Math.min(640,img.width);
+      const sc=c.width/img.width;
+      c.height=Math.round((img.height-cutTop)*sc);
+      const x=c.getContext('2d'); x.imageSmoothingQuality='high';
+      x.drawImage(img,0,cutTop,img.width,img.height-cutTop,0,0,c.width,c.height);
+      const url=c.toDataURL('image/jpeg',.85);
+      if(url&&url.length>2000) return url;
+    }catch(e){ if(attempt===1) console.warn('torso ref failed:',e&&e.message); }
+  }
+  return null;
 }
 async function confirmCombo(){
   if(!cropImg){ toast(TX('t_upload')); return; }

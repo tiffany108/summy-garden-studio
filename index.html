@@ -1726,8 +1726,8 @@ function showScenePreview(id){
     <div style="font-size:12.5px;color:#7dd3fc;font-weight:700;max-width:400px;line-height:1.5;margin-top:2px">✨ This is a sample model. Tap <b>Confirm — generate</b> to create YOUR headshot in this scene.</div>
   </div>`;
 }
-function updateCombo(){ const b=bgById(selectedBg); const el=document.getElementById('comboSummary');
-  if(el) el.innerHTML='✨ <b>'+dispLabel('style',selectedStyle||'Auto')+'</b> · <b>'+dispLabel('outfit',selectedOutfit||'Auto')+'</b> · <b>'+dispLabel('pose',selectedPose||'Auto')+'</b> · <b>'+dispLabel('expr',selectedExpr||'Auto')+'</b>'+(b?' · <b>'+bgName(b)+'</b>':'')+'<br><span style="opacity:.7">'+TX('combo_tail')+'</span>'; }
+/* Customization removed: the old style/outfit/pose/expression combo summary is gone. */
+function updateCombo(){ const el=document.getElementById('comboSummary'); if(el) el.innerHTML=''; }
 
 /* ---------- Server generation (identity-preserving, when API key is configured) ---------- */
 async function refDataURL(src,w,h,q){

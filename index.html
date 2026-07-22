@@ -363,7 +363,7 @@ html,body{overflow-x:clip}
       <p>No studio, no scheduling, no awkward posing. Your first headshot is free with your account — referred friends start with two.</p>
     </div>
     <div class="steps">
-      <div class="step"><div class="icon-tile tile-teal">📷</div><h3>1 · Upload & frame yourself</h3><p>Upload a selfie, then drag and zoom until your head and shoulders fill the guide.</p></div>
+      <div class="step"><div class="icon-tile tile-teal">📷</div><h3>1 · Upload your photos</h3><p>Add a few clear head-and-shoulders photos at different angles — we pick the best one for each scene.</p></div>
       <div class="step"><div class="icon-tile tile-sky">🎨</div><h3>2 · Pick scene & look</h3><p>100 scenes across 10 themed collections, plus colour-graded looks from business-crisp to creative.</p></div>
       <div class="step"><div class="icon-tile tile-gold">✨</div><h3>3 · Enhance, save & download</h3><p>Skin and tone enhancement applied automatically. Download any variant as a PNG.</p></div>
     </div>
@@ -382,7 +382,7 @@ html,body{overflow-x:clip}
           <div class="studio-label">Your photo</div>
           <div class="upload-zone clickable" id="uploadZone" onclick="pickFile(event)">
             <div class="up-icon">⇪</div>
-            <p><b id="upTitle">Click to upload a selfie</b></p>
+            <p><b id="upTitle">Click to upload your photos</b></p>
             <small id="upSub">JPG or PNG · face clearly visible · min 512×512</small>
             <small id="upHead" style="display:block;margin-top:7px;color:#fbbf24;font-weight:700">📸 Use a head-&amp;-shoulders photo — a large, clear face gives the best likeness. Avoid full-body shots.</small>
           </div>
@@ -390,7 +390,7 @@ html,body{overflow-x:clip}
             <button type="button" class="up-btn" onclick="document.getElementById('fileInput').click()"><span>⬆</span> <span id="upBtn1">Upload photo</span></button>
             <button type="button" class="up-btn cam" onclick="openCamera()"><span>📷</span> <span id="upBtn2">Take a photo</span></button>
           </div>
-          <input type="file" id="fileInput" accept="image/*" hidden>
+          <input type="file" id="fileInput" accept="image/*" multiple hidden>
           <input type="file" id="camInput" accept="image/*" capture="user" hidden>
           <div class="studio-label" id="sceneLabel">⭐ Pick your favourite scene</div>
           <div class="scene-hint"><span class="pin">👇</span><span id="sceneHintTxt">Choose a collection, then tap a thumbnail below</span></div>
@@ -1150,12 +1150,10 @@ function snapPhoto(){
   x.translate(side,0); x.scale(-1,1); /* un-mirror */
   x.drawImage(v,(v.videoWidth-side)/2,(v.videoHeight-side)/2,side,side,0,0,side,side);
   closeCamera();
-  const img=new Image(); img.onload=()=>{ cropImg=img; setupCropper(); }; img.src=c.toDataURL('image/jpeg',.92);
+  const durl=c.toDataURL('image/jpeg',.92);
+  const img=new Image(); img.onload=()=>{ const wasEmpty=photos.length===0; if(photos.length<PHOTO_MAX) photos.push({img,url:durl}); if(wasEmpty&&photos.length){ setActivePhoto(0); openModeModal(); } else renderPhotos(); }; img.src=durl;
 }
-document.getElementById('camInput').addEventListener('change',e=>{
-  const fl=e.target.files[0]; if(!fl)return;
-  const r=new FileReader(); r.onload=ev=>{ const img=new Image(); img.onload=()=>{ cropImg=img; setupCropper(); }; img.src=ev.target.result; }; r.readAsDataURL(fl);
-});
+document.getElementById('camInput').addEventListener('change',e=>{ addPhotoFiles(e.target.files); e.target.value=''; });
 
 /* ---------- Auto (ready-made looks) vs Customize — asked right after upload ---------- */
 /* Every gallery scene is offered, grouped by category; each category carries a
@@ -1246,10 +1244,11 @@ async function checkNewVersion(){
 setInterval(checkNewVersion,180000); checkNewVersion();
 /* ---------- Portrait capture (drag + zoom, head & shoulders) ---------- */
 let cropImg=null, cropScale=1, cropMin=1, cropOX=0, cropOY=0, dragging=false, lastX=0, lastY=0;
+let photos=[], activePhoto=0; const PHOTO_MAX=8;
 const UPLOAD_ZONE_HTML=document.getElementById('uploadZone')?document.getElementById('uploadZone').innerHTML:'';
 function resetStudio(){
   /* start over: clear the photo, the created sets and every selection */
-  cropImg=null; proofShots=[]; proofBusy=false; previewActive=false; clearTimeout(prevTimer);
+  cropImg=null; photos=[]; activePhoto=0; proofShots=[]; proofBusy=false; previewActive=false; clearTimeout(prevTimer);
   if(typeof confirmCombo==='function') confirmCombo._zoomOK=false;
   selectedStyle=null; selectedOutfit=null; selectedPose=null; selectedExpr=null;
   unselectBg();
@@ -1265,12 +1264,7 @@ function resetStudio(){
 }
 const CW=240, CH=300;
 function pickFile(e){ if(e&&e.target&&e.target.closest&&e.target.closest('#cropCanvas'))return; document.getElementById('fileInput').click(); }
-document.getElementById('fileInput').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{ const img=new Image(); img.onload=()=>{ cropImg=img; setupCropper(); }; img.src=ev.target.result; };
-  r.readAsDataURL(f);
-});
+document.getElementById('fileInput').addEventListener('change',e=>{ addPhotoFiles(e.target.files); e.target.value=''; });
 function setupCropper(){
   const zone=document.getElementById('uploadZone');
   zone.classList.remove('clickable'); zone.onclick=null;
@@ -1319,6 +1313,52 @@ function getPortraitCanvas(){
   const x=out.getContext('2d'); const k=480/CW;
   x.drawImage(cropImg, cropOX*k, cropOY*k, cropImg.width*cropScale*k, cropImg.height*cropScale*k);
   return out;
+}
+
+/* ---------- Multi-photo upload (no per-photo framing; the system picks the source) ---------- */
+/* We keep the same cropImg / cropScale / cropOX / cropOY globals the whole pipeline
+   (getPortraitCanvas, faceRefDataURL, headSelfieDataURL, the swap) already relies on —
+   but instead of a drag/zoom framer, the active photo is auto-framed to the head-&-
+   shoulders default (cover-fit, centred). The customer no longer edits the framing;
+   they just add photos, and each scene's swap uses the best-matching one. */
+function setPhotoFraming(img){
+  cropImg=img;
+  cropMin=Math.max(CW/img.width, CH/img.height); cropScale=cropMin;
+  cropOX=(CW-img.width*cropScale)/2; cropOY=(CH-img.height*cropScale)/2;
+}
+function setActivePhoto(i){
+  if(i<0||i>=photos.length) return;
+  activePhoto=i; setPhotoFraming(photos[i].img);
+  renderPhotos();
+  try{ if(previewActive && typeof quickPreview==='function') quickPreview(); }catch(e){}
+}
+function renderPhotos(){
+  const zone=document.getElementById('uploadZone'); if(!zone) return;
+  if(!photos.length){ zone.classList.add('clickable'); zone.onclick=pickFile; zone.innerHTML=UPLOAD_ZONE_HTML; try{applyLang(LANG);}catch(e){} return; }
+  zone.classList.remove('clickable'); zone.onclick=null;
+  const thumbs=photos.map((p,i)=>`<div onclick="setActivePhoto(${i})" style="position:relative;aspect-ratio:4/5;border-radius:11px;overflow:hidden;cursor:pointer;box-shadow:${i===activePhoto?'0 0 0 3px #4ade80':'inset 0 0 0 1px rgba(125,211,252,.3)'}"><img src="${p.url}" style="width:100%;height:100%;object-fit:cover"><button type="button" onclick="event.stopPropagation();removePhoto(${i})" style="position:absolute;top:3px;right:3px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(4,26,41,.85);color:#fff;font-size:12px;line-height:1;cursor:pointer">✕</button>${i===activePhoto?'<span style="position:absolute;left:0;right:0;bottom:0;padding:10px 3px 3px;background:linear-gradient(transparent,rgba(4,26,41,.92));color:#4ade80;font-size:9.5px;font-weight:800;text-align:center;letter-spacing:.03em">IN USE</span>':''}</div>`).join('');
+  const addTile=photos.length<PHOTO_MAX?`<div onclick="document.getElementById('fileInput').click()" style="aspect-ratio:4/5;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:#7dd3fc;box-shadow:inset 0 0 0 1.5px rgba(125,211,252,.4);font-size:11px;font-weight:700"><span style="font-size:22px;line-height:1">＋</span>Add</div>`:'';
+  zone.innerHTML=`<div style="width:100%"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px">${thumbs}${addTile}</div><p style="margin:10px 0 0;font-size:11.5px;color:#fbbf24;font-weight:700;line-height:1.45">📸 Add a few clear photos — plain background, hair off your face, good makeup, and try different angles (front, slight left, slight right). We pick the best photo for each scene.</p></div>`;
+}
+function removePhoto(i){
+  photos.splice(i,1);
+  if(!photos.length){ resetStudio(); return; }
+  if(activePhoto>=photos.length) activePhoto=photos.length-1;
+  else if(activePhoto>i) activePhoto--;
+  setActivePhoto(activePhoto);
+}
+function addPhotoFiles(fileList){
+  const files=[...(fileList||[])].filter(f=>f&&f.type&&f.type.startsWith('image/'));
+  if(!files.length) return;
+  const wasEmpty=photos.length===0;
+  let pending=files.length;
+  const done=()=>{ if(--pending===0){ if(wasEmpty&&photos.length){ setActivePhoto(0); openModeModal(); } else renderPhotos(); } };
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{ const img=new Image(); img.onload=()=>{ if(photos.length<PHOTO_MAX) photos.push({img,url:ev.target.result}); done(); }; img.onerror=done; img.src=ev.target.result; };
+    r.onerror=done;
+    r.readAsDataURL(f);
+  });
 }
 
 /* ---------- On-device person segmentation (MediaPipe) ---------- */

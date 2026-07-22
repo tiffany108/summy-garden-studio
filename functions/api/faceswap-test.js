@@ -27,12 +27,13 @@ const handler = async (req) => {
   if (src.length < 200) return Response.json({ error: "source_b64 required" }, { status: 400, headers });
 
   const ti = parseInt(body.target_i, 10);
-  const targetUrl = body.target_url ||
-    `https://summy-garden-studio.pages.dev/api/sample?kind=p&i=${Number.isInteger(ti) ? ti : 30}`;
+  const target = (typeof body.target_b64 === "string" && body.target_b64.length > 200)
+    ? body.target_b64                                   // base64 target (e.g. a freshly-generated matched sample)
+    : (body.target_url || `https://summy-garden-studio.pages.dev/api/sample?kind=p&i=${Number.isInteger(ti) ? ti : 30}`);
 
   const payload = {
     source_image: src,           // customer's face (base64 or data URL)
-    target_image: targetUrl,     // gallery model photo (public URL, Segmind fetches it)
+    target_image: target,        // gallery model photo (URL or base64)
     image_format: "jpeg",
     quality: Math.min(100, Math.max(10, parseInt(body.quality, 10) || 95)),
   };

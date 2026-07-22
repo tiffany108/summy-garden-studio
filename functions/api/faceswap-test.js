@@ -11,9 +11,11 @@ const handler = async (req) => {
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
-
+  let stage = "start";
+  try {
   const key = (env.SEGMIND_API_KEY || "").trim();
   if (!key) return Response.json({ error: "SEGMIND_API_KEY not configured" }, { status: 501, headers });
+  stage = "auth";
 
   let body = {}; try { body = await req.json(); } catch {}
   if (!body.token) return Response.json({ error: "sign in required" }, { status: 401, headers });
@@ -36,17 +38,14 @@ const handler = async (req) => {
   };
   if (typeof body.additional_prompt === "string" && body.additional_prompt) payload.additional_prompt = body.additional_prompt.slice(0, 300);
 
-  let r;
-  try {
-    r = await fetch("https://api.segmind.com/v1/faceswap-v5", {
-      method: "POST",
-      headers: { "x-api-key": key, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch (e) {
-    return Response.json({ error: "segmind request failed: " + String(e?.message || e) }, { status: 502, headers });
-  }
+  stage = "segmind";
+  const r = await fetch("https://api.segmind.com/v1/faceswap-v5", {
+    method: "POST",
+    headers: { "x-api-key": key, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
+  stage = "read";
   const ct = r.headers.get("content-type") || "";
   if (r.ok && ct.startsWith("image/")) {
     const ab = await r.arrayBuffer();
@@ -54,7 +53,10 @@ const handler = async (req) => {
   }
   // error or JSON body — surface it for debugging
   const txt = await r.text().catch(() => "");
-  return Response.json({ error: `Segmind ${r.status}`, detail: txt.slice(0, 600), ct }, { status: r.ok ? 200 : 502, headers });
+  return Response.json({ error: `Segmind ${r.status}`, detail: txt.slice(0, 600), ct: ct.slice(0, 40) }, { status: r.ok ? 200 : 502, headers });
+  } catch (e) {
+    return Response.json({ error: `crash at ${stage}: ${String(e?.stack || e?.message || e).slice(0, 400)}` }, { status: 500, headers });
+  }
 };
 
 export async function onRequest(context) { env = context.env; return handler(context.request); }

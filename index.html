@@ -1852,6 +1852,7 @@ async function quickPreview(){
 function maybeRefreshPreview(){ if(!previewActive) return; clearTimeout(prevTimer); prevTimer=setTimeout(()=>{ syncPvCtrls(); renderPvBox(); },200); }
 /* ---------- Photo sets: real AI proofs, watermarked until download ---------- */
 let proofShots=[], proofBusy=false, swapSampleIdx=null; const PROOF_MAX=3;
+function blobToDataURL(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }); }
 function wmFromDataURL(src){
   return new Promise(res=>{ const im=new Image(); im.onload=()=>{
     const W=480,H=600; const c=document.createElement('canvas'); c.width=W; c.height=H;
@@ -1963,57 +1964,23 @@ async function confirmCombo(){
   if(photos.length<MIN_PHOTOS){ toast('📸 Please add at least '+MIN_PHOTOS+' photos first ('+photos.length+' so far).'); document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   if(!bgById(selectedBg)){ toast(TX('t_scene')); return; }
   if(!user){ toast(TX('t_account')); accountClick(); return; }
-  /* enforce the likeness reminder once per upload when the crop was never zoomed */
-  if(!confirmCombo._zoomOK && cropScale<=cropMin*1.02){
-    confirmCombo._zoomOK=true;
-    toast(TX('t_zoomgate'));
-    document.getElementById('uploadZone').scrollIntoView({behavior:'smooth',block:'center'});
-    return;
-  }
   if(proofShots.length>=PROOF_MAX){ toast(TX('t_limit').replace('{m}',PROOF_MAX)); return; }
   if(proofBusy) return; proofBusy=true; renderPvBox();
   const bg=bgById(selectedBg);
   try{
-    const pc=getPortraitCanvas(); const selfie=pc.toDataURL('image/jpeg',.85);
-    const oIdx=(selectedOutfit&&OPTLABELS.outfit.indexOf(selectedOutfit)>=0)?OPTLABELS.outfit.indexOf(selectedOutfit):null;
-    let sceneRef=null;
-    if(swapSampleIdx!==null){
-      /* Auto: the AI backdrop is DERIVED from the tapped sample card (person
-         removed by the AI once, then cached for everyone) — so the generated
-         background matches the exact card the customer chose. */
-      sceneRef=await refDataURL('/api/sample?kind=bs&i='+swapSampleIdx,512,640,.82);
-      if(!sceneRef){
-        const sm=await refDataURL(aiSampleURL(bg,swapSampleIdx),640,800,.85);
-        if(sm){
-          try{
-            const dr=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({derive:true, scene_i:swapSampleIdx, base_ref:sm, token: sbSession?sbSession.access_token:null})});
-            const dd=await dr.json().catch(()=>({}));
-            if(dd&&dd.image) sceneRef=await refDataURL(dd.image,512,640,.82);
-            else if(dd&&dd.cached) sceneRef=await refDataURL('/api/sample?kind=bs&i='+swapSampleIdx,512,640,.82);
-          }catch(e){}
-        }
-      }
-    }
-    const [sceneRef2,outfitRefGeneric,headSelfie,torsoRef]=await Promise.all([
-      sceneRef?Promise.resolve(null):refDataURL(aiSceneURL(bg,bgIndex(bg.id)),512,640,.82),
-      oIdx!==null?refDataURL(optImg('outfit',oIdx),384,480,.82):Promise.resolve(null),
-      headSelfieDataURL(),
-      swapSampleIdx!==null?sampleTorsoRef(swapSampleIdx):Promise.resolve(null)
-    ]);
-    sceneRef=sceneRef||sceneRef2;
-    if(!sceneRef) sceneRef=await refDataURL(bg.image,512,640,.9); /* solid/gradient backdrops render from the SVG */
-    /* Auto: the sample card's own (face-free) torso is the outfit reference —
-       exact suit colour, fabric and body scale from the tapped card */
-    const outfitRef=torsoRef||outfitRefGeneric;
-    /* one well-framed head&shoulders base image; no separate face close-up */
-    const payload={selfie: headSelfie||selfie, proof:true, auto: swapSampleIdx!==null, scene:bg.name+' — '+bg.desc, category:bg.cat, outfit:selectedOutfit||LOOK_DEFAULTS.outfit, style:selectedStyle||LOOK_DEFAULTS.style, pose:selectedPose||LOOK_DEFAULTS.pose, expr:selectedExpr||LOOK_DEFAULTS.expr, frame:selectedFrame, enhance:+(document.getElementById('enhSlider')?.value??60), variant:proofShots.length, scene_id:bg.id, scene_ref:sceneRef, outfit_ref:outfitRef, token: sbSession?sbSession.access_token:null};
-    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)});
-    const d=await res.json().catch(()=>({}));
-    if(!res.ok||!d.image){ toast(TX('t_fail')+(d.error||('server '+res.status))); proofBusy=false; renderPvBox(); return; }
-    const wm=await wmFromDataURL(d.image);
-    proofShots.push({clean:d.image, wm, unlocked:false, label:bgName(bg)+' · '+(selectedOutfit==='Original'?TX('own_short'):selectedOutfit?xl(selectedOutfit):TX('suit_short'))});
+    const ti=bgIndex(selectedBg);
+    /* use the photo whose angle best matches THIS scene's model (auto-matched) */
+    try{ if(typeof autoMatchPhotoToScene==='function') await autoMatchPhotoToScene(ti); }catch(e){}
+    /* the proven recipe: full face, pure swap, no prompt, hair/angle-matched sample */
+    const src=getPortraitCanvas().toDataURL('image/jpeg',.92);
+    const res=await fetch('/api/faceswap',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token: sbSession?sbSession.access_token:null, source_b64: src.split(',')[1], target_i: ti})});
+    const ct=res.headers.get('content-type')||'';
+    let clean=null;
+    if(res.ok && ct.startsWith('image/')){ clean=await blobToDataURL(await res.blob()); }
+    else { const d=await res.json().catch(()=>({})); clean=d.image||null; if(!clean){ toast(TX('t_fail')+(d.error||('server '+res.status))); proofBusy=false; renderPvBox(); return; } }
+    const wm=await wmFromDataURL(clean);
+    proofShots.push({clean, wm, unlocked:false, label:bgName(bg)});
     toast(TX('t_saved').replace('{n}',proofShots.length));
     maybeAskFeedback();
   }catch(e){ toast(TX('t_fail')); }

@@ -38,6 +38,12 @@ const handler = async (req) => {
   };
   if (typeof body.additional_prompt === "string" && body.additional_prompt) payload.additional_prompt = body.additional_prompt.slice(0, 300);
 
+  if (body.debug === "pre") return Response.json({ ok: true, stage: "pre-segmind", keyLen: key.length, keyPrefix: key.slice(0, 3), targetUrl }, { status: 200, headers });
+  if (body.debug === "ping") {
+    const p = await fetch("https://api.segmind.com/v1/faceswap-v5", { method: "POST", headers: { "x-api-key": key, "Content-Type": "application/json" }, body: JSON.stringify({ source_image: "https://summy-garden-studio.pages.dev/api/sample?kind=p&i=1", target_image: targetUrl, image_format: "jpeg" }) });
+    const pt = await p.text().catch(() => "");
+    return Response.json({ ok: true, pingStatus: p.status, ct: (p.headers.get("content-type") || "").slice(0, 30), body: pt.slice(0, 300) }, { status: 200, headers });
+  }
   stage = "segmind";
   const r = await fetch("https://api.segmind.com/v1/faceswap-v5", {
     method: "POST",

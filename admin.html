@@ -4,12 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin · Summy Garden Studio</title>
-<meta name="robots" content="noindex,nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
@@ -46,9 +42,6 @@ input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
 .sec-title{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:28px 0 14px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
 .stat{background:#fff;border-radius:15px;box-shadow:var(--card);padding:20px 22px}
-/* yellow luminous highlight on hover — stats, cards and charts */
-.stat,.card,.chart-box{transition:box-shadow .22s ease}
-.stat:hover,.card:hover,.chart-box:hover{box-shadow:0 0 0 2.5px #facc15,0 0 22px 4px rgba(250,204,21,.5)}
 .stat .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:19px;color:#fff;margin-bottom:12px}
 .stat b{display:block;font-size:28px;font-weight:800;letter-spacing:-.02em}
 .stat span{font-size:12.5px;color:var(--muted)}
@@ -73,6 +66,10 @@ tbody tr:hover{background:#e8f4fd}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--bg-deep);color:#fff;font-size:14px;font-weight:600;border-radius:999px;padding:12px 22px;box-shadow:0 12px 30px rgba(0,0,0,.3);transition:.35s;z-index:50}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .hint{background:#fff8e1;color:#8a6d1a;border-radius:12px;padding:12px 16px;font-size:13px;margin-top:12px}
+.pw-field{position:relative}
+.pw-field input{padding-right:44px!important;margin-bottom:11px}
+.pw-eye{position:absolute;top:0;right:0;height:calc(100% - 11px);width:42px;display:grid;place-items:center;background:none;box-shadow:none;cursor:pointer;font-size:16px;opacity:.55;padding:0}
+.pw-eye:hover{opacity:.9}
 </style>
 </head>
 <body>
@@ -112,8 +109,8 @@ tbody tr:hover{background:#e8f4fd}
     <div class="sec-title" data-i18n="t_biz">Business dashboard</div>
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <label style="font-size:12.5px;font-weight:700;color:var(--muted)">📅 Date range <input type="text" id="bdRange" placeholder="Pick a date range…" readonly style="width:215px;margin:0 8px 0 6px;cursor:pointer;background:#f0f6fa"></label>
-        <input type="hidden" id="bdFrom"><input type="hidden" id="bdTo">
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_from">From</span> <input type="date" id="bdFrom" style="width:auto;margin:0 8px 0 4px"></label>
+        <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_to">To</span> <input type="date" id="bdTo" style="width:auto;margin:0 8px 0 4px"></label>
         <label style="font-size:12.5px;font-weight:700;color:var(--muted)"><span data-i18n="lbl_cost">Cost per AI image (US$)</span> <input type="number" step="0.001" id="bdCost" value="0.039" style="width:90px;margin:0 8px 0 4px"></label>
         <button class="btn" onclick="renderBiz()" data-i18n="btn_apply">Apply</button>
         <button class="btn dark" onclick="exportUsersCSV()" data-i18n="btn_export">⬇ Export users CSV</button>
@@ -130,12 +127,7 @@ tbody tr:hover{background:#e8f4fd}
       <div class="stats" style="margin-top:14px">
         <div class="stat"><div class="ico i4">💰</div><b id="bdRev">–</b><span id="bdRevNote" data-i18n="b_rev">Revenue in range (≈US$)</span></div>
         <div class="stat"><div class="ico i3">🤖</div><b id="bdTok">–</b><span data-i18n="b_tok">AI token cost in range (est., US$)</span></div>
-        <div class="stat"><div class="ico i2">↩️</div><b id="bdRefund">–</b><span>Refunds in range (≈US$)</span></div>
         <div class="stat"><div class="ico i1">📈</div><b id="bdNet">–</b><span data-i18n="b_net">Net profit in range (≈US$)</span></div>
-      </div>
-      <div class="chart-box" style="margin-top:18px;background:#fff;border-radius:15px;box-shadow:var(--card);padding:18px 20px">
-        <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Revenue · Cost · Refunds by date (≈US$)</div>
-        <div style="position:relative;height:260px"><canvas id="bizChart"></canvas></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:6px;overflow-x:auto">
@@ -152,15 +144,6 @@ tbody tr:hover{background:#e8f4fd}
 
     <div class="sec-title"><span data-i18n="t_msgs">Contact messages</span> <span style="text-transform:none;font-weight:600;color:#8fa6b3" data-i18n="t_msgs_sub">· quotations, feedback & questions from the site</span></div>
     <div class="card">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-        <input id="mfSearch" placeholder="🔍 Email or name…" oninput="renderMsgs()" style="width:200px;margin:0">
-        <select id="mfTopic" onchange="renderMsgs()" style="padding:11px 13px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:13.5px;color:var(--ink);outline:none;cursor:pointer"><option value="">All topics</option></select>
-        <input id="mfDate" placeholder="📅 Any date" readonly style="width:200px;margin:0;cursor:pointer">
-        <select id="mfStatus" onchange="renderMsgs()" style="padding:11px 13px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:13.5px;color:var(--ink);outline:none;cursor:pointer">
-          <option value="">All statuses</option><option value="replied">✓ Replied</option><option value="pending">⌛ Not replied</option></select>
-        <button class="btn dark" onclick="clearMsgFilters()">Clear</button>
-        <span id="mfCount" style="font-size:12px;font-weight:600;color:#8fa6b3"></span>
-      </div>
       <table><thead><tr><th data-i18n="th_date">Date</th><th data-i18n="th_topic">Topic</th><th data-i18n="th_name">Name</th><th data-i18n="th_email">Email</th><th data-i18n="th_msg">Message</th><th data-i18n="th_act">Actions</th></tr></thead>
       <tbody id="msgRows"><tr><td colspan="6" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
     </div>
@@ -190,6 +173,17 @@ tbody tr:hover{background:#e8f4fd}
       <div class="hint" data-i18n="hint_pricing">💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.</div>
     </div>
 
+    <div class="sec-title" data-i18n="cp_sec">Account security</div>
+    <div class="card" style="max-width:440px">
+      <label data-i18n="cp_title" style="font-weight:700">Change password</label>
+      <div class="pw-field"><input type="password" id="cpCur" placeholder="Current password" data-i18n-ph="cp_cur" autocomplete="current-password"><button type="button" class="pw-eye" aria-label="Show password" onclick="togglePwEye(this,'cpCur')">👁</button></div>
+      <div class="pw-field"><input type="password" id="cpNew" placeholder="New password" data-i18n-ph="cp_new" autocomplete="new-password"><button type="button" class="pw-eye" aria-label="Show password" onclick="togglePwEye(this,'cpNew')">👁</button></div>
+      <div class="pw-field"><input type="password" id="cpNew2" placeholder="Confirm new password" data-i18n-ph="cp_new2" autocomplete="new-password"><button type="button" class="pw-eye" aria-label="Show password" onclick="togglePwEye(this,'cpNew2')">👁</button></div>
+      <div id="cpHint" class="hint" data-i18n="pw_hint" style="background:#eef4f8;color:var(--muted);margin-top:0">At least 8 characters, including an uppercase letter, a lowercase letter and a number.</div>
+      <div id="cpMsg" style="font-size:12.5px;font-weight:600;min-height:16px;margin:8px 0"></div>
+      <button class="btn" onclick="changePassword()" data-i18n="cp_btn">Update password</button>
+    </div>
+
     <div class="sec-title"><span data-i18n="t_preview">Live site preview</span>
       <button class="btn dark" style="margin-left:10px;padding:6px 13px;font-size:12px;text-transform:none;letter-spacing:0" onclick="fullscreenPreview()" data-i18n="btn_fs">⛶ Full screen</button>
       <a class="btn dark" style="margin-left:4px;padding:6px 13px;font-size:12px;text-decoration:none;text-transform:none;letter-spacing:0" href="/" target="_blank" data-i18n="btn_newtab">↗ Open in new tab</a>
@@ -202,24 +196,6 @@ tbody tr:hover{background:#e8f4fd}
 
 <div class="toast" id="toast"></div>
 
-<!-- Message reader + reply composer -->
-<div id="msgModal" style="display:none;position:fixed;inset:0;background:rgba(4,26,41,.62);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:20px;max-width:720px;width:100%;max-height:92vh;overflow:auto;padding:28px 30px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.35)">
-    <button onclick="closeMsgModal()" style="position:absolute;top:14px;right:16px;background:#eef0f4;border-radius:10px;width:34px;height:34px;font-size:17px;font-weight:700;color:#334">×</button>
-    <h3 style="font-size:19px;font-weight:800;margin:0 0 4px" id="mmTopic"></h3>
-    <p style="font-size:13px;color:#54707e;margin:0 0 16px" id="mmMeta"></p>
-    <div id="mmBody" style="background:#f4f9fc;border-radius:14px;padding:18px 20px;font-size:15.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:42vh;overflow:auto;box-shadow:inset 0 0 0 1px rgba(7,44,69,.08);margin-bottom:20px"></div>
-    <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#54707e;margin-bottom:8px">Reply from support@summygarden.com</div>
-    <textarea id="mmReply" placeholder="Write your reply to the customer…" style="width:100%;min-height:120px;padding:14px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14.5px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
-      <label class="btn dark" style="cursor:pointer;margin:0">📎 Attach files<input type="file" id="mmFiles" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" style="display:none" onchange="mmFilesChanged()"></label>
-      <span id="mmFileList" style="font-size:12.5px;color:#54707e;flex:1"></span>
-      <button class="btn" id="mmSend" onclick="sendReply()">✉️ Send reply</button>
-    </div>
-    <p id="mmStatus" style="font-size:12.5px;color:#54707e;margin:10px 0 0"></p>
-  </div>
-</div>
-
 <script>
 const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
 const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
@@ -229,9 +205,9 @@ let session=null;
 
 /* ---------- Admin i18n (en / zh / zh-TW) ---------- */
 const AL={
-en:{badge_admin:"🔐 Super Admin",signout:"Sign out",login_h:"Admin sign in",login_p:"Restricted area — super-admin access only.",ph_email:"Admin email",ph_pw:"Password",btn_signin:"Sign in",t_overview:"Live overview",s_members:"Registered members",s_shots:"Headshots generated",s_credits:"Credits outstanding",s_refs:"Referral rewards",t_biz:"Business dashboard",lbl_from:"From",lbl_to:"To",lbl_cost:"Cost per AI image (US$)",btn_apply:"Apply",btn_export:"⬇ Export users CSV",btn_export_em:"✉️ Export emails",b_reg:"Registered accounts",b_conf:"Email confirmed",b_unconf:"Email not confirmed",b_pay:"Paying members",b_ret:"Returning members (2+ days active)",b_rev:"Revenue in range (≈US$)",b_tok:"AI token cost in range (est., US$)",b_net:"Net profit in range (≈US$)",th_email:"Email",th_name:"Name",th_conf:"Confirmed",th_credits:"Credits",th_shots:"Shots",th_spent:"Spent (≈US$)",th_ret:"Returning",th_joined:"Joined",th_last:"Last active",t_members:"Recent members",th_refcode:"Referral code",th_refs:"Referrals",t_msgs:"Contact messages",t_msgs_sub:"· quotations, feedback & questions from the site",th_date:"Date",th_topic:"Topic",th_msg:"Message",t_edit:"Edit marketing content",t_edit_sub:"· changes go live instantly, no deploy",lbl_annOn:"Show announcement banner at top of site",lbl_ann:"Announcement text",lbl_heroA:"Hero headline (before the highlighted words)",lbl_heroB:"Hero highlighted words",lbl_heroP:"Hero subtitle",lbl_badge:"Free badge text",btn_save:"💾 Save changes",btn_reset:"Reset",btn_liveedit:"✏️ Live-edit any text on the site",hint_pricing:"💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.",t_preview:"Live site preview",btn_fs:"⛶ Full screen",btn_newtab:"↗ Open in new tab",show_all:"Show all {n} members ▾",show_less:"Show less ▴",msg_expand:"Click to expand / collapse the full message",th_act:"Actions",act_reply:"✉️ Reply",act_fwd:"↗ Forward"},
-zh:{badge_admin:"🔐 超级管理员",signout:"登出",login_h:"管理员登录",login_p:"受限区域 — 仅超级管理员可访问。",ph_email:"管理员邮箱",ph_pw:"密码",btn_signin:"登录",t_overview:"实时概览",s_members:"注册会员",s_shots:"已生成头像",s_credits:"未使用点数",s_refs:"推荐奖励",t_biz:"业务仪表板",lbl_from:"从",lbl_to:"至",lbl_cost:"每张 AI 图片成本（美元）",btn_apply:"应用",btn_export:"⬇ 导出用户 CSV",btn_export_em:"✉️ 导出邮箱",b_reg:"注册账户",b_conf:"邮箱已验证",b_unconf:"邮箱未验证",b_pay:"付费会员",b_ret:"回访会员（活跃 2 天以上）",b_rev:"区间收入（约美元）",b_tok:"区间 AI 成本（估算，美元）",b_net:"区间净利润（约美元）",th_email:"邮箱",th_name:"姓名",th_conf:"已验证",th_credits:"点数",th_shots:"生成数",th_spent:"消费（约美元）",th_ret:"回访",th_joined:"注册日期",th_last:"最近活跃",t_members:"最新会员",th_refcode:"推荐码",th_refs:"推荐人数",t_msgs:"联络消息",t_msgs_sub:"· 来自网站的询价、反馈与问题",th_date:"日期",th_topic:"主题",th_msg:"消息",t_edit:"编辑营销内容",t_edit_sub:"· 修改即时生效，无需部署",lbl_annOn:"在网站顶部显示公告横幅",lbl_ann:"公告文字",lbl_heroA:"主标题（高亮词之前）",lbl_heroB:"主标题高亮词",lbl_heroP:"主副标题",lbl_badge:"免费徽章文字",btn_save:"💾 保存修改",btn_reset:"重置",btn_liveedit:"✏️ 在网站上实时编辑任意文字",hint_pricing:"💡 价格与支付金额此处不可编辑 — 需与 Stripe 保持同步以确保收费正确。想改价请告诉我，我会安全地同步更新。",t_preview:"网站实时预览",btn_fs:"⛶ 全屏",btn_newtab:"↗ 新标签页打开",show_all:"显示全部 {n} 位会员 ▾",show_less:"收起 ▴",msg_expand:"点击展开 / 收起完整消息",th_act:"操作",act_reply:"✉️ 回复",act_fwd:"↗ 转发"},
-"zh-TW":{badge_admin:"🔐 超級管理員",signout:"登出",login_h:"管理員登入",login_p:"受限區域 — 僅超級管理員可存取。",ph_email:"管理員電郵",ph_pw:"密碼",btn_signin:"登入",t_overview:"即時概覽",s_members:"註冊會員",s_shots:"已生成頭像",s_credits:"未使用點數",s_refs:"推薦獎勵",t_biz:"業務儀表板",lbl_from:"從",lbl_to:"至",lbl_cost:"每張 AI 圖片成本（美元）",btn_apply:"套用",btn_export:"⬇ 匯出用戶 CSV",btn_export_em:"✉️ 匯出電郵",b_reg:"註冊帳戶",b_conf:"電郵已驗證",b_unconf:"電郵未驗證",b_pay:"付費會員",b_ret:"回訪會員（活躍 2 天以上）",b_rev:"區間收入（約美元）",b_tok:"區間 AI 成本（估算，美元）",b_net:"區間淨利潤（約美元）",th_email:"電郵",th_name:"姓名",th_conf:"已驗證",th_credits:"點數",th_shots:"生成數",th_spent:"消費（約美元）",th_ret:"回訪",th_joined:"註冊日期",th_last:"最近活躍",t_members:"最新會員",th_refcode:"推薦碼",th_refs:"推薦人數",t_msgs:"聯絡訊息",t_msgs_sub:"· 來自網站的詢價、回饋與問題",th_date:"日期",th_topic:"主題",th_msg:"訊息",t_edit:"編輯行銷內容",t_edit_sub:"· 修改即時生效，無需部署",lbl_annOn:"在網站頂部顯示公告橫幅",lbl_ann:"公告文字",lbl_heroA:"主標題（醒目詞之前）",lbl_heroB:"主標題醒目詞",lbl_heroP:"主副標題",lbl_badge:"免費徽章文字",btn_save:"💾 儲存修改",btn_reset:"重設",btn_liveedit:"✏️ 在網站上即時編輯任意文字",hint_pricing:"💡 價格與付款金額此處不可編輯 — 需與 Stripe 保持同步以確保收費正確。想改價請告訴我，我會安全地同步更新。",t_preview:"網站即時預覽",btn_fs:"⛶ 全螢幕",btn_newtab:"↗ 新分頁開啟",show_all:"顯示全部 {n} 位會員 ▾",show_less:"收起 ▴",msg_expand:"點擊展開 / 收起完整訊息",th_act:"操作",act_reply:"✉️ 回覆",act_fwd:"↗ 轉寄"}};
+en:{badge_admin:"🔐 Super Admin",signout:"Sign out",login_h:"Admin sign in",login_p:"Restricted area — super-admin access only.",ph_email:"Admin email",ph_pw:"Password",btn_signin:"Sign in",t_overview:"Live overview",s_members:"Registered members",s_shots:"Headshots generated",s_credits:"Credits outstanding",s_refs:"Referral rewards",t_biz:"Business dashboard",lbl_from:"From",lbl_to:"To",lbl_cost:"Cost per AI image (US$)",btn_apply:"Apply",btn_export:"⬇ Export users CSV",btn_export_em:"✉️ Export emails",b_reg:"Registered accounts",b_conf:"Email confirmed",b_unconf:"Email not confirmed",b_pay:"Paying members",b_ret:"Returning members (2+ days active)",b_rev:"Revenue in range (≈US$)",b_tok:"AI token cost in range (est., US$)",b_net:"Net profit in range (≈US$)",th_email:"Email",th_name:"Name",th_conf:"Confirmed",th_credits:"Credits",th_shots:"Shots",th_spent:"Spent (≈US$)",th_ret:"Returning",th_joined:"Joined",th_last:"Last active",t_members:"Recent members",th_refcode:"Referral code",th_refs:"Referrals",t_msgs:"Contact messages",t_msgs_sub:"· quotations, feedback & questions from the site",th_date:"Date",th_topic:"Topic",th_msg:"Message",t_edit:"Edit marketing content",t_edit_sub:"· changes go live instantly, no deploy",lbl_annOn:"Show announcement banner at top of site",lbl_ann:"Announcement text",lbl_heroA:"Hero headline (before the highlighted words)",lbl_heroB:"Hero highlighted words",lbl_heroP:"Hero subtitle",lbl_badge:"Free badge text",btn_save:"💾 Save changes",btn_reset:"Reset",btn_liveedit:"✏️ Live-edit any text on the site",hint_pricing:"💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.",t_preview:"Live site preview",btn_fs:"⛶ Full screen",btn_newtab:"↗ Open in new tab",show_all:"Show all {n} members ▾",show_less:"Show less ▴",msg_expand:"Click to expand / collapse the full message",th_act:"Actions",act_reply:"✉️ Reply",act_fwd:"↗ Forward",cp_sec:"Account security",cp_title:"Change password",cp_cur:"Current password",cp_new:"New password",cp_new2:"Confirm new password",cp_btn:"Update password",pw_hint:"At least 8 characters, including an uppercase letter, a lowercase letter and a number.",cp_ok:"Password updated ✓",cp_wrong:"Current password is incorrect",cp_weak:"New password doesn’t meet the requirements",cp_mismatch:"New passwords don’t match",cp_same:"New password must be different from the current one"},
+zh:{badge_admin:"🔐 超级管理员",signout:"登出",login_h:"管理员登录",login_p:"受限区域 — 仅超级管理员可访问。",ph_email:"管理员邮箱",ph_pw:"密码",btn_signin:"登录",t_overview:"实时概览",s_members:"注册会员",s_shots:"已生成头像",s_credits:"未使用点数",s_refs:"推荐奖励",t_biz:"业务仪表板",lbl_from:"从",lbl_to:"至",lbl_cost:"每张 AI 图片成本（美元）",btn_apply:"应用",btn_export:"⬇ 导出用户 CSV",btn_export_em:"✉️ 导出邮箱",b_reg:"注册账户",b_conf:"邮箱已验证",b_unconf:"邮箱未验证",b_pay:"付费会员",b_ret:"回访会员（活跃 2 天以上）",b_rev:"区间收入（约美元）",b_tok:"区间 AI 成本（估算，美元）",b_net:"区间净利润（约美元）",th_email:"邮箱",th_name:"姓名",th_conf:"已验证",th_credits:"点数",th_shots:"生成数",th_spent:"消费（约美元）",th_ret:"回访",th_joined:"注册日期",th_last:"最近活跃",t_members:"最新会员",th_refcode:"推荐码",th_refs:"推荐人数",t_msgs:"联络消息",t_msgs_sub:"· 来自网站的询价、反馈与问题",th_date:"日期",th_topic:"主题",th_msg:"消息",t_edit:"编辑营销内容",t_edit_sub:"· 修改即时生效，无需部署",lbl_annOn:"在网站顶部显示公告横幅",lbl_ann:"公告文字",lbl_heroA:"主标题（高亮词之前）",lbl_heroB:"主标题高亮词",lbl_heroP:"主副标题",lbl_badge:"免费徽章文字",btn_save:"💾 保存修改",btn_reset:"重置",btn_liveedit:"✏️ 在网站上实时编辑任意文字",hint_pricing:"💡 价格与支付金额此处不可编辑 — 需与 Stripe 保持同步以确保收费正确。想改价请告诉我，我会安全地同步更新。",t_preview:"网站实时预览",btn_fs:"⛶ 全屏",btn_newtab:"↗ 新标签页打开",show_all:"显示全部 {n} 位会员 ▾",show_less:"收起 ▴",msg_expand:"点击展开 / 收起完整消息",th_act:"操作",act_reply:"✉️ 回复",act_fwd:"↗ 转发",cp_sec:"账户安全",cp_title:"修改密码",cp_cur:"当前密码",cp_new:"新密码",cp_new2:"确认新密码",cp_btn:"更新密码",pw_hint:"至少 8 位，包含大写字母、小写字母和数字。",cp_ok:"密码已更新 ✓",cp_wrong:"当前密码不正确",cp_weak:"新密码不符合要求",cp_mismatch:"两次输入的新密码不一致",cp_same:"新密码必须与当前密码不同"},
+"zh-TW":{badge_admin:"🔐 超級管理員",signout:"登出",login_h:"管理員登入",login_p:"受限區域 — 僅超級管理員可存取。",ph_email:"管理員電郵",ph_pw:"密碼",btn_signin:"登入",t_overview:"即時概覽",s_members:"註冊會員",s_shots:"已生成頭像",s_credits:"未使用點數",s_refs:"推薦獎勵",t_biz:"業務儀表板",lbl_from:"從",lbl_to:"至",lbl_cost:"每張 AI 圖片成本（美元）",btn_apply:"套用",btn_export:"⬇ 匯出用戶 CSV",btn_export_em:"✉️ 匯出電郵",b_reg:"註冊帳戶",b_conf:"電郵已驗證",b_unconf:"電郵未驗證",b_pay:"付費會員",b_ret:"回訪會員（活躍 2 天以上）",b_rev:"區間收入（約美元）",b_tok:"區間 AI 成本（估算，美元）",b_net:"區間淨利潤（約美元）",th_email:"電郵",th_name:"姓名",th_conf:"已驗證",th_credits:"點數",th_shots:"生成數",th_spent:"消費（約美元）",th_ret:"回訪",th_joined:"註冊日期",th_last:"最近活躍",t_members:"最新會員",th_refcode:"推薦碼",th_refs:"推薦人數",t_msgs:"聯絡訊息",t_msgs_sub:"· 來自網站的詢價、回饋與問題",th_date:"日期",th_topic:"主題",th_msg:"訊息",t_edit:"編輯行銷內容",t_edit_sub:"· 修改即時生效，無需部署",lbl_annOn:"在網站頂部顯示公告橫幅",lbl_ann:"公告文字",lbl_heroA:"主標題（醒目詞之前）",lbl_heroB:"主標題醒目詞",lbl_heroP:"主副標題",lbl_badge:"免費徽章文字",btn_save:"💾 儲存修改",btn_reset:"重設",btn_liveedit:"✏️ 在網站上即時編輯任意文字",hint_pricing:"💡 價格與付款金額此處不可編輯 — 需與 Stripe 保持同步以確保收費正確。想改價請告訴我，我會安全地同步更新。",t_preview:"網站即時預覽",btn_fs:"⛶ 全螢幕",btn_newtab:"↗ 新分頁開啟",show_all:"顯示全部 {n} 位會員 ▾",show_less:"收起 ▴",msg_expand:"點擊展開 / 收起完整訊息",th_act:"操作",act_reply:"✉️ 回覆",act_fwd:"↗ 轉寄",cp_sec:"帳戶安全",cp_title:"修改密碼",cp_cur:"目前密碼",cp_new:"新密碼",cp_new2:"確認新密碼",cp_btn:"更新密碼",pw_hint:"至少 8 位，包含大寫字母、小寫字母和數字。",cp_ok:"密碼已更新 ✓",cp_wrong:"目前密碼不正確",cp_weak:"新密碼不符合要求",cp_mismatch:"兩次輸入的新密碼不一致",cp_same:"新密碼必須與目前密碼不同"}};
 let ALANG=localStorage.getItem('sgsAdminLang')||(function(){const l=(navigator.language||'').toLowerCase();
   if(l.startsWith('zh')) return (l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh'; return 'en';})();
 const AT=k=>(AL[ALANG]&&AL[ALANG][k])||AL.en[k]||k;
@@ -239,6 +215,7 @@ function applyAdminLang(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{const v=AT(el.dataset.i18n); if(v!=null) el.textContent=v;});
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{const v=AT(el.dataset.i18nPh); if(v!=null) el.placeholder=v;});
   const s=document.getElementById('adminLang'); if(s) s.value=ALANG;
+  const _cpm=document.getElementById('cpMsg'); if(_cpm){ _cpm.textContent=''; }
   document.documentElement.lang=ALANG;
   if(typeof bizComputed!=='undefined'&&bizComputed.length) renderBizTable();
 }
@@ -246,6 +223,22 @@ function setAdminLang(v){ ALANG=AL[v]?v:'en'; localStorage.setItem('sgsAdminLang
 document.addEventListener('DOMContentLoaded',applyAdminLang);
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function pwStrong(p){ return typeof p==='string' && p.length>=8 && /[a-z]/.test(p) && /[A-Z]/.test(p) && /[0-9]/.test(p); }
+function togglePwEye(btn,id){ const e=document.getElementById(id); if(!e) return; const show=e.type==='password'; e.type=show?'text':'password'; btn.textContent=show?'🙈':'👁'; }
+function cpSay(msg,ok){ const m=document.getElementById('cpMsg'); if(m){ m.textContent=msg; m.style.color=ok?'#178a52':'#d14343'; } }
+async function changePassword(){
+  if(!session){ cpSay(AT('cp_wrong')); return; }
+  const cur=document.getElementById('cpCur').value, np=document.getElementById('cpNew').value, np2=document.getElementById('cpNew2').value;
+  if(!pwStrong(np)){ cpSay(AT('cp_weak')); return; }
+  if(np!==np2){ cpSay(AT('cp_mismatch')); return; }
+  if(np===cur){ cpSay(AT('cp_same')); return; }
+  const chk=await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: cur });
+  if(chk.error){ cpSay(AT('cp_wrong')); return; }
+  const { error }=await sb.auth.updateUser({ password: np });
+  if(error){ cpSay(error.message||AT('cp_weak')); return; }
+  cpSay(AT('cp_ok'), true); toast(AT('cp_ok'));
+  ['cpCur','cpNew','cpNew2'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+}
 function show(id,on){document.getElementById(id).style.display=on?(id==='dash'?'block':''):'none';}
 
 async function doLogin(){
@@ -272,53 +265,15 @@ const toUSD=(amt,cur)=>(+amt||0)*(FX[String(cur||'usd').toLowerCase()]??1);
 let BD=null, bizComputed=[];
 async function loadBiz(){
   try{
-    const r=await fetch('/api/admin-stats',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch('/.netlify/functions/admin-stats',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({token:session.access_token})});
     if(!r.ok){ const d=await r.json().catch(()=>({})); document.getElementById('bdNote').textContent='Business data unavailable: '+(d.error||r.status); return; }
     BD=await r.json();
     const today=new Date(), past=new Date(Date.now()-29*86400000);
     if(!document.getElementById('bdFrom').value) document.getElementById('bdFrom').value=past.toISOString().slice(0,10);
     if(!document.getElementById('bdTo').value) document.getElementById('bdTo').value=today.toISOString().slice(0,10);
-    initRangePicker();
     renderBiz();
   }catch(e){ document.getElementById('bdNote').textContent='Business data failed to load'; }
-}
-/* one calendar for the whole range: click start date, then end date */
-let bdPicker=null;
-function initRangePicker(){
-  if(bdPicker||!window.flatpickr) return;
-  bdPicker=flatpickr('#bdRange',{
-    mode:'range', dateFormat:'Y-m-d',
-    defaultDate:[document.getElementById('bdFrom').value, document.getElementById('bdTo').value],
-    onChange:(dates)=>{ if(dates.length===2){
-      document.getElementById('bdFrom').value=bdPicker.formatDate(dates[0],'Y-m-d');
-      document.getElementById('bdTo').value=bdPicker.formatDate(dates[1],'Y-m-d');
-      renderBiz();
-    }}
-  });
-}
-let bizChart=null;
-function renderBizChart(from,to,purch,gens,costPer){
-  if(!window.Chart) return;
-  const days=[]; const f=new Date(from), t=new Date(to.slice(0,10));
-  for(let d=new Date(f); d<=t && days.length<370; d.setDate(d.getDate()+1)) days.push(d.toISOString().slice(0,10));
-  const rev={}, ref={}, cost={};
-  purch.forEach(p=>{ const d=(p.created_at||'').slice(0,10);
-    rev[d]=(rev[d]||0)+toUSD(p.amount,p.currency);
-    if((p.credits_reversed||0)>0 && (p.credits||0)>0) ref[d]=(ref[d]||0)+toUSD(p.amount,p.currency)*Math.min(1,p.credits_reversed/p.credits); });
-  gens.forEach(g=>{ const d=(g.created_at||'').slice(0,10); cost[d]=(cost[d]||0)+4*costPer; });
-  const ctx=document.getElementById('bizChart'); if(!ctx) return;
-  if(bizChart) bizChart.destroy();
-  bizChart=new Chart(ctx,{type:'line',
-    data:{labels:days.map(d=>d.slice(5)),datasets:[
-      {label:'Revenue',data:days.map(d=>+(rev[d]||0).toFixed(2)),borderColor:'#22c55e',backgroundColor:'rgba(74,222,128,.14)',fill:true,tension:.35,pointRadius:3,pointHoverRadius:5,borderWidth:2.5},
-      {label:'Cost (est.)',data:days.map(d=>+(cost[d]||0).toFixed(2)),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.10)',fill:true,tension:.35,pointRadius:3,pointHoverRadius:5,borderWidth:2.5},
-      {label:'Refunds',data:days.map(d=>+(ref[d]||0).toFixed(2)),borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.10)',fill:true,tension:.35,pointRadius:3,pointHoverRadius:5,borderWidth:2.5}]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'top',labels:{boxWidth:14,boxHeight:14,font:{family:'Inter',weight:'700',size:12}}},
-        tooltip:{callbacks:{label:c=>' '+c.dataset.label+': $'+(+c.parsed.y).toFixed(2)}}},
-      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:16,font:{family:'Inter',size:11}}},
-        y:{beginAtZero:true,ticks:{callback:v=>'$'+v,font:{family:'Inter',size:11}}}}}});
 }
 function renderBiz(){
   if(!BD) return;
@@ -351,11 +306,8 @@ function renderBiz(){
   document.getElementById('bdRev').textContent='$'+revUSD.toFixed(2);
   document.getElementById('bdRevNote').textContent='Revenue in range (≈US$)'+(Object.keys(byCur).length?' · '+Object.entries(byCur).map(([c,v])=>c+' '+v.toFixed(2)).join(' + '):'');
   document.getElementById('bdTok').textContent='$'+tok.toFixed(2);
-  const refundUSD=purch.reduce((a,p)=>a+((p.credits_reversed||0)>0&&(p.credits||0)>0?toUSD(p.amount,p.currency)*Math.min(1,p.credits_reversed/p.credits):0),0);
-  const refEl=document.getElementById('bdRefund'); if(refEl){ refEl.textContent='$'+refundUSD.toFixed(2); refEl.style.color=refundUSD>0?'#c0392b':'inherit'; }
-  const net=revUSD-tok-refundUSD;
+  const net=revUSD-tok;
   const netEl=document.getElementById('bdNet'); netEl.textContent=(net<0?'-$':'$')+Math.abs(net).toFixed(2); netEl.style.color=net<0?'#c0392b':'#0f6e56';
-  renderBizChart(from, to, purch, (BD.generations||[]).filter(g=>inRange(g.created_at)), cost);
   document.getElementById('bdNote').textContent='Data as of '+new Date(BD.generated_at).toLocaleTimeString()+' · '+gensRange+' generations ('+gensRange*4+' AI images) in range';
   renderBizTable();
 }
@@ -396,45 +348,27 @@ function exportUsersCSV(){
   toast('CSV exported — '+bizComputed.length+' members');
 }
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let MSGS=[], mfPicker=null, mfRange=null;
 async function loadMessages(){
   const tb=document.getElementById('msgRows');
-  const {data,error}=await sb.from('contact_messages').select('*').order('created_at',{ascending:false}).limit(200);
+  const {data,error}=await sb.from('contact_messages').select('*').order('created_at',{ascending:false}).limit(30);
+  tb.innerHTML='';
   if(error){ tb.innerHTML='<tr><td colspan="6" style="color:#c0392b">'+esc(error.message)+'</td></tr>'; return; }
-  MSGS=data||[];
-  const sel=document.getElementById('mfTopic');
-  sel.length=1; [...new Set(MSGS.map(m=>m.topic).filter(Boolean))].forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o); });
-  if(!mfPicker && window.flatpickr) mfPicker=flatpickr('#mfDate',{mode:'range',dateFormat:'Y-m-d',
-    onChange:d=>{ mfRange = d.length===2 ? [mfPicker.formatDate(d[0],'Y-m-d'), mfPicker.formatDate(d[1],'Y-m-d')] : null; if(d.length!==1) renderMsgs(); }});
-  renderMsgs();
-}
-function clearMsgFilters(){ document.getElementById('mfSearch').value=''; document.getElementById('mfTopic').value=''; document.getElementById('mfStatus').value=''; mfRange=null; if(mfPicker) mfPicker.clear(); renderMsgs(); }
-function renderMsgs(){
-  const tb=document.getElementById('msgRows'); tb.innerHTML='';
-  const q=(document.getElementById('mfSearch').value||'').trim().toLowerCase();
-  const topic=document.getElementById('mfTopic').value;
-  const st=document.getElementById('mfStatus').value;
-  const data=MSGS.filter(m=>{
-    if(q && !(((m.email||'')+' '+(m.name||'')).toLowerCase().includes(q))) return false;
-    if(topic && m.topic!==topic) return false;
-    if(st==='replied' && !m.replied_at) return false;
-    if(st==='pending' && m.replied_at) return false;
-    if(mfRange){ const d=(m.created_at||'').slice(0,10); if(d<mfRange[0]||d>mfRange[1]) return false; }
-    return true;
-  });
-  document.getElementById('mfCount').textContent=data.length+' of '+MSGS.length+' messages';
   (data||[]).forEach(m=>{
     const tr=document.createElement('tr');
     const long=(m.message||'').length>80;
     const short=long?esc(m.message.slice(0,80))+'…':esc(m.message);
-    const replied=m.replied_at?' <span style="color:#16a34a;font-weight:700;font-size:11px">✓ replied</span>':'';
-    tr.innerHTML=`<td style="white-space:nowrap">${esc((m.created_at||'').slice(0,10))}${replied}</td><td>${esc(m.topic)}</td><td>${esc(m.name)||'—'}</td><td><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></td>
-      <td style="max-width:360px;cursor:pointer" title="Click to read the full message and reply"><span class="msgShort">${short} <b style="color:#0284c7">⤢</b></span></td>`;
-    tr.lastElementChild.onclick=()=>openMsgModal(m);
+    tr.innerHTML=`<td style="white-space:nowrap">${esc((m.created_at||'').slice(0,10))}</td><td>${esc(m.topic)}</td><td>${esc(m.name)||'—'}</td><td><a href="mailto:${esc(m.email)}">${esc(m.email)}</a></td>
+      <td style="max-width:360px${long?';cursor:pointer':''}"${long?' title="'+AT('msg_expand')+'"':''}><span class="msgShort">${short}${long?' <b style="color:#0284c7">▾</b>':''}</span>${long?'<span class="msgFull" style="display:none;white-space:pre-wrap">'+esc(m.message)+' <b style="color:#0284c7">▴</b></span>':''}</td>`;
+    if(long){ const td=tr.lastElementChild;
+      td.onclick=()=>{ const s=td.querySelector('.msgShort'), f=td.querySelector('.msgFull');
+        const open=f.style.display!=='none';
+        f.style.display=open?'none':'block'; s.style.display=open?'inline':'none'; };
+    }
     const act=document.createElement('td'); act.style.whiteSpace='nowrap';
-    const reply=document.createElement('button'); reply.className='btn dark'; reply.style.cssText='padding:5px 10px;font-size:11.5px;margin-right:6px';
+    const quoted=('> '+String(m.message||'').split('\n').join('\n> '));
+    const reply=document.createElement('a'); reply.className='btn dark'; reply.style.cssText='padding:5px 10px;font-size:11.5px;text-decoration:none;margin-right:6px';
     reply.textContent=AT('act_reply');
-    reply.onclick=()=>openMsgModal(m,true);
+    reply.href='mailto:'+encodeURIComponent(m.email)+'?subject='+encodeURIComponent('Re: ['+m.topic+'] Summy Garden Studio')+'&body='+encodeURIComponent('\n\n'+quoted);
     const fwd=document.createElement('a'); fwd.className='btn dark'; fwd.style.cssText='padding:5px 10px;font-size:11.5px;text-decoration:none';
     fwd.textContent=AT('act_fwd');
     fwd.href='mailto:gogonewnews@gmail.com?subject='+encodeURIComponent('Fwd: ['+m.topic+'] from '+(m.name||m.email))+'&body='+encodeURIComponent('From: '+(m.name||'—')+' <'+m.email+'>\nDate: '+(m.created_at||'')+'\nTopic: '+m.topic+'\n\n'+m.message);
@@ -442,51 +376,7 @@ function renderMsgs(){
     tr.appendChild(act);
     tb.appendChild(tr);
   });
-  if(!data||!data.length) tb.innerHTML='<tr><td colspan="6" style="color:#8fa6b3">'+(MSGS.length?'No messages match these filters':'No messages yet')+'</td></tr>';
-}
-/* ---------- Message reader + reply ---------- */
-let mmCurrent=null;
-function openMsgModal(m,focusReply){
-  mmCurrent=m;
-  document.getElementById('mmTopic').textContent=(m.topic||'Message');
-  document.getElementById('mmMeta').textContent=(m.name||'—')+' · '+(m.email||'')+' · '+String(m.created_at||'').slice(0,16).replace('T',' ')+(m.replied_at?' · ✓ replied '+String(m.replied_at).slice(0,10):'');
-  document.getElementById('mmBody').textContent=m.message||'';
-  document.getElementById('mmReply').value='';
-  document.getElementById('mmFiles').value='';
-  document.getElementById('mmFileList').textContent='';
-  document.getElementById('mmStatus').textContent='';
-  document.getElementById('mmSend').disabled=false;
-  const mod=document.getElementById('msgModal'); mod.style.display='flex';
-  if(focusReply) setTimeout(()=>document.getElementById('mmReply').focus(),80);
-}
-function closeMsgModal(){ document.getElementById('msgModal').style.display='none'; mmCurrent=null; }
-document.getElementById('msgModal').addEventListener('click',e=>{ if(e.target===document.getElementById('msgModal')) closeMsgModal(); });
-function mmFilesChanged(){
-  const fs=[...document.getElementById('mmFiles').files];
-  const total=fs.reduce((s,f)=>s+f.size,0);
-  document.getElementById('mmFileList').textContent=fs.length?fs.map(f=>f.name+' ('+(f.size/1024/1024).toFixed(2)+'MB)').join(', '):'';
-  if(total>15*1024*1024){ toast('Attachments too large — keep the total under 15MB'); document.getElementById('mmFiles').value=''; document.getElementById('mmFileList').textContent=''; }
-}
-const fileB64=f=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(f); });
-async function sendReply(){
-  if(!mmCurrent||!session) return;
-  const text=document.getElementById('mmReply').value.trim();
-  if(!text){ toast('Write a reply first'); return; }
-  const btn=document.getElementById('mmSend'); btn.disabled=true;
-  const st=document.getElementById('mmStatus'); st.textContent='Sending…';
-  try{
-    const fs=[...document.getElementById('mmFiles').files];
-    const attachments=[];
-    for(const f of fs) attachments.push({filename:f.name, type:f.type||'application/octet-stream', content:await fileB64(f)});
-    const r=await fetch('/api/reply-message',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:session.access_token, message_id:mmCurrent.id, to:mmCurrent.email,
-        subject:'Re: ['+(mmCurrent.topic||'Message')+'] Summy Garden Studio', body:text, attachments})});
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(d.error||('server '+r.status));
-    st.textContent='✓ Sent to '+mmCurrent.email;
-    toast('✉️ Reply sent from support@summygarden.com');
-    closeMsgModal(); loadMessages();
-  }catch(e){ st.textContent='⚠️ '+e.message; btn.disabled=false; }
+  if(!data||!data.length) tb.innerHTML='<tr><td colspan="6" style="color:#8fa6b3">No messages yet</td></tr>';
 }
 async function loadStats(){
   try{

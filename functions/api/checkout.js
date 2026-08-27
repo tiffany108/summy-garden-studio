@@ -20,9 +20,6 @@ function fetchT(url, opts, ms) {
   return fetch(url, { ...opts, signal: c.signal }).finally(() => clearTimeout(t));
 }
 
-const sbUser = (token) => sbVerify(token);
-
-
 /* ---- Token verification without /auth/v1 ----
    Supabase's /auth/v1/* endpoints do not respond from Cloudflare Workers on this
    project (they hang; /rest/v1 answers in ~20ms). We therefore verify the caller
@@ -50,6 +47,7 @@ async function sbVerify(token) {
   if (!Array.isArray(rows) || !rows.length) return null;
   return { id: p.sub, email: p.email || "" };
 }
+const sbUser = (token) => sbVerify(token);
 
 export async function onRequest(context) {
   const { request: req, env } = context;
@@ -62,96 +60,6 @@ export async function onRequest(context) {
   let stage = "start";
   try {
   let body = {}; try { body = await req.json(); } catch {}
-
-  // Temporary connectivity probe: times each upstream host from inside the Worker.
-  // Returns status codes and timings only — never any secret.
-  if (body && body.diag === "sgs") {
-    const probe = async (name, url, opts, ms) => {
-      const t0 = Date.now();
-      try {
-        const r = await fetchT(url, opts, ms);
-        return `${name}: HTTP ${r.status} in ${Date.now() - t0}ms`;
-      } catch (e) {
-        return `${name}: ${e?.name === "AbortError" ? "TIMED OUT" : String(e?.message || e)} after ${Date.now() - t0}ms`;
-      }
-    };
-    const out = [];
-    out.push(await probe("sb /auth/v1/user", `${SB_URL}/auth/v1/user`, { headers: { apikey: SB_PUB, Authorization: "Bearer probe" } }, 5000));
-    out.push(await probe("sb /auth/v1/health", `${SB_URL}/auth/v1/health`, { headers: { apikey: SB_PUB } }, 5000));
-    out.push(await probe("sb /rest/v1/", `${SB_URL}/rest/v1/`, { headers: { apikey: SB_PUB } }, 5000));
-    out.push(await probe("sb root (no headers)", `${SB_URL}/`, {}, 5000));
-    out.push(await probe("sb service-key rest", `${SB_URL}/rest/v1/`, { headers: { apikey: env.SUPABASE_SECRET_KEY || "", Authorization: `Bearer ${env.SUPABASE_SECRET_KEY || ""}` } }, 5000));
-    out.push(await probe("control example.com", "https://example.com", {}, 5000));
-    out.push(await probe("stripe", "https://api.stripe.com/v1/balance", { headers: { Authorization: `Bearer ${sk}` } }, 5000));
-    out.push(`keys: stripe=${String(sk).slice(0, 7)}(${String(sk).length}) sbpub=${SB_PUB.slice(0, 16)}(${SB_PUB.length}) sbsecret=${String(env.SUPABASE_SECRET_KEY || "MISSING").slice(0, 10)}(${String(env.SUPABASE_SECRET_KEY || "").length})`);
-    return Response.json({ probes: out }, { status: 200, headers });
-  }
-  // Step-by-step trace of token verification. Reports shapes and status codes only.
-  if (body && body.diag === "auth") {
-    const out = [];
-    try {
-      const tk = body.token;
-      out.push(`token: ${tk ? "present len=" + String(tk).length + " dots=" + (String(tk).split(".").length - 1) : "MISSING"}`);
-      const p = jwtPayload(tk);
-      out.push(`payload: ${p ? "ok sub=" + (p.sub ? "yes" : "NO") + " exp=" + (p.exp ? (Date.now() / 1000 >= p.exp ? "EXPIRED" : "valid") : "none") + " email=" + (p.email ? "yes" : "no") : "DECODE FAILED"}`);
-      if (p && p.sub) {
-        const t0 = Date.now();
-        const r = await fetchT(`${SB_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(p.sub)}&select=id`,
-          { headers: { apikey: SB_PUB, Authorization: `Bearer ${tk}` } }, 6000);
-        out.push(`profiles query: HTTP ${r.status} in ${Date.now() - t0}ms`);
-        const raw = await r.text();
-        out.push(`rows: ${raw.slice(0, 80)}`);
-      }
-      const v = await sbVerify(tk);
-      out.push(`sbVerify: ${v ? "OK id=" + String(v.id).slice(0, 8) + "… email=" + (v.email ? "yes" : "no") : "returned null"}`);
-    } catch (e) {
-      out.push(`THREW: ${e?.name || ""} ${String(e?.message || e).slice(0, 160)}`);
-    }
-    return Response.json({ probes: out }, { status: 200, headers });
-  }
-
-  // Replicates the real checkout flow with per-step reporting.
-  if (body && body.diag === "stripe") {
-    const out = [];
-    try {
-      const user = await sbVerify(body.token);
-      out.push(`user: ${user ? "ok" : "null"}`);
-      const P2 = PACKS["Starter"], cur2 = (body.currency || "USD").toLowerCase();
-      const origin2 = req.headers.get("origin") || "https://summygarden.com";
-      out.push(`origin: ${origin2}`);
-      const f = new URLSearchParams();
-      f.set("mode", "payment");
-      f.set("client_reference_id", user.id);
-      f.set("customer_email", user.email || "");
-      f.set("metadata[user_id]", user.id);
-      f.set("metadata[credits]", String(P2.credits));
-      f.set("metadata[pack]", "Starter");
-      f.set("success_url", `${origin2}/?paid=1#pricing`);
-      f.set("cancel_url", `${origin2}/#pricing`);
-      f.set("line_items[0][quantity]", "1");
-      f.set("line_items[0][price_data][currency]", cur2);
-      f.set("line_items[0][price_data][unit_amount]", String(P2[cur2]));
-      f.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — Starter pack (${P2.credits} credits)`);
-      if (!body.noAlipay) ["card", "alipay"].forEach((m, i) => f.set(`payment_method_types[${i}]`, m));
-      else f.set("payment_method_types[0]", "card");
-      out.push(`form built, methods=${body.noAlipay ? "card only" : "card+alipay"}`);
-      const t0 = Date.now();
-      const r = await fetchT("https://api.stripe.com/v1/checkout/sessions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
-        body: f.toString(),
-      }, 12000);
-      out.push(`stripe: HTTP ${r.status} in ${Date.now() - t0}ms`);
-      const raw = await r.text();
-      let d = null; try { d = JSON.parse(raw); } catch (e) {}
-      out.push(d?.error ? `stripe error: ${d.error.type || ""} / ${d.error.code || ""} / ${String(d.error.message || "").slice(0, 180)}`
-                        : `session url: ${d?.url ? "created" : "MISSING"}`);
-    } catch (e) {
-      out.push(`THREW: ${e?.name || ""} ${String(e?.message || e).slice(0, 200)}`);
-    }
-    return Response.json({ probes: out }, { status: 200, headers });
-  }
-
   const { pack, currency, token } = body;
   const P = PACKS[pack];
   const cur = (currency || "USD").toLowerCase();
@@ -174,7 +82,10 @@ export async function onRequest(context) {
   form.set("line_items[0][price_data][currency]", cur);
   form.set("line_items[0][price_data][unit_amount]", String(P[cur]));
   form.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — ${pack} pack (${P.credits} credits)`);
-  ["card","alipay"].forEach((m,i)=>form.set(`payment_method_types[${i}]`, m));
+  // Let Stripe offer whatever is activated on the account. Hardcoding
+  // payment_method_types breaks checkout the moment a listed method is not
+  // enabled (Alipay was rejecting every session with a 400).
+  form.set("automatic_payment_methods[enabled]", "true");
 
   stage = "stripe";
   const res = await fetchT("https://api.stripe.com/v1/checkout/sessions", {

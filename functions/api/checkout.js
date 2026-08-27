@@ -110,6 +110,48 @@ export async function onRequest(context) {
     return Response.json({ probes: out }, { status: 200, headers });
   }
 
+  // Replicates the real checkout flow with per-step reporting.
+  if (body && body.diag === "stripe") {
+    const out = [];
+    try {
+      const user = await sbVerify(body.token);
+      out.push(`user: ${user ? "ok" : "null"}`);
+      const P2 = PACKS["Starter"], cur2 = (body.currency || "USD").toLowerCase();
+      const origin2 = req.headers.get("origin") || "https://summygarden.com";
+      out.push(`origin: ${origin2}`);
+      const f = new URLSearchParams();
+      f.set("mode", "payment");
+      f.set("client_reference_id", user.id);
+      f.set("customer_email", user.email || "");
+      f.set("metadata[user_id]", user.id);
+      f.set("metadata[credits]", String(P2.credits));
+      f.set("metadata[pack]", "Starter");
+      f.set("success_url", `${origin2}/?paid=1#pricing`);
+      f.set("cancel_url", `${origin2}/#pricing`);
+      f.set("line_items[0][quantity]", "1");
+      f.set("line_items[0][price_data][currency]", cur2);
+      f.set("line_items[0][price_data][unit_amount]", String(P2[cur2]));
+      f.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — Starter pack (${P2.credits} credits)`);
+      if (!body.noAlipay) ["card", "alipay"].forEach((m, i) => f.set(`payment_method_types[${i}]`, m));
+      else f.set("payment_method_types[0]", "card");
+      out.push(`form built, methods=${body.noAlipay ? "card only" : "card+alipay"}`);
+      const t0 = Date.now();
+      const r = await fetchT("https://api.stripe.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: f.toString(),
+      }, 12000);
+      out.push(`stripe: HTTP ${r.status} in ${Date.now() - t0}ms`);
+      const raw = await r.text();
+      let d = null; try { d = JSON.parse(raw); } catch (e) {}
+      out.push(d?.error ? `stripe error: ${d.error.type || ""} / ${d.error.code || ""} / ${String(d.error.message || "").slice(0, 180)}`
+                        : `session url: ${d?.url ? "created" : "MISSING"}`);
+    } catch (e) {
+      out.push(`THREW: ${e?.name || ""} ${String(e?.message || e).slice(0, 200)}`);
+    }
+    return Response.json({ probes: out }, { status: 200, headers });
+  }
+
   const { pack, currency, token } = body;
   const P = PACKS[pack];
   const cur = (currency || "USD").toLowerCase();

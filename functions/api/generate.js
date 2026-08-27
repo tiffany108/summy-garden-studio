@@ -5,12 +5,28 @@ const API = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:ge
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
-const VARIANTS = [
-  "natural confident smile, even studio lighting",
-  "warm approachable expression, soft window lighting",
-  "composed professional expression, crisp editorial lighting",
-  "relaxed friendly expression, golden-hour rim light",
+// 30 renders per credit. Variety comes from LIGHTING and CAMERA POSITION only —
+// never from changing the face — so every shot still looks like the same person.
+const LIGHTS = [
+  "even, soft studio key light with a large softbox",
+  "soft north-facing window light from camera left",
+  "crisp editorial key light with a subtle hair rim",
+  "warm golden-hour rim light with a gentle fill",
+  "bright high-key lighting with minimal shadow",
+  "classic Rembrandt key with soft shadow falloff",
+  "clean beauty-dish light with a bright round catchlight",
+  "diffused overcast daylight, very even and natural",
+  "balanced two-light corporate setup with a soft fill",
+  "restrained low-key lighting with controlled shadow",
 ];
+const ANGLES = [
+  "camera at eye level, straight on",
+  "camera a touch above eye level, flattering downward angle",
+  "camera at eye level with a very slight lateral offset",
+];
+const VARIANTS = Array.from({ length: LIGHTS.length * ANGLES.length }, (_, i) =>
+  `${LIGHTS[i % LIGHTS.length]}, ${ANGLES[Math.floor(i / LIGHTS.length) % ANGLES.length]}`
+);
 const OUTFITS = {
   "Auto": "professional attire that best suits the chosen style",
   "Original": "the same clothing they are wearing in the photo, tidied and professional",
@@ -207,7 +223,7 @@ export async function onRequest(context) {
   let remaining = null;
 
   if (vi === 0) {
-    // variant 0 spends exactly one credit for the whole 4-variant generation
+    // variant 0 spends exactly one credit for the whole 30-photo generation
     const r = await sbService(env, `/rest/v1/rpc/consume_credit`, { method: "POST", body: JSON.stringify({ uid: authUser.id }) });
     const val = r.ok ? await r.json() : -1;
     if (val === -1 || val === null) return Response.json({ error: "no credits" }, { status: 402, headers });
@@ -215,8 +231,9 @@ export async function onRequest(context) {
     await sbService(env, `/rest/v1/generations`, { method: "POST", headers: { Prefer: "return=minimal" },
       body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · ") }) });
   } else {
-    // variants 1-3 ride on a generation started in the last 3 minutes
-    const since = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+    // remaining variants ride on a generation started recently; 30 photos take
+    // several minutes to come back, so the window is generous.
+    const since = new Date(Date.now() - 20 * 60 * 1000).toISOString();
     const q = await sbService(env, `/rest/v1/generations?user_id=eq.${authUser.id}&created_at=gte.${encodeURIComponent(since)}&select=id&limit=1`);
     const rows = q.ok ? await q.json() : [];
     if (!rows.length) return Response.json({ error: "no active generation" }, { status: 402, headers });
@@ -235,7 +252,7 @@ export async function onRequest(context) {
     .filter((r) => typeof r === "string" && r.startsWith("data:image/") && r.length < 3_000_000)
     .slice(0, 2)
     .map((r) => ({ mime_type: r.slice(5, r.indexOf(";")), data: r.split(",")[1] }));
-  const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
+  const lightByVariant = VARIANTS[vi] || VARIANTS[0];
   const nRefs = refImgs.length;
   const refLine = nRefs
     ? `You are given ${nRefs + 1} photographs of the SAME person from different angles. Use ALL of them together to build an accurate understanding of this individual's face. The FIRST image is the primary reference for framing. `

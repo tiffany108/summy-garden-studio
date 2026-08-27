@@ -36,6 +36,25 @@ export async function onRequest(context) {
   let stage = "start";
   try {
   let body = {}; try { body = await req.json(); } catch {}
+
+  // Temporary connectivity probe: times each upstream host from inside the Worker.
+  // Returns status codes and timings only — never any secret.
+  if (body && body.diag === "sgs") {
+    const probe = async (name, url, opts, ms) => {
+      const t0 = Date.now();
+      try {
+        const r = await fetchT(url, opts, ms);
+        return `${name}: HTTP ${r.status} in ${Date.now() - t0}ms`;
+      } catch (e) {
+        return `${name}: ${e?.name === "AbortError" ? "TIMED OUT" : String(e?.message || e)} after ${Date.now() - t0}ms`;
+      }
+    };
+    const out = [];
+    out.push(await probe("supabase", `${SB_URL}/auth/v1/user`, { headers: { apikey: SB_PUB, Authorization: "Bearer probe" } }, 6000));
+    out.push(await probe("stripe", "https://api.stripe.com/v1/balance", { headers: { Authorization: `Bearer ${sk}` } }, 6000));
+    out.push(`stripe_key_prefix: ${String(sk).slice(0, 7)} len=${String(sk).length}`);
+    return Response.json({ probes: out }, { status: 200, headers });
+  }
   const { pack, currency, token } = body;
   const P = PACKS[pack];
   const cur = (currency || "USD").toLowerCase();

@@ -132,6 +132,7 @@ const POSEFRAME = {
   "Looking away": "head and shoulders framing",
 };
 const POSES = {
+  "Match my photo": "in the SAME head angle and body orientation as the reference photo — do not re-pose them",
   "Straight on": "facing the camera straight on",
   "Left facing": "body turned to their left with the face toward camera",
   "Right facing": "body turned to their right with the face toward camera",
@@ -158,7 +159,9 @@ const MODES = {
   "Natural": "natural relaxed style, soft true-to-life colours and gentle contrast",
 };
 const EXPRESSIONS = {
+  "Match my photo": "the SAME facial expression as the reference photo — keep their own mouth, eyes and smile exactly as they are",
   "Natural smile": "a warm, natural smile",
+  "Big smile": "a bright, open smile showing teeth",
   "Confident": "a composed, confident expression",
   "Friendly": "a friendly, approachable expression",
   "Serious": "a calm, serious and professional expression",
@@ -193,7 +196,7 @@ export async function onRequest(context) {
   if (!env.SUPABASE_SECRET_KEY) return Response.json({ error: "SUPABASE_SECRET_KEY not configured" }, { status: 501, headers });
 
   let body = {}; try { body = await req.json(); } catch {}
-  const { selfie, scene, category, outfit, style, pose, expr, frame, token, scene_id } = body;
+  const { selfie, refs, scene, category, outfit, style, pose, expr, frame, token, scene_id } = body;
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
@@ -226,18 +229,43 @@ export async function onRequest(context) {
   const frameDesc = POSEFRAME[pose] || FRAMES[frame] || FRAMES["Head & shoulders"];
   const b64 = selfie.split(",")[1];
   const mime = selfie.slice(5, selfie.indexOf(";"));
+  // Extra identity references. Gemini accepts a maximum of 3 input images per prompt,
+  // so the primary selfie + at most 2 extra angles.
+  const refImgs = (Array.isArray(refs) ? refs : [])
+    .filter((r) => typeof r === "string" && r.startsWith("data:image/") && r.length < 3_000_000)
+    .slice(0, 2)
+    .map((r) => ({ mime_type: r.slice(5, r.indexOf(";")), data: r.split(",")[1] }));
   const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
+  const nRefs = refImgs.length;
+  const refLine = nRefs
+    ? `You are given ${nRefs + 1} photographs of the SAME person from different angles. Use ALL of them together to build an accurate understanding of this individual's face. The FIRST image is the primary reference for framing. `
+    : `You are given one photograph of a person. `;
+
   const prompt =
-    `Transform this photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
-    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). ` +
-    `Style: ${styleDesc}. Dress them in ${outfitDesc}. The person is ${poseDesc}, with ${exprDesc}. ` +
+    // 1. Identity lock comes first and alone, before any styling instruction.
+    `IDENTITY LOCK — this is the highest priority instruction and overrides everything below. ` +
+    `${refLine}` +
+    `Reproduce this exact person. Copy their facial geometry precisely: the shape and width of the face, jawline, chin, cheekbones, brow ridge, the exact shape, size, spacing and colour of the eyes, the exact shape and width of the nose, the exact shape of the lips and mouth, the hairline, hair colour, hair texture and hair length, the ears, and any moles, freckles, scars, dimples, facial hair or glasses. ` +
+    `Keep their true skin tone, ethnicity, age and gender exactly as they appear. The output must be immediately recognisable as this specific individual by someone who knows them. ` +
+    // 2. Hard negatives — the drift failure modes.
+    `DO NOT beautify, idealise, slim, or symmetrise the face. Do not make them look younger, thinner or more conventionally attractive. Do not change eye shape or colour, nose shape, lip shape, jaw width, face length or hairline. Do not swap in a different, generic or "model" face. Do not alter their skin tone or ethnicity. Do not add or remove facial hair, glasses or moles. Do not smooth away their natural skin texture — real pores and fine lines must remain visible. ` +
+    // 3. Only then, the styling — explicitly scoped to everything EXCEPT the face structure.
+    `Now, WITHOUT altering any of the above, re-photograph this person as a professional headshot. ` +
+    `Change only the clothing, the background and the lighting. Dress them in ${outfitDesc}. ` +
     `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
-    `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
+    `The person is ${poseDesc}, with ${exprDesc}. ` +
+    // 4. Retouching limited to what a photographer does with light and grading — not facial edits.
+    `Grade and light it like a high-end studio photographer: ${styleDesc}. ${lightByVariant}. Even, flattering key light with a soft catchlight in the eyes, balanced colour, and a clean natural complexion achieved through lighting rather than by editing the skin. Reduce only transient shine and stray flyaway hairs. Keep every permanent feature. ` +
+    `${frameDesc}, photorealistic, 85mm portrait lens, shot on a full-frame camera, sharp focus on the eyes, natural skin texture retained, high-end professional photography. Not an illustration, not a painting, not AI-smoothed.`;
 
   try {
     const res = await fetch(`${API}?key=${gemKey}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }],
+      body: JSON.stringify({ contents: [{ parts: [
+        { inline_data: { mime_type: mime, data: b64 } },
+        ...refImgs.map((r) => ({ inline_data: r })),
+        { text: prompt },
+      ] }],
         generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
     if (!res.ok) { const t = await res.text(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }

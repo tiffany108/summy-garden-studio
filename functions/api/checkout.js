@@ -86,6 +86,30 @@ export async function onRequest(context) {
     out.push(`keys: stripe=${String(sk).slice(0, 7)}(${String(sk).length}) sbpub=${SB_PUB.slice(0, 16)}(${SB_PUB.length}) sbsecret=${String(env.SUPABASE_SECRET_KEY || "MISSING").slice(0, 10)}(${String(env.SUPABASE_SECRET_KEY || "").length})`);
     return Response.json({ probes: out }, { status: 200, headers });
   }
+  // Step-by-step trace of token verification. Reports shapes and status codes only.
+  if (body && body.diag === "auth") {
+    const out = [];
+    try {
+      const tk = body.token;
+      out.push(`token: ${tk ? "present len=" + String(tk).length + " dots=" + (String(tk).split(".").length - 1) : "MISSING"}`);
+      const p = jwtPayload(tk);
+      out.push(`payload: ${p ? "ok sub=" + (p.sub ? "yes" : "NO") + " exp=" + (p.exp ? (Date.now() / 1000 >= p.exp ? "EXPIRED" : "valid") : "none") + " email=" + (p.email ? "yes" : "no") : "DECODE FAILED"}`);
+      if (p && p.sub) {
+        const t0 = Date.now();
+        const r = await fetchT(`${SB_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(p.sub)}&select=id`,
+          { headers: { apikey: SB_PUB, Authorization: `Bearer ${tk}` } }, 6000);
+        out.push(`profiles query: HTTP ${r.status} in ${Date.now() - t0}ms`);
+        const raw = await r.text();
+        out.push(`rows: ${raw.slice(0, 80)}`);
+      }
+      const v = await sbVerify(tk);
+      out.push(`sbVerify: ${v ? "OK id=" + String(v.id).slice(0, 8) + "… email=" + (v.email ? "yes" : "no") : "returned null"}`);
+    } catch (e) {
+      out.push(`THREW: ${e?.name || ""} ${String(e?.message || e).slice(0, 160)}`);
+    }
+    return Response.json({ probes: out }, { status: 200, headers });
+  }
+
   const { pack, currency, token } = body;
   const P = PACKS[pack];
   const cur = (currency || "USD").toLowerCase();

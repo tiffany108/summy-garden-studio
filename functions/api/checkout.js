@@ -4,11 +4,12 @@ const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
 const PACKS = {
-  // 1 credit = 30 finished photos (~US$1.20 of generation cost), so credit counts
-  // are sized to keep every pack profitable.
-  Starter:  { credits: 2,  usd: 999,  gbp: 799,  hkd: 7800,  eur: 899,  cny: 6900 },
-  Pro:      { credits: 5,  usd: 1999, gbp: 1599, hkd: 15600, eur: 1799, cny: 13800 },
-  "Career+":{ credits: 10, usd: 3499, gbp: 2799, hkd: 27300, eur: 3199, cny: 24800 },
+  // 1 credit = 1 shoot = 30 finished photos (~US$1.20 of generation cost).
+  // Keys stay Starter/Pro/Career+ for continuity; they are shown as
+  // Essential / Professional / Studio in the UI.
+  Starter:  { credits: 1, usd: 2400, gbp: 1900, hkd: 18800, eur: 2200, cny: 17800 },
+  Pro:      { credits: 3, usd: 3900, gbp: 3100, hkd: 30800, eur: 3600, cny: 28800 },
+  "Career+":{ credits: 6, usd: 5900, gbp: 4700, hkd: 46800, eur: 5400, cny: 42800 },
 };
 
 async function sbUser(token) {

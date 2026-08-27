@@ -1,7 +1,13 @@
 // Summy Garden Studio — identity-preserving headshot generation (streaming v2)
 // Auth + credits enforced via Supabase. Env: GEMINI_API_KEY, SUPABASE_SECRET_KEY.
-const MODEL = "gemini-2.5-flash-image";
-const API = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+// Two-tier model strategy. The bulk of a shoot runs on the cheap fast model;
+// photos that fail the browser-side likeness check are re-shot on the Pro model,
+// which holds identity far better. Official list prices per 1K image:
+//   gemini-2.5-flash-image  $0.039   (bulk)
+//   gemini-3-pro-image      $0.134   (re-shoots only)
+const MODEL_STD = "gemini-2.5-flash-image";
+const MODEL_PRO = "gemini-3-pro-image";
+const apiFor = (m) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
@@ -212,7 +218,7 @@ export async function onRequest(context) {
   if (!env.SUPABASE_SECRET_KEY) return Response.json({ error: "SUPABASE_SECRET_KEY not configured" }, { status: 501, headers });
 
   let body = {}; try { body = await req.json(); } catch {}
-  const { selfie, refs, scene, category, outfit, style, pose, expr, frame, token, scene_id } = body;
+  const { selfie, refs, scene, category, outfit, style, pose, expr, frame, token, scene_id, quality } = body;
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
@@ -276,7 +282,8 @@ export async function onRequest(context) {
     `${frameDesc}, photorealistic, 85mm portrait lens, shot on a full-frame camera, sharp focus on the eyes, natural skin texture retained, high-end professional photography. Not an illustration, not a painting, not AI-smoothed.`;
 
   try {
-    const res = await fetch(`${API}?key=${gemKey}`, {
+    const model = quality === "pro" ? MODEL_PRO : MODEL_STD;
+    const res = await fetch(`${apiFor(model)}?key=${gemKey}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [
         { inline_data: { mime_type: mime, data: b64 } },
@@ -307,7 +314,7 @@ export async function onRequest(context) {
           body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path }) });
       }
     } catch {}
-    const payload = JSON.stringify({ image: `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`, variant: vi, remaining, mode: "gemini" });
+    const payload = JSON.stringify({ image: `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`, variant: vi, remaining, mode: quality === "pro" ? "gemini-pro" : "gemini" });
     const stream = new ReadableStream({ start(c) { const enc = new TextEncoder(); const CH = 65536;
       for (let i = 0; i < payload.length; i += CH) c.enqueue(enc.encode(payload.slice(i, i + CH))); c.close(); } });
     return new Response(stream, { status: 200, headers: { ...headers, "Content-Type": "application/json" } });

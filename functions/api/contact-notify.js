@@ -1,20 +1,20 @@
-let env;
 // Summy Garden Studio — forward each Contact-us message to the studio mailbox.
 // Env: RESEND_API_KEY (required), CONTACT_NOTIFY_TO (optional, defaults below),
 // EMAIL_FROM (optional). Reply-To is the visitor, so replying reaches them directly.
 
-const handler = async (req) => {
+export async function onRequest(context) {
+  const { request: req, env } = context;
+  const NOTIFY_TO = env.CONTACT_NOTIFY_TO || "gogonewnews@gmail.com";
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
   const rk = env.RESEND_API_KEY;
   if (!rk) return Response.json({ error: "email not configured" }, { status: 501, headers });
-  const NOTIFY_TO = env.CONTACT_NOTIFY_TO || "gogonewnews@gmail.com"; // read per request (env unavailable at module load on Cloudflare)
 
   // stopgap anti-abuse: only accept requests from our own site (browser-enforced).
   // Proper defence (Cloudflare Turnstile + rate limiting) is added during the CF migration.
   const origin = req.headers.get("origin") || "";
-  const ALLOWED = ["https://summy-garden-studio.netlify.app"];
+  const ALLOWED = ["https://summygarden.com", "https://www.summygarden.com", "https://summy-garden-studio.netlify.app"];
   const okOrigin = !origin || ALLOWED.some(a => origin === a) || origin.endsWith(".summygarden.com") || origin.endsWith(".summygarden.app") || origin.endsWith(".pages.dev");
   if (!okOrigin) return Response.json({ error: "forbidden" }, { status: 403, headers });
 
@@ -42,6 +42,4 @@ const handler = async (req) => {
   });
   if (!r.ok) { const d = await r.json().catch(() => ({})); return Response.json({ error: d?.message || "send failed" }, { status: 502, headers }); }
   return Response.json({ ok: true }, { status: 200, headers });
-};
-
-export async function onRequest(context){ env = context.env; return handler(context.request); }
+}

@@ -1,4 +1,3 @@
-let env;
 // Summy Garden Studio — email a generated headshot to the signed-in member.
 // Env: RESEND_API_KEY (create a free account at resend.com), optional EMAIL_FROM
 // (defaults to Resend's onboarding sender, which can only deliver to the
@@ -6,7 +5,8 @@ let env;
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
-const handler = async (req) => {
+export async function onRequest(context) {
+  const { request: req, env } = context;
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -35,7 +35,7 @@ const handler = async (req) => {
       subject: `Your Summy Garden Studio headshot${variant != null ? " — variant " + "ABCD"[variant] : ""}`,
       html: `<p>Hi${user.user_metadata?.name ? " " + user.user_metadata.name.split(" ")[0] : ""},</p>
              <p>Your professional headshot is attached${scene ? ` — scene: <b>${String(scene).replace(/</g, "&lt;")}</b>` : ""}${look ? `, look: <b>${String(look).replace(/</g, "&lt;")}</b>` : ""}.</p>
-             <p>It's also saved in your dashboard at <a href="https://summy-garden-studio.netlify.app">Summy Garden Studio</a>.</p>
+             <p>It's also saved in your dashboard at <a href="https://summygarden.com">Summy Garden Studio</a>.</p>
              <p>— Summy Garden Studio 🌿</p>`,
       attachments: [{ filename: `summy-garden-headshot-${"ABCD"[variant] || "A"}.${ext}`, content: b64 }],
     }),
@@ -43,6 +43,4 @@ const handler = async (req) => {
   const data = await r.json().catch(() => ({}));
   if (!r.ok) return Response.json({ error: data?.message || `email failed (${r.status})` }, { status: 502, headers });
   return Response.json({ ok: true, to: user.email }, { status: 200, headers });
-};
-
-export async function onRequest(context){ env = context.env; return handler(context.request); }
+}

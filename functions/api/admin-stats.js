@@ -1,4 +1,3 @@
-let env;
 // Summy Garden Studio — business stats for the admin dashboard.
 // Verifies the caller is the admin account, then gathers data with the
 // service key (bypasses RLS): all auth users (email + confirmation status),
@@ -8,7 +7,8 @@ const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 const ADMIN_EMAIL = "tiffany123@hotmail.com.hk";
 
-const handler = async (req) => {
+export async function onRequest(context) {
+  const { request: req, env } = context;
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -37,9 +37,7 @@ const handler = async (req) => {
 
   const profiles = await get(`${SB_URL}/rest/v1/profiles?select=id,name,credits,ref_count,created_at&limit=5000`) || [];
   const generations = await get(`${SB_URL}/rest/v1/generations?select=user_id,created_at&order=created_at.desc&limit=20000`) || [];
-  const purchases = await get(`${SB_URL}/rest/v1/purchases?select=user_id,session_id,pack,credits,amount,currency,created_at,credits_reversed&order=created_at.desc&limit=10000`) || [];
+  const purchases = await get(`${SB_URL}/rest/v1/purchases?select=user_id,session_id,pack,credits,amount,currency,created_at&order=created_at.desc&limit=10000`) || [];
 
   return Response.json({ users, profiles, generations, purchases, generated_at: new Date().toISOString() }, { status: 200, headers });
-};
-
-export async function onRequest(context){ env = context.env; return handler(context.request); }
+}

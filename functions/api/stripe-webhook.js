@@ -1,4 +1,3 @@
-let env;
 // Summy Garden Studio — Stripe webhook: credit the account after successful payment.
 // Env: STRIPE_WEBHOOK_SECRET, SUPABASE_SECRET_KEY.
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
@@ -13,10 +12,11 @@ async function verify(payload, sigHeader, secret) {
   return hex === v1;
 }
 
-const handler = async (req) => {
+export async function onRequest(context) {
+  const { request: req, env } = context;
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
-  const secret = (env.STRIPE_WEBHOOK_SECRET || "").trim();
-  const sbKey = (env.SUPABASE_SECRET_KEY || "").trim();
+  const secret = env.STRIPE_WEBHOOK_SECRET;
+  const sbKey = env.SUPABASE_SECRET_KEY;
   if (!secret || !sbKey) return new Response("not configured", { status: 501 });
 
   const payload = await req.text();
@@ -35,58 +35,21 @@ const handler = async (req) => {
         headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json",
                    Prefer: "resolution=ignore-duplicates,return=representation" },
         body: JSON.stringify({ user_id: uid, session_id: s.id, pack: s.metadata?.pack || "",
-          credits: add, amount: (s.amount_total ?? 0) / 100, currency: s.currency || "usd",
-          payment_intent: (typeof s.payment_intent === "string" ? s.payment_intent : s.payment_intent?.id) || null }),
+          credits: add, amount: (s.amount_total ?? 0) / 100, currency: s.currency || "usd" }),
       });
-      // NEVER report success on a failed write — return 5xx so Stripe retries and the error is visible.
-      if (!rec.ok) {
-        const detail = await rec.text().catch(() => "");
-        return new Response(`purchase insert failed: ${rec.status} ${detail}`.slice(0, 480), { status: 500 });
-      }
-      // Newly inserted rows come back in the array; an empty array means this session was
-      // already processed (duplicate) — so credit exactly once.
-      const inserted = await rec.json().catch(() => []);
-      if (Array.isArray(inserted) && inserted.length > 0) {
+      const inserted = rec.ok ? await rec.json() : [];
+      // only credit the account when this event hasn't been processed before
+      if (!rec.ok || (Array.isArray(inserted) && inserted.length > 0)) {
         const g = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${uid}&select=credits`, { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` } });
-        if (!g.ok) {
-          const detail = await g.text().catch(() => "");
-          return new Response(`profile read failed: ${g.status} ${detail}`.slice(0, 480), { status: 500 });
-        }
-        const rows = await g.json().catch(() => []);
+        const rows = g.ok ? await g.json() : [];
         const cur = rows[0]?.credits ?? 0;
-        const up = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${uid}`, {
+        await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${uid}`, {
           method: "PATCH",
           headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify({ credits: cur + add }),
         });
-        if (!up.ok) {
-          const detail = await up.text().catch(() => "");
-          return new Response(`credit update failed: ${up.status} ${detail}`.slice(0, 480), { status: 500 });
-        }
-      }
-    }
-  } else if (event.type === "charge.refunded") {
-    // A charge was refunded (fully or partially) — reverse the credits we granted for it.
-    const c = event.data.object; // Stripe Charge
-    const pi = typeof c.payment_intent === "string" ? c.payment_intent : c.payment_intent?.id;
-    const chargeAmt = c.amount || 0;
-    const refundedAmt = c.amount_refunded || 0;
-    if (pi && refundedAmt > 0) {
-      // One atomic DB function: find the purchase by payment_intent, reverse credits
-      // proportional to the amount refunded so far, and remember how much we've reversed
-      // (so partial refunds and repeat webhook deliveries never double-deduct).
-      const r = await fetch(`${SB_URL}/rest/v1/rpc/reverse_purchase_credits`, {
-        method: "POST",
-        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ pi, charge_amt: chargeAmt, refunded_amt: refundedAmt }),
-      });
-      if (!r.ok) {
-        const detail = await r.text().catch(() => "");
-        return new Response(`refund reversal failed: ${r.status} ${detail}`.slice(0, 480), { status: 500 });
       }
     }
   }
   return new Response("ok", { status: 200 });
-};
-
-export async function onRequest(context){ env = context.env; return handler(context.request); }
+}

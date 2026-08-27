@@ -1,4 +1,3 @@
-let env;
 // Summy Garden Studio — identity-preserving headshot generation (streaming v2)
 // Auth + credits enforced via Supabase. Env: GEMINI_API_KEY, SUPABASE_SECRET_KEY.
 const MODEL = "gemini-2.5-flash-image";
@@ -13,7 +12,7 @@ const VARIANTS = [
   "relaxed friendly expression, golden-hour rim light",
 ];
 const OUTFITS = {
-  "Auto": "a tailored professional business suit chosen by the studio — navy or charcoal with a crisp shirt, whichever flatters the person best",
+  "Auto": "professional attire that best suits the chosen style",
   "Original": "the same clothing they are wearing in the photo, tidied and professional",
   "Navy suit": "a tailored navy business suit with a crisp white shirt",
   "Charcoal suit": "a tailored charcoal-grey business suit with a shirt",
@@ -176,12 +175,15 @@ async function sbAuthUser(token) {
   if (!r.ok) return null;
   return await r.json();
 }
-async function sbService(path, opts = {}) {
+async function sbService(env, path, opts = {}) {
   const key = env.SUPABASE_SECRET_KEY;
   return fetch(`${SB_URL}${path}`, { ...opts, headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(opts.headers || {}) } });
 }
 
-const handler = async (req) => {
+function b64ToBytes(b64){ const bin=atob(b64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+
+export async function onRequest(context) {
+  const { request: req, env } = context;
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
@@ -190,81 +192,34 @@ const handler = async (req) => {
   if (!gemKey) return Response.json({ error: "GEMINI_API_KEY not configured" }, { status: 501, headers });
   if (!env.SUPABASE_SECRET_KEY) return Response.json({ error: "SUPABASE_SECRET_KEY not configured" }, { status: 501, headers });
 
-  let stage = "parse";
-  try {
   let body = {}; try { body = await req.json(); } catch {}
   const { selfie, scene, category, outfit, style, pose, expr, frame, token, scene_id } = body;
-  const enhance = Math.max(0, Math.min(100, parseInt(body.enhance ?? 60, 10) || 0)); // % facial enhancement
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
-  stage = "auth";
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
-  stage = "derive";
-  if (body.derive === true) {
-    // Derive an empty backdrop FROM a sample card (person removed) — cached in
-    // KV once per scene so Auto generations reproduce the exact card background.
-    const sIdx = parseInt(body.scene_i, 10);
-    if (!Number.isInteger(sIdx) || sIdx < 0 || sIdx > 500) return Response.json({ error: "bad scene" }, { status: 400, headers });
-    const bsKey = "bs-" + sIdx;
-    if (env.SCENE_CACHE) {
-      const cached = await env.SCENE_CACHE.get(bsKey, { type: "arrayBuffer" });
-      if (cached) return Response.json({ cached: true }, { status: 200, headers });
-    }
-    const parse = (s, cap) => { if (typeof s !== "string" || !s.startsWith("data:image/") || s.length > cap) return null;
-      const c = s.indexOf(","); if (c < 0) return null; return { mime: s.slice(5, s.indexOf(";")), data: s.slice(c + 1) }; };
-    const bRef = parse(body.base_ref, 2_500_000);
-    if (!bRef) return Response.json({ error: "base required" }, { status: 400, headers });
-    const dPrompt = "Remove the person from this photograph completely. Recreate the SAME location as an empty professional backdrop photo: identical framing, architecture, objects, colours and lighting; naturally reconstruct the areas the person covered. Absolutely no people. Photorealistic.";
-    const dres = await fetch(`${API}?key=${gemKey}`, { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: bRef.mime || "image/jpeg", data: bRef.data } }, { text: dPrompt }] }],
-        generationConfig: { imageConfig: { aspectRatio: "3:4" } } }) });
-    if (!dres.ok) { const t = await dres.text(); return Response.json({ error: `Gemini ${dres.status}: ${t.slice(0, 200)}` }, { status: 500, headers }); }
-    const ddata = await dres.json();
-    const dparts = ddata?.candidates?.[0]?.content?.parts || [];
-    const dimg = dparts.find((p) => p.inlineData || p.inline_data);
-    if (!dimg) return Response.json({ error: "no image in response" }, { status: 500, headers });
-    const dd = dimg.inlineData || dimg.inline_data;
-    try { if (env.SCENE_CACHE) await env.SCENE_CACHE.put(bsKey, Uint8Array.from(atob(dd.data), (c) => c.charCodeAt(0)).buffer); } catch {}
-    return Response.json({ image: `data:${dd.mimeType || dd.mime_type || "image/png"};base64,${dd.data}`, derived: true }, { status: 200, headers });
-  }
-  stage = "credit";
   if (!selfie || !selfie.startsWith("data:image/")) return Response.json({ error: "selfie required" }, { status: 400, headers });
   if (selfie.length > 6_000_000) return Response.json({ error: "image too large" }, { status: 413, headers });
 
   const vi = Math.min(Math.max(parseInt(body.variant ?? 0, 10) || 0, 0), VARIANTS.length - 1);
-  const isProof = body.proof === true;
   let remaining = null;
 
-  if (isProof) {
-    // Proof mode: one watermarked combination set, no credit spent now —
-    // max 3 per user per 2 hours (admin exempt); credits are charged when
-    // a photo is downloaded/emailed (see /api/unlock-photo).
-    const isAdmin = authUser.email === "tiffany123@hotmail.com.hk";
-    const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const q = await sbService(`/rest/v1/headshots?user_id=eq.${authUser.id}&variant=eq.9&created_at=gte.${encodeURIComponent(since)}&select=id`);
-    const rows = q.ok ? await q.json() : [];
-    if (!isAdmin && rows.length >= 6) return Response.json({ error: "Preview limit reached for now — download your favourite set, or try again in a couple of hours." }, { status: 409, headers });
-  } else if (vi === 0) {
+  if (vi === 0) {
     // variant 0 spends exactly one credit for the whole 4-variant generation
-    const r = await sbService(`/rest/v1/rpc/consume_credit`, { method: "POST", body: JSON.stringify({ uid: authUser.id }) });
+    const r = await sbService(env, `/rest/v1/rpc/consume_credit`, { method: "POST", body: JSON.stringify({ uid: authUser.id }) });
     const val = r.ok ? await r.json() : -1;
     if (val === -1 || val === null) return Response.json({ error: "no credits" }, { status: 402, headers });
     remaining = val;
-    await sbService(`/rest/v1/generations`, { method: "POST", headers: { Prefer: "return=minimal" },
+    await sbService(env, `/rest/v1/generations`, { method: "POST", headers: { Prefer: "return=minimal" },
       body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · ") }) });
   } else {
     // variants 1-3 ride on a generation started in the last 3 minutes
     const since = new Date(Date.now() - 3 * 60 * 1000).toISOString();
-    const q = await sbService(`/rest/v1/generations?user_id=eq.${authUser.id}&created_at=gte.${encodeURIComponent(since)}&select=id&limit=1`);
+    const q = await sbService(env, `/rest/v1/generations?user_id=eq.${authUser.id}&created_at=gte.${encodeURIComponent(since)}&select=id&limit=1`);
     const rows = q.ok ? await q.json() : [];
     if (!rows.length) return Response.json({ error: "no active generation" }, { status: 402, headers });
   }
 
-  stage = "prompt";
-  // Default (no outfit chosen / "Auto") → the studio's best suit.
-  // Only the explicit "Original" choice keeps the person's own clothing.
-  const keepOriginalOutfit = outfit === "Original";
-  const outfitDesc = keepOriginalOutfit ? OUTFITS["Original"] : (OUTFITS[outfit] || OUTFITS["Auto"]);
+  const outfitDesc = OUTFITS[outfit] || OUTFITS["Navy suit"];
   const styleDesc = STYLES[style] || STYLES["Formal"];
   const poseDesc = POSES[pose] || POSES["Straight on"];
   const exprDesc = EXPRESSIONS[expr] || EXPRESSIONS["Natural smile"];
@@ -272,114 +227,39 @@ const handler = async (req) => {
   const b64 = selfie.split(",")[1];
   const mime = selfie.slice(5, selfie.indexOf(";"));
   const lightByVariant = ["even studio lighting","soft window lighting","crisp editorial lighting","golden-hour rim light"][vi];
+  const prompt =
+    `Transform this photo into a polished, professional headshot of the SAME person — preserve their exact facial identity, bone structure, natural skin tone, ethnicity and hair. Do not change who they are. ` +
+    `Apply flattering professional retouching: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, while keeping the result realistic and recognisable (no plastic or over-smoothed look). ` +
+    `Style: ${styleDesc}. Dress them in ${outfitDesc}. The person is ${poseDesc}, with ${exprDesc}. ` +
+    `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
+    `${frameDesc}, ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
 
-  // Reference images for the EXACT chosen scene and outfit arrive from the
-  // browser as small data-URLs (encoding them server-side exceeded the CPU
-  // limit and crashed the function — the client does it for free).
-  const parseDataImg = (s, cap) => {
-    if (typeof s !== "string" || !s.startsWith("data:image/") || s.length > cap) return null;
-    const comma = s.indexOf(","); if (comma < 0) return null;
-    return { mime: s.slice(5, s.indexOf(";")), data: s.slice(comma + 1) };
-  };
-  const sceneRef = parseDataImg(body.scene_ref, 2_500_000);
-  const outfitRef = parseDataImg(body.outfit_ref, 2_000_000);
-  const faceRef = parseDataImg(body.face_ref, 2_000_000);
-  const baseRef = parseDataImg(body.base_ref, 2_500_000); // sample portrait for face-swap mode
-  // If the Gemini call fails after the credit was consumed, give the credit back.
-  const refundCredit = async () => {
-    if (vi !== 0 || remaining === null) return;
-    try {
-      const r = await sbService(`/rest/v1/profiles?id=eq.${authUser.id}&select=credits`);
-      const rows = r.ok ? await r.json() : [];
-      if (rows.length) await sbService(`/rest/v1/profiles?id=eq.${authUser.id}`, {
-        method: "PATCH", headers: { Prefer: "return=minimal" },
-        body: JSON.stringify({ credits: (rows[0].credits | 0) + 1 }) });
-    } catch {}
-  };
-  // Retouch intensity chosen by the user (0% = keep the face exactly as-is; 100% = full studio polish)
-  const retouch =
-    enhance < 20 ? `Apply NO facial retouching at all: keep the skin texture, pores, marks, skin tone and all facial shapes exactly as they appear in the original photo — change only the clothing, background, lighting and framing. ` :
-    enhance < 50 ? `Apply only very light retouching (about ${enhance}% intensity): keep the original skin texture, tone and all facial shapes untouched; at most soften harsh shadows and reduce temporary shine — the face must look unedited and completely natural. ` :
-    enhance < 80 ? `Apply moderate professional retouching (about ${enhance}% intensity): even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten the eyes subtly — while faithfully preserving the original skin tone, skin texture and every facial shape and proportion (no slimming, no reshaping, no plastic look). ` :
-    `Apply flattering professional retouching to SKIN AND LIGHTING ONLY: even out and smooth the skin naturally, gently reduce blemishes, shine and under-eye shadows, brighten and add subtle catchlights to the eyes, whiten teeth slightly, and give a healthy, well-lit complexion — as a high-end studio photographer would, keeping the result realistic and recognisable (no plastic or over-smoothed look). `;
-  const ords = ["FIRST", "SECOND", "THIRD", "FOURTH"]; let imgN = 1;
-  const faceOrd = faceRef ? ords[imgN++] : null;
-  const sceneOrd = sceneRef ? ords[imgN++] : null;
-  const outfitOrd = outfitRef ? ords[imgN++] : null;
-  let prompt, parts;
-  if (body.swap === true && baseRef) {
-    // FACE-SWAP mode (Auto / sample pick): keep the sample photo identical,
-    // replace only the model's head with the customer's.
-    const promptOverride = (authUser.email === "tiffany123@hotmail.com.hk" && typeof body.swap_prompt === "string" && body.swap_prompt.length < 4000) ? body.swap_prompt : null;
-    prompt = promptOverride ||
-      (`FACE SWAP task — this is a mandatory face replacement, not a suggestion. ` +
-      `The FIRST attached image is a professional portrait of MODEL A. The SECOND attached image shows PERSON B. ` +
-      `Produce the FIRST image again, IDENTICAL in every way — same clothing, same body, same pose, same hands, same background, same lighting, same colours, same framing — EXCEPT the head: MODEL A's face, head and hair must be COMPLETELY REPLACED by PERSON B's face, head and hairstyle. ` +
-      `The output must NOT contain MODEL A's face or hair anywhere. If PERSON B has a different gender, age, ethnicity or hairstyle than MODEL A, the new head MUST still be PERSON B's — adapt nothing about it. ` +
-      `PERSON B's identity is non-negotiable: copy their facial geometry, eyes, nose, mouth, jawline, skin tone and hairstyle exactly so they are instantly recognisable. ` +
-      `${retouch}Never change the shape or proportions of any facial feature. ` +
-      `Blend the new head seamlessly: natural neck transition, skin tone matched to PERSON B, relit to the FIRST image's lighting direction. Photorealistic, high-end professional photography.`);
-    parts = [{ inline_data: { mime_type: baseRef.mime || "image/jpeg", data: baseRef.data } }];
-    if (faceRef) parts.push({ inline_data: { mime_type: faceRef.mime || "image/jpeg", data: faceRef.data } });
-    else parts.push({ inline_data: { mime_type: mime, data: b64 } });
-    parts.push({ text: prompt });
-  } else {
-  prompt =
-    `Professional headshot creation task. Edit the FIRST attached photo. Follow ALL numbered instructions: ` +
-    `1) IDENTITY — MOST IMPORTANT: the output must show the SAME person as the FIRST photo. ` +
-    (faceOrd ? `The ${faceOrd} attached image is a sharp close-up of this person's face — it is the DEFINITIVE face reference: copy it exactly, feature by feature. Use it ONLY for facial identity — do NOT copy its crop, zoom or framing; the composition is set by instruction 5. ` : ``) +
-    `Copy their exact face: facial geometry, eyes, nose, mouth, jawline, skin tone, ethnicity and apparent age. HAIR: keep their OWN hair colour, length and type, but groom it into a neat, professionally styled version suitable for a studio portrait (smooth flyaways, tidy shape). Do not beautify them into a different person; anyone who knows them must recognise them instantly. ` +
-    `2) FACE RETOUCH: ${retouch}At EVERY retouch level: never change the shape or proportions of any facial feature — no slimming, reshaping, enlarging eyes or altering the nose, jaw or lips. Only skin texture, blemishes and lighting may be adjusted. Permitted natural changes: the facial EXPRESSION requested in instruction 5, a natural head turn/tilt to fit the pose, and scene-matched lighting on the face. ` +
-    `3) CLOTHING: ` +
-    (outfitOrd
-      ? (body.auto === true
-        ? `REMOVE the person's current clothing. The ${outfitOrd} attached image is a real photograph of the EXACT outfit the person must wear (${outfitDesc}). Reproduce that garment PRECISELY: match its exact colour and shade, fabric, lapel shape, buttons, collar, shirt and tie, fitted naturally to the person's body. Copy ONLY the clothing from that image — completely ignore its background, and ignore any head, hair, neck or skin visible in it. The person's original clothing must not remain visible. `
-        : `REMOVE the person's current clothing and dress them in EXACTLY the outfit shown in the ${outfitOrd} attached image (${outfitDesc}) — match its exact colour and shade, garment, fabric, neckline and details, fitted naturally to their body. The original clothing must not remain visible. `)
-      : keepOriginalOutfit
-        ? `keep the person's OWN clothing exactly as worn in the FIRST photo — same garment, colours, neckline and fabric, just neatly presented. Do not replace their clothes. `
-        : `REMOVE the person's current clothing and dress them in ${outfitDesc}. The original clothing must not remain visible. `) +
-    `4) BACKGROUND: ` +
-    (sceneOrd
-      ? `COMPLETELY REPLACE the FIRST photo's background with the environment shown in the ${sceneOrd} attached image (${scene || "professional setting"}). None of the FIRST photo's original surroundings, ground or sky may remain visible. The result must look as if the person was photographed standing IN the ${sceneOrd} image's exact location: match that reference image's composition, architecture, objects, colours, season and lighting as closely as possible — near pixel-faithful apart from a soft depth-of-field blur behind the person. `
-      : `COMPLETELY REPLACE the background with ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. `) +
-    `5) POSE & FRAMING: the person is ${poseDesc}, with ${exprDesc}. Compose the shot as ${body.auto === true ? "a waist-up half-body corporate portrait — the head occupying roughly ONE QUARTER of the image height, with generous space around the person, matching the exact body scale, shoulder line and body/torso angle visible in the outfit reference image" : frameDesc} — recompose the crop and zoom to this framing (do NOT reuse the FIRST photo's framing or distance, and do NOT zoom into the face), keeping the person horizontally centred. ` +
-    `6) STYLE & LIGHT: ${styleDesc}. ${lightByVariant}, photorealistic, flattering soft key lighting, 85mm portrait lens, high-end professional photography.`;
-
-  parts = [{ inline_data: { mime_type: mime, data: b64 } }];
-  if (faceRef) parts.push({ inline_data: { mime_type: faceRef.mime || "image/jpeg", data: faceRef.data } });
-  if (sceneRef) parts.push({ inline_data: { mime_type: sceneRef.mime || "image/jpeg", data: sceneRef.data } });
-  if (outfitRef) parts.push({ inline_data: { mime_type: outfitRef.mime || "image/jpeg", data: outfitRef.data } });
-  parts.push({ text: prompt });
-  }
-
-  stage = "gemini";
   try {
     const res = await fetch(`${API}?key=${gemKey}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts }],
+      body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mime, data: b64 } }, { text: prompt }] }],
         generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
-    if (!res.ok) { const t = await res.text(); await refundCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 900)}` }, { status: 500, headers }); }
+    if (!res.ok) { const t = await res.text(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }
     const data = await res.json();
-    const outParts = data?.candidates?.[0]?.content?.parts || [];
-    const img = outParts.find((p) => p.inlineData || p.inline_data);
-    if (!img) { await refundCredit(); return Response.json({ error: "no image in response" }, { status: 500, headers }); }
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const img = parts.find((p) => p.inlineData || p.inline_data);
+    if (!img) return Response.json({ error: "no image in response" }, { status: 502, headers });
     const d = img.inlineData || img.inline_data;
     // Save this variant to the user's dashboard (best effort — never blocks the response)
     try {
       const outMime = d.mimeType || d.mime_type || "image/png";
       const ext = outMime.includes("jpeg") ? "jpg" : "png";
-      const outVi = isProof ? 9 : vi; // 9 marks a proof/combination set
-      const path = `${authUser.id}/${Date.now()}_v${outVi}.${ext}`;
+      const path = `${authUser.id}/${Date.now()}_v${vi}.${ext}`;
       const sbKey = env.SUPABASE_SECRET_KEY;
       const up = await fetch(`${SB_URL}/storage/v1/object/headshots/${path}`, {
         method: "POST",
         headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": outMime, "x-upsert": "true" },
-        body: Uint8Array.from(atob(d.data), c=>c.charCodeAt(0)),
+        body: b64ToBytes(d.data),
       });
       if (up.ok) {
-        await sbService(`/rest/v1/headshots`, { method: "POST", headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: outVi, path }) });
+        await sbService(env, `/rest/v1/headshots`, { method: "POST", headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path }) });
       }
     } catch {}
     const payload = JSON.stringify({ image: `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`, variant: vi, remaining, mode: "gemini" });
@@ -387,13 +267,6 @@ const handler = async (req) => {
       for (let i = 0; i < payload.length; i += CH) c.enqueue(enc.encode(payload.slice(i, i + CH))); c.close(); } });
     return new Response(stream, { status: 200, headers: { ...headers, "Content-Type": "application/json" } });
   } catch (e) {
-    await refundCredit();
-    return Response.json({ error: String(e?.message || e) }, { status: 500, headers });
+    return Response.json({ error: String(e?.message || e) }, { status: 502, headers });
   }
-  } catch (e) {
-    // top-level guard: report the crash point instead of a blank Cloudflare 502
-    return Response.json({ error: `crash at ${stage}: ${String(e?.stack || e?.message || e).slice(0, 400)}` }, { status: 500, headers });
-  }
-};
-
-export async function onRequest(context){ env = context.env; return handler(context.request); }
+}

@@ -1,4 +1,3 @@
-let env;
 // Summy Garden Studio — create a Stripe Checkout Session.
 // Env: STRIPE_SECRET_KEY. Verifies the Supabase session so credits land on the right account.
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
@@ -15,11 +14,12 @@ async function sbUser(token) {
   return r.ok ? await r.json() : null;
 }
 
-const handler = async (req) => {
+export async function onRequest(context) {
+  const { request: req, env } = context;
   const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return Response.json({ error: "POST only" }, { status: 405, headers });
-  const sk = (env.STRIPE_SECRET_KEY || "").trim();
+  const sk = env.STRIPE_SECRET_KEY;
   if (!sk) return Response.json({ error: "STRIPE_SECRET_KEY not configured" }, { status: 501, headers });
 
   let body = {}; try { body = await req.json(); } catch {}
@@ -30,7 +30,7 @@ const handler = async (req) => {
   const user = await sbUser(token);
   if (!user?.id) return Response.json({ error: "sign in required" }, { status: 401, headers });
 
-  const origin = req.headers.get("origin") || "https://summy-garden-studio.netlify.app";
+  const origin = req.headers.get("origin") || "https://summygarden.com";
   const form = new URLSearchParams();
   form.set("mode", "payment");
   form.set("client_reference_id", user.id);
@@ -44,32 +44,14 @@ const handler = async (req) => {
   form.set("line_items[0][price_data][currency]", cur);
   form.set("line_items[0][price_data][unit_amount]", String(P[cur]));
   form.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — ${pack} pack (${P.credits} credits)`);
-  // Omit payment_method_types so Checkout offers whatever is enabled in the Stripe
-  // dashboard (card always; Alipay/WeChat Pay etc. appear automatically once activated).
+  ["card","alipay"].forEach((m,i)=>form.set(`payment_method_types[${i}]`, m));
 
-  let res, data;
-  try {
-    res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
-      body: form.toString(),
-    });
-    data = await res.json();
-  } catch (e) {
-    // 502 gets replaced by the zone's branded error page, hiding the reason — use 400 so the message reaches the client.
-    return Response.json({ error: "stripe request failed: " + (e?.message || String(e)) }, { status: 400, headers });
-  }
-  if (!res.ok) return Response.json({ error: data.error?.message || "stripe error" }, { status: 400, headers });
+  const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: form.toString(),
+  });
+  const data = await res.json();
+  if (!res.ok) return Response.json({ error: data.error?.message || "stripe error" }, { status: 502, headers });
   return Response.json({ url: data.url }, { status: 200, headers });
-};
-
-export async function onRequest(context){
-  env = context.env;
-  try {
-    return await handler(context.request);
-  } catch (e) {
-    console.log("CHECKOUT_HANDLER_ERROR", e && (e.stack || e.message) || String(e));
-    return new Response("checkout handler error: " + (e && (e.stack || e.message) || String(e)),
-      { status: 500, headers: { "Content-Type": "text/plain", "Access-Control-Allow-Origin": "*" } });
-  }
 }

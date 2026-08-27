@@ -20,9 +20,35 @@ function fetchT(url, opts, ms) {
   return fetch(url, { ...opts, signal: c.signal }).finally(() => clearTimeout(t));
 }
 
-async function sbUser(token) {
-  const r = await fetchT(`${SB_URL}/auth/v1/user`, { headers: { apikey: SB_PUB, Authorization: `Bearer ${token}` } }, 8000);
-  return r.ok ? await r.json() : null;
+const sbUser = (token) => sbVerify(token);
+
+
+/* ---- Token verification without /auth/v1 ----
+   Supabase's /auth/v1/* endpoints do not respond from Cloudflare Workers on this
+   project (they hang; /rest/v1 answers in ~20ms). We therefore verify the caller
+   through PostgREST, which validates the JWT signature itself — a forged or
+   expired token is rejected — and RLS guarantees a user can only read their own
+   profile row. Same security guarantee, an endpoint that actually responds. */
+function jwtPayload(t) {
+  try {
+    const b = String(t).split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const s = atob(b + "=".repeat((4 - (b.length % 4)) % 4));
+    const u = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    return JSON.parse(new TextDecoder().decode(u));
+  } catch (e) { return null; }
+}
+async function sbVerify(token) {
+  if (!token) return null;
+  const p = jwtPayload(token);
+  if (!p || !p.sub) return null;
+  if (p.exp && Date.now() / 1000 >= p.exp) return null;
+  const r = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(p.sub)}&select=id`,
+    { headers: { apikey: SB_PUB, Authorization: `Bearer ${token}` } });
+  if (!r.ok) return null;
+  const rows = await r.json().catch(() => []);
+  if (!Array.isArray(rows) || !rows.length) return null;
+  return { id: p.sub, email: p.email || "" };
 }
 
 export async function onRequest(context) {

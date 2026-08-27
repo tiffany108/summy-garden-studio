@@ -50,9 +50,14 @@ export async function onRequest(context) {
       }
     };
     const out = [];
-    out.push(await probe("supabase", `${SB_URL}/auth/v1/user`, { headers: { apikey: SB_PUB, Authorization: "Bearer probe" } }, 6000));
-    out.push(await probe("stripe", "https://api.stripe.com/v1/balance", { headers: { Authorization: `Bearer ${sk}` } }, 6000));
-    out.push(`stripe_key_prefix: ${String(sk).slice(0, 7)} len=${String(sk).length}`);
+    out.push(await probe("sb /auth/v1/user", `${SB_URL}/auth/v1/user`, { headers: { apikey: SB_PUB, Authorization: "Bearer probe" } }, 5000));
+    out.push(await probe("sb /auth/v1/health", `${SB_URL}/auth/v1/health`, { headers: { apikey: SB_PUB } }, 5000));
+    out.push(await probe("sb /rest/v1/", `${SB_URL}/rest/v1/`, { headers: { apikey: SB_PUB } }, 5000));
+    out.push(await probe("sb root (no headers)", `${SB_URL}/`, {}, 5000));
+    out.push(await probe("sb service-key rest", `${SB_URL}/rest/v1/`, { headers: { apikey: env.SUPABASE_SECRET_KEY || "", Authorization: `Bearer ${env.SUPABASE_SECRET_KEY || ""}` } }, 5000));
+    out.push(await probe("control example.com", "https://example.com", {}, 5000));
+    out.push(await probe("stripe", "https://api.stripe.com/v1/balance", { headers: { Authorization: `Bearer ${sk}` } }, 5000));
+    out.push(`keys: stripe=${String(sk).slice(0, 7)}(${String(sk).length}) sbpub=${SB_PUB.slice(0, 16)}(${SB_PUB.length}) sbsecret=${String(env.SUPABASE_SECRET_KEY || "MISSING").slice(0, 10)}(${String(env.SUPABASE_SECRET_KEY || "").length})`);
     return Response.json({ probes: out }, { status: 200, headers });
   }
   const { pack, currency, token } = body;

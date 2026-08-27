@@ -174,7 +174,7 @@ export async function onRequest(context) {
     const img = parts.find((p) => p.inlineData || p.inline_data);
     if (!img) return new Response("no image", { status: 502 });
     const d = img.inlineData || img.inline_data;
-    const bin = Uint8Array.from(atob(d.data), (c) => c.charCodeAt(0));
+    const _s = atob(d.data); const bin = new Uint8Array(_s.length); for (let _i = 0; _i < _s.length; _i++) bin[_i] = _s.charCodeAt(_i);
     await env.GALLERY.put(key, bin.buffer, { httpMetadata: { contentType: "image/png" } });
     buf = bin.buffer;
   }

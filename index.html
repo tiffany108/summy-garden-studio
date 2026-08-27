@@ -1436,13 +1436,14 @@ async function composeVariant(bg, person, extra){
    the strongest scenes inside each theme and splits the 30 shots between them. */
 const MAX_THEMES=6;
 let selectedCats=[studioCat];
-const catLabel=cat=>TX('c'+(CATEGORIES.indexOf(cat)+1))||cat;
+const catLabel=cat=>{ try{ return TX('c'+(CATEGORIES.indexOf(cat)+1))||cat; }catch(e){ return cat; } };
 function renderCatChecks(){
   const el=document.getElementById('catChecks'); if(!el) return;
+  const T=(k,f)=>{ try{ return TX(k); }catch(e){ return f; } };
   const full=selectedCats.length>=MAX_THEMES;
   el.innerHTML='<div class="cat-head" style="grid-column:1/-1">'+
-      TX('th_sel').replace('{n}',selectedCats.length).replace('{m}',MAX_THEMES)+
-      '<span>'+TX('th_each').replace('{p}',Math.floor(PHOTOS_PER_CREDIT/selectedCats.length))+'</span></div>'+
+      T('th_sel','{n} of {m} themes').replace('{n}',selectedCats.length).replace('{m}',MAX_THEMES)+
+      '<span>'+T('th_each','~{p} photos each').replace('{p}',Math.floor(PHOTOS_PER_CREDIT/selectedCats.length))+'</span></div>'+
     CATEGORIES.map(cat=>{
       const on=selectedCats.includes(cat);
       return '<div class="cat-chk'+(on?' on':(full?' full':''))+'" onclick="toggleCat('+JSON.stringify(cat).replace(/"/g,'&quot;')+')">'+
@@ -1625,7 +1626,6 @@ function renderLook(){
   g.style.gridTemplateColumns='repeat(auto-fill,minmax('+(n<=8?'160px':n<=20?'124px':'104px')+',1fr))';
   g.scrollTop=0;
 }
-syncScenesFromThemes(); renderCatChecks();
 if(wardrobe){ outfitFilter=wardrobe; if(selectedOutfit==='Navy suit') selectedOutfit=WARDROBE_DEFAULT[wardrobe]||'Navy suit'; }
 document.querySelectorAll('#outfitFilter .look-chip').forEach(b=>b.onclick=()=>{
   outfitFilter=b.dataset.g;
@@ -2252,6 +2252,7 @@ function setCookie(choice){ store.setItem('sgsCookie',choice); document.getEleme
 function initCookies(){ if(!store.getItem('sgsCookie')) setTimeout(()=>{ document.getElementById('cookieBar').classList.add('show'); },1200); }
 
 /* ---------- Init ---------- */
+syncScenesFromThemes(); renderCatChecks();
 renderSwatches();
 renderShowcase();
 renderLook();

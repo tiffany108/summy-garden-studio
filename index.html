@@ -97,6 +97,7 @@ nav{position:sticky;top:0;z-index:50;background:rgba(6,44,69,.85);backdrop-filte
 .ref-thumb{width:42px;height:52px;object-fit:cover;border-radius:7px;flex:0 0 auto;cursor:pointer;opacity:.55;transition:.15s;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .ref-thumb:hover{opacity:.85}
 .ref-thumb.pri{opacity:1;box-shadow:0 0 0 2px var(--accent)}
+.self-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(160deg,rgba(125,211,252,.20),rgba(52,211,153,.16))}
 .up-btn.cam{background:var(--grad-brand);box-shadow:var(--brand-glow)}
 @keyframes pinBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 .cat-sel option{color:#111827}
@@ -1187,6 +1188,7 @@ function renderRefTray(){
 }
 function setPrimaryRef(i){
   refPrimary=i; cropImg=refShots[i].img; setupCropper(); renderRefTray();
+  if(lookTab==='pose'||lookTab==='expr') renderLook();
 }
 async function addRefFiles(files){
   const list=[...files].slice(0,MAX_REFS-refShots.length);
@@ -1201,6 +1203,7 @@ async function addRefFiles(files){
   if(!refShots.length) return;
   if(!cropImg){ refPrimary=0; cropImg=refShots[0].img; setupCropper(); }
   renderRefTray();
+  if(lookTab==='pose'||lookTab==='expr') renderLook();
 }
 document.getElementById('fileInput').addEventListener('change',e=>{
   if(e.target.files&&e.target.files.length) addRefFiles(e.target.files);
@@ -1424,8 +1427,8 @@ let outfitFilter='all';
 /* Special tiles reuse already-cached sample images, so adding them never shifts
    the thumbnail indices of the real options below them. */
 const OPTSPECIAL={ outfit:[['Auto','osp',0],['Original','osp',1]],
-                   pose:[['Match my photo','osp',1]],
-                   expr:[['Match my photo','osp',1]] };
+                   pose:[['Match my photo','self',0]],
+                   expr:[['Match my photo','self',0]] };
 const SEL={style:()=>selectedStyle,outfit:()=>selectedOutfit,pose:()=>selectedPose,expr:()=>selectedExpr};
 const SETSEL={style:v=>selectedStyle=v,outfit:v=>selectedOutfit=v,pose:v=>selectedPose=v,expr:v=>selectedExpr=v};
 let lookTab='style';
@@ -1434,7 +1437,15 @@ function retryOpt(el){ const n=(+el.dataset.r||0)+1; el.dataset.r=n; if(n>3){el.
 function makeOptCard(kind,label,i,special){
   const cur=SEL[kind]()===label;
   const c=document.createElement('div'); c.className='look-card'+(cur?' sel':'');
-  if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
+  if(special && special[1]==='self'){
+    /* "Match my photo" previews the user's own photo — no sample image needed. */
+    const mine=(typeof refShots!=='undefined'&&refShots[refPrimary])?refShots[refPrimary].dataUrl:null;
+    c.innerHTML='<div class="look-thumb">'+(mine
+        ? '<img src="'+mine+'" alt="'+xl(label)+'">'
+        : '<div class="self-ph"><span>🙂</span></div>')+
+      '</div><div class="look-label">'+xl(label)+'</div>';
+  }
+  else if(special){ c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(special[1],special[2])+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
   else { c.innerHTML='<div class="look-thumb"><img loading="lazy" src="'+optImg(kind,i)+'" onerror="retryOpt(this)" alt="'+xl(label)+'"></div><div class="look-label">'+xl(label)+'</div>'; }
   c.onclick=()=>{ SETSEL[kind](label); renderLook(); updateCombo(); };
   return c;

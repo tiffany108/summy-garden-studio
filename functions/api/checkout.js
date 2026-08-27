@@ -82,10 +82,11 @@ export async function onRequest(context) {
   form.set("line_items[0][price_data][currency]", cur);
   form.set("line_items[0][price_data][unit_amount]", String(P[cur]));
   form.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — ${pack} pack (${P.credits} credits)`);
-  // Let Stripe offer whatever is activated on the account. Hardcoding
-  // payment_method_types breaks checkout the moment a listed method is not
-  // enabled (Alipay was rejecting every session with a 400).
-  form.set("automatic_payment_methods[enabled]", "true");
+  // payment_method_types is deliberately NOT set. Omitting it makes Stripe Checkout
+  // offer exactly the methods enabled in the dashboard, so nothing breaks when one
+  // is switched on or off. (Hardcoding ["card","alipay"] failed every session with
+  // a 400 because Alipay was never activated; automatic_payment_methods is a
+  // PaymentIntents parameter and is rejected here.)
 
   stage = "stripe";
   const res = await fetchT("https://api.stripe.com/v1/checkout/sessions", {

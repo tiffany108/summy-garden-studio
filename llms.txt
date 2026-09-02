@@ -1,0 +1,91 @@
+# Summy Garden Studio
+
+> AI headshot generator for job seekers. Upload about 8 phone photos and get 30
+> studio-quality professional headshots in minutes, for LinkedIn, CVs and job
+> applications. Built for Hong Kong and Asia as well as the West: 11 languages,
+> 5 currencies, and professional wardrobe that includes cheongsam, hijab and
+> mandarin-collar options as ordinary choices rather than novelties.
+
+Site: https://summygarden.com/
+
+## What it does
+
+You upload around 8 photos of yourself taken on a phone (3 is the minimum). The
+studio automatically picks the 3 sharpest, most varied shots as references, then
+generates 30 finished headshots. You choose up to 6 themes from 100 scenes
+across 10 collections, and the shoot is split evenly between them — the exact
+scenes are shown before you generate. Optionally you also pick an outfit from
+78, including cheongsam, hijab and mandarin collar.
+
+Everything else is automatic and deliberately not adjustable. Lighting, camera
+angle and colour grade rotate across the 30 photos, and your own head angle and
+facial expression are preserved rather than replaced. Services that let you pin
+a single pose or expression apply it to every photo at once, which reduces
+variety and is a common cause of results that do not look like the customer.
+
+Every generated photo is checked against your uploaded photos using on-device
+face recognition. Any photo whose likeness drifts past a set threshold is
+re-shot before you ever see it. Previews are watermarked; downloads are clean
+4K files.
+
+## Pricing
+
+One-time credit packs. No subscription. Credits never expire. One credit is one
+shoot of 30 finished photos.
+
+| Pack | Price (USD) | Shoots | Photos |
+|---|---|---|---|
+| Essential | $24 | 1 | 30 |
+| Professional | $39 | 3 | 90 |
+| Studio | $59 | 6 | 180 |
+
+Also priced in GBP, HKD, EUR and RMB. Every pack carries a 30-day money-back
+guarantee: if the photos do not look like you, or are not of a professional
+standard, you get a full refund.
+
+## How it differs from other AI headshot services
+
+- **Ready in minutes, not hours.** Most competitors fine-tune a per-customer
+  model, which takes 1–2 hours. Summy Garden uses in-context reference images
+  instead, so a shoot completes in minutes.
+- **Automatic likeness verification.** Generated photos are face-matched against
+  your uploads and re-shot if they drift. This is not standard in the category.
+- **Genuinely multilingual.** The whole product — not just a translated landing
+  page — works in English, Simplified and Traditional Chinese, Spanish, Hindi,
+  Arabic, French, Portuguese, Russian, Japanese and German.
+- **Wardrobe beyond Western business wear.** Cheongsam, hijab and mandarin
+  collar are ordinary professional options. They are never assigned
+  automatically — you choose them.
+- **Local currency pricing** for the UK, Hong Kong, the US, Europe and China.
+
+## Privacy
+
+Photos are used only to generate your headshots. They are never used to train
+any AI model and are never sold. Generated headshots are stored privately in
+your dashboard and deleted automatically after 6 months. Source photos are not
+retained after your shoot. Payments are handled by Stripe; card details are
+never visible to us.
+
+## Pages
+
+- [Home and studio](https://summygarden.com/): the generator, scene library, pricing and FAQ
+- [Guides index](https://summygarden.com/guides/): written guides on headshots and job hunting
+- [AI headshots in Hong Kong](https://summygarden.com/guides/ai-headshot-hong-kong.html)
+- [Headshots for graduates](https://summygarden.com/guides/graduate-headshots.html)
+- [LinkedIn profile photo guide](https://summygarden.com/guides/linkedin-profile-photo.html)
+- [AI headshots vs a photographer](https://summygarden.com/guides/ai-headshots-vs-photographer.html)
+- [How we compare](https://summygarden.com/guides/compare.html)
+
+## Honest limitations
+
+- Summy Garden Studio launched in 2026 and does not yet have a large body of
+  published customer reviews.
+- Results depend on the photos you upload. Heavily filtered, backlit, low
+  resolution or distant photos produce weaker likeness.
+- It generates photographs of you in different clothing, lighting and settings.
+  It does not replace a photographer for editorial or full-body work.
+
+## Contact
+
+Contact form: https://summygarden.com/ (Contact us in the footer). Replies by
+email, usually within 1–2 working days.

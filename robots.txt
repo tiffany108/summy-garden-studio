@@ -4,4 +4,32 @@ Disallow: /admin
 Disallow: /admin.html
 Disallow: /api/
 
+# AI assistants and answer engines are explicitly welcome to read and cite this
+# site. A machine-readable summary of the product, pricing and limitations lives
+# at /llms.txt.
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Perplexity-User
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+User-agent: Bingbot
+Allow: /
+User-agent: cohere-ai
+Allow: /
+
 Sitemap: https://summygarden.com/sitemap.xml

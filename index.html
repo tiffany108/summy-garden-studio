@@ -964,7 +964,7 @@ async function loadProfile(){
   const { data, error } = await sb.from('profiles').select('*').eq('id', sbSession.user.id).single();
   if(error||!data){ user=null; return; }
   user = { email: sbSession.user.email, name: data.name||sbSession.user.email.split('@')[0],
-           credits: data.credits, code: data.ref_code, refCount: data.ref_count, tester: !!data.is_tester,
+           credits: data.credits, code: data.ref_code, refCount: data.ref_count, tester: !!data.is_tester, is_admin: !!data.is_admin,
            joined: (data.created_at||'').slice(0,10), history: [], shots: [] };
   try{
     const g = await sb.from('generations').select('scene,look,created_at').order('created_at',{ascending:false}).limit(18);
@@ -1116,8 +1116,8 @@ async function downloadAllShots(){
 let ctSel='Quotation';
 function ctTopic(b){ ctSel=b.dataset.t; document.querySelectorAll('#ctTopics .cat-pill').forEach(x=>x.classList.toggle('active',x===b)); }
 function openContact(){
-  if(user){ const n=document.getElementById('ctName'), e=document.getElementById('ctEmail');
-    if(!n.value) n.value=user.name||''; if(!e.value) e.value=user.email||''; }
+  // Start blank every time — the sender fills in their own details.
+  ['ctName','ctEmail','ctMsg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   openModal('contactModal');
 }
 async function submitContact(){
@@ -2251,7 +2251,9 @@ async function loadAdminContent(){
 }
 
 /* ---------- Admin live text edit mode ---------- */
-const ADMIN_EMAIL='tiffany123@hotmail.com.hk';
+// The owner's address is deliberately NOT in this file — it would be visible to
+// anyone who views source. Edit mode is gated on the profile flag instead.
+const isOwner=()=>!!(user&&(user.is_admin||user.tester));
 let textOverrides=null, editDirty={}, editModeOn=false;
 function cssPath(el){
   const parts=[];
@@ -2376,7 +2378,7 @@ if(new URLSearchParams(location.search).get('paid')==='1'){ setTimeout(()=>toast
 if(sb){
   sb.auth.getSession().then(async ({data})=>{ sbSession=data.session; await loadProfile(); updateCreditLabel(); updateAccountBtn();
     if(new URLSearchParams(location.search).get('edit')==='1'){
-      if(sbSession && sbSession.user.email===ADMIN_EMAIL) startEditMode();
+      if(sbSession && isOwner()) startEditMode();
       else toast('Live edit is for the admin account — please sign in as admin first');
     }
     if(new URLSearchParams(location.search).get('paid')==='1'||sessionStorage.getItem('sgsPaid')){ sessionStorage.removeItem('sgsPaid'); setTimeout(async()=>{ await loadProfile(); updateCreditLabel(); },2500); } });

@@ -2298,7 +2298,7 @@ let adminContent=null;
 function applyAdminOverrides(){
   if(!adminContent) return;
   const c=adminContent;
-  if(c.heroA||c.heroB){ const h=document.querySelector('.hero h1'); if(h) h.innerHTML=(c.heroA||'')+' <em>'+(c.heroB||'')+'</em>'; }
+  if(c.heroA||c.heroB){ const h=document.querySelector('.hero h1'); if(h) h.innerHTML=sanitizeHTML((c.heroA||'')+' <em>'+(c.heroB||'')+'</em>'); }
   if(c.heroP){ const p=document.querySelector('.hero p'); if(p) p.textContent=c.heroP; }
   if(c.badge){ const b=document.getElementById('heroBadge'); if(b) b.textContent=c.badge; }
   const bar=document.getElementById('annBar');
@@ -2326,10 +2326,40 @@ function cssPath(el){
   }
   return parts.join(' > ');
 }
+/* ---- HTML sanitiser for stored site content ----
+   site_config holds owner-authored text overrides that are injected with
+   innerHTML. Anything reaching innerHTML from the database is treated as
+   untrusted: scripts, event handlers, javascript: URLs and embedding tags are
+   stripped, leaving only simple formatting. This is defence in depth — the
+   database policy is the primary control. */
+const SAFE_TAGS=['B','STRONG','I','EM','U','SPAN','BR','SMALL','A','P','H1','H2','H3','H4','LI','UL','OL','TD','TH','LABEL','BUTTON'];
+function sanitizeHTML(html){
+  const tpl=document.createElement('template');
+  tpl.innerHTML=String(html==null?'':html);
+  const walk=(node)=>{
+    [...node.childNodes].forEach(n=>{
+      if(n.nodeType===8){ n.remove(); return; }            // comments
+      if(n.nodeType!==1) return;                            // keep text
+      if(!SAFE_TAGS.includes(n.tagName)){ n.replaceWith(...n.childNodes); return; }
+      [...n.attributes].forEach(a=>{
+        const name=a.name.toLowerCase(), val=String(a.value||'');
+        if(name.startsWith('on')) n.removeAttribute(a.name);            // handlers
+        else if(name==='href'||name==='src'){
+          if(/^\s*(javascript|data|vbscript):/i.test(val)) n.removeAttribute(a.name);
+        }
+        else if(!['href','title','style','class'].includes(name)) n.removeAttribute(a.name);
+        if(name==='style' && /expression|url\s*\(|javascript:/i.test(val)) n.removeAttribute(a.name);
+      });
+      walk(n);
+    });
+  };
+  walk(tpl.content);
+  return tpl.innerHTML;
+}
 function applyTextOverrides(){
   if(!textOverrides) return;
   if((store.getItem('sgsLang')||'en')!=='en') return; /* edits override the English text only */
-  for(const sel in textOverrides){ try{ const el=document.querySelector(sel); if(el && !el.isContentEditable) el.innerHTML=textOverrides[sel]; }catch(e){} }
+  for(const sel in textOverrides){ try{ const el=document.querySelector(sel); if(el && !el.isContentEditable) el.innerHTML=sanitizeHTML(textOverrides[sel]); }catch(e){} }
 }
 async function loadTextOverrides(){
   if(!sb) return;

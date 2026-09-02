@@ -2300,6 +2300,9 @@ function initCookies(){ if(!store.getItem('sgsCookie')) setTimeout(()=>{ documen
 /* ---------- Init ---------- */
 /* ---- Trust bar / before-after / FAQ ---- */
 function renderTrust(){
+  // Q/st live inside applyLang, so this function keeps its own helpers.
+  const Q=x=>document.querySelector(x);
+  const st=(el,v)=>{ if(el&&v!=null) el.textContent=v; };
   const tb=document.getElementById('trustBar');
   if(tb){ const items=TX('tb')||[]; tb.innerHTML=items.map(t=>'<span class="trust-pill"><i>✓</i>'+t+'</span>').join(''); }
   // The proof section only appears once real before/after images exist, so the
@@ -2321,7 +2324,7 @@ function renderTrust(){
       '<span>'+r[0]+'</span><span class="ch">+</span></button><div class="faq-a">'+r[1]+'</div></div>').join('');
   }
 }
-renderTrust();
+try{ renderTrust(); }catch(e){}
 syncScenesFromThemes(); renderCatChecks();
 renderSwatches();
 renderShowcase();

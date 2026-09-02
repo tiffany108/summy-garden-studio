@@ -438,7 +438,7 @@ footer a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:20px}
       <a href="#pricing">Pricing</a>
     </div>
     <select id="langSel" class="lang-sel" title="Language"></select>
-    <span class="credit-pill"><span class="dot"></span><span id="creditLabel">1 credit</span></span>
+    <span class="credit-pill" id="creditPill"><span class="dot"></span><span id="creditLabel">1 credit</span></span>
     <button class="nav-cta" id="accountBtn" onclick="accountClick()">Get started</button>
   </div>
 </nav>
@@ -2150,7 +2150,11 @@ async function emailShot(i){
 /* ---------- Credits / paywall / checkout ---------- */
 function updateCreditLabel(){
   const n=getCredits();
-  document.getElementById('creditLabel').textContent = user ? ((user.tester?'∞':n)+' '+((user.tester||n!==1)?LT().credits:LT().credit)) : '★ '+TX('join');
+  const pill=document.getElementById('creditPill');
+  if(pill) pill.style.display = user ? '' : 'none';
+  if(!user) return;
+  document.getElementById('creditLabel').textContent =
+    (user.tester?'∞':n)+' '+((user.tester||n!==1)?LT().credits:LT().credit);
 }
 function updateAccountBtn(){
   const b=document.getElementById('accountBtn'); if(!b) return;

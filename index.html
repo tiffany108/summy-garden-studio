@@ -967,7 +967,7 @@ async function loadProfile(){
            credits: data.credits, code: data.ref_code, refCount: data.ref_count, tester: !!data.is_tester, is_admin: !!data.is_admin,
            joined: (data.created_at||'').slice(0,10), history: [], shots: [] };
   try{
-    const g = await sb.from('generations').select('scene,look,created_at').order('created_at',{ascending:false}).limit(18);
+    const g = await sb.from('generations').select('scene,look,created_at').eq('user_id', sbSession.user.id).order('created_at',{ascending:false}).limit(18);
     if(g.data) user.history = g.data.map(r=>({bg:r.scene, attire:r.look, date:(r.created_at||'').slice(5,10)}));
   }catch(e){}
   await loadShots();
@@ -975,7 +975,7 @@ async function loadProfile(){
 async function loadShots(){
   if(!sb||!user) return;
   try{
-    const s = await sb.from('headshots').select('scene,look,variant,path,created_at').order('created_at',{ascending:false}).limit(400);
+    const s = await sb.from('headshots').select('scene,look,variant,path,created_at').eq('user_id', sbSession.user.id).order('created_at',{ascending:false}).limit(400);
     if(s.data) user.shots = s.data;
   }catch(e){}
 }
@@ -1049,7 +1049,31 @@ async function signInAccount(){
   closeModal('register'); updateCreditLabel(); updateAccountBtn();
   toast('🌿 Welcome back, '+(user?user.name.split(' ')[0]:'')+'!');
 }
-async function signOut(){ if(sb) await sb.auth.signOut(); sbSession=null; user=null; closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out'); }
+async function signOut(){
+  if(sb) await sb.auth.signOut();
+  sbSession=null; user=null;
+  clearSessionState();
+  closeModal('dashboard'); updateCreditLabel(); updateAccountBtn(); toast('Signed out');
+}
+/* Wipe every trace of the previous person: their uploaded photos, the face
+   descriptor built from them, generated results, and any credentials still
+   sitting in the sign-in form. Without this the next person on the same
+   computer inherits the last one's session state. */
+function clearSessionState(){
+  try{
+    refShots.length=0; refPrimary=0; cropImg=null;
+    if(typeof _refCache!=='undefined') _refCache.clear();
+    if(typeof refDesc!=='undefined') refDesc=null;
+    window._lastShots=null; window._lastMarked=null; window._lastRedos=0;
+    ['regName','regEmail','regPw','regPw2','inEmail','inPw','ctName','ctEmail','ctMsg']
+      .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    const rz=document.getElementById('resultZone'); if(rz) rz.innerHTML='';
+    const dh=document.getElementById('dashHistory'); if(dh) dh.innerHTML='';
+    try{ renderRefTray(); }catch(e){}
+    try{ resetUploadZone(); }catch(e){}
+    try{ showLookPanel(); }catch(e){}
+  }catch(e){}
+}
 function renderDashboard(){
   if(!user) return;
   document.getElementById('dashHello').textContent = TX('dash_h')+' — '+user.name;

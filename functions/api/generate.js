@@ -11,9 +11,10 @@ const apiFor = (m) => `https://generativelanguage.googleapis.com/v1beta/models/$
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
-// 30 renders per credit. Variety comes from LIGHTING, CAMERA ANGLE and WHERE IN
-// THE SCENE the subject stands — never from changing the face — so every shot
-// still looks like the same person.
+// 30 renders per credit. Variety comes from LIGHTING, CAMERA ANGLE and WHICH PART
+// OF THE SETTING sits behind the subject — never from changing the face, and never
+// from moving or shrinking the subject in frame — so every shot still looks like
+// the same person, framed the way a headshot should be.
 const LIGHTS = [
   "even, soft studio key light with a large softbox",
   "soft north-facing window light from camera left",
@@ -31,18 +32,25 @@ const ANGLES = [
   "camera a touch above eye level, flattering downward angle",
   "camera at eye level with a very slight lateral offset",
 ];
-/* Where in the setting the subject stands. Without this, every photo of a given
-   scene was framed identically and only the light changed, so five shots of
-   "Downtown Morning" looked like one photo relit five times. Varying the vantage
-   makes them read as different corners of the same location — which is what a
-   photographer moving around a real place would produce. */
+/* Which PART OF THE SETTING falls behind the subject. Without this, every photo
+   of a scene was framed identically and only the light changed, so five shots of
+   "Downtown Morning" read as one photo relit five times.
+
+   These deliberately vary the BACKGROUND ONLY. An earlier draft moved the subject
+   around the frame ("slightly left of centre", "set deeper into the scene", "an
+   architectural feature behind them") and each of those costs photo quality: off-
+   centre framing is wrong for a headshot, standing further back shrinks the face
+   and takes detail out of the very thing we are trying to preserve, and hard
+   features behind the head are what drag clutter into the hair. So the subject is
+   pinned — centred, head-and-shoulders, same distance, always — and only what sits
+   behind them changes. Variety must never be bought with likeness. */
 const VANTAGES = [
-  "standing in the foreground with the setting opening up behind them",
-  "positioned slightly left of centre, the setting receding to the right",
-  "positioned slightly right of centre, the setting receding to the left",
-  "framed against a quieter corner of the setting with less background detail",
-  "framed with a distinctive architectural feature of the setting behind them",
-  "set a little deeper into the scene so more of the location is visible",
+  "an open, uncluttered stretch of the setting behind them",
+  "a softer, more distant part of the setting behind them",
+  "a quieter corner of the setting behind them, with minimal detail",
+  "a gently textured part of the setting behind them",
+  "a brighter, more open part of the setting behind them",
+  "a calmer, more shaded part of the setting behind them",
 ];
 const VARIANTS = Array.from({ length: LIGHTS.length * ANGLES.length }, (_, i) =>
   `${LIGHTS[i % LIGHTS.length]}, ${ANGLES[Math.floor(i / LIGHTS.length) % ANGLES.length]}`
@@ -318,7 +326,11 @@ export async function onRequest(context) {
     `Now, WITHOUT altering any of the above, re-photograph this person as a professional headshot. ` +
     `Change only the clothing, the background and the lighting. Dress them in ${outfitDesc}. ` +
     `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
-    `Vary the framing within that setting: the subject is ${vantage}. ` +
+    `Behind them, show ${vantage}. ` +
+    // Guard-rail for the line above: the background may vary between photos,
+    // the subject may not. Off-centre framing or a smaller subject would cost
+    // face detail, which is the one thing this whole prompt exists to protect.
+    `Keep the subject centred at the same head-and-shoulders distance in every case — do not move them off-centre, do not place them further from the camera, and keep the background clean and free of objects close to their head. ` +
     `The person is ${poseDesc}, with ${exprDesc}. ` +
     // 4. Retouching limited to what a photographer does with light and grading — not facial edits.
     `Grade and light it like a high-end studio photographer: ${styleDesc}. ${lightByVariant}. Even, flattering key light with a soft catchlight in the eyes, balanced colour, and a clean natural complexion achieved through lighting rather than by editing the skin. Reduce only transient shine and stray flyaway hairs. Keep every permanent feature. ` +

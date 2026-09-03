@@ -153,7 +153,17 @@ function buildPrompt(kind, i) {
        is fine); what breaks the photo is the racket. Hence an explicit no-props
        rule, plus a no-text rule — one tile came back with "Summy Garden Studio"
        hallucinated across it. */
-    return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, professional business attire. The location is only a blurred backdrop: the subject is posing for a portrait, NOT taking part in any activity. Empty hands — no props, no equipment, no racket, no ball, no bag, no towel, no cup, no book, no phone, nothing held or carried and nothing draped over the shoulder. No text, no lettering, no words, no watermark, no logo, no signage and no captions anywhere in the image.`;
+    /* Strip the brand out of anything sent to the image model. Scene 90 is called
+       "Summy Signature" and described as "the Summy Garden Studio brand gradient",
+       so the model was literally asked for that text and rendered it across the
+       tile. The customer-facing name keeps the brand; the prompt does not. */
+    const debrand = (t) => t.toLowerCase()
+      .replace(/the summy garden studio|the summy garden|the summy/g, "a")
+      .replace(/summy garden studio|summy garden|summy/g, "")
+      .replace(/\s{2,}/g, " ").trim();
+    const nm = debrand(m.n) || "signature gradient";
+    const ds = debrand(m.d.replace(/\./g, ""));
+    return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${nm} setting (${m.c.toLowerCase()}), ${ds}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, professional business attire. The location is only a blurred backdrop: the subject is posing for a portrait, NOT taking part in any activity. Empty hands — no props, no equipment, no racket, no ball, no bag, no towel, no cup, no book, no phone, nothing held or carried and nothing draped over the shoulder. No text, no lettering, no words, no watermark, no logo, no signage and no captions anywhere in the image.`;
   }
   if (kind === "b") { const m = META[i]; return `Empty professional photography backdrop: ${m.n.toLowerCase()} (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, absolutely no people, photorealistic, soft bokeh, shallow depth of field.`; }
   const set = OPT[kind]; if (!set || !set[i]) return null;
@@ -166,14 +176,23 @@ export async function onRequest(context) {
   const kind = ["p","b","style","outfit","pose","expr","osp"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
   const maxI = kind === "p" || kind === "b" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
   const i = Math.min(Math.max(parseInt(url.searchParams.get("i") || "0", 10) || 0, 0), maxI - 1);
-  /* Scene tiles are cached in R2 and served immutable for a year, so a prompt
-     change does NOT alter images already generated. Bump SCENE_V to force the
-     scene tiles (kinds p and b) to be regenerated the next time each is viewed.
-     That costs roughly $0.039 per tile — about $3.90 for all 100 — billed as
-     visitors browse, so only bump it when you actually want to pay for a refresh. */
-  const SCENE_V = 1;
+  /* Scene tiles are cached in R2 and served immutable for a year, so changing the
+     prompt does NOT alter images already generated — a bad tile stays until its
+     cache key changes.
+
+     REGEN lists the scene indices to re-render, at about $0.039 each, billed once
+     as each tile is next viewed. Targeted on purpose: only the broken tiles need
+     paying for. Add an index (or a range) here, deploy, and that tile refreshes.
+       50-59 = Sports & Tennis — the model was handing the subject a racket and a
+               towel, since fixed by the no-props rule in buildPrompt().
+     Leave REGEN empty to spend nothing. To redo everything, use [...Array(100).keys()]
+     — roughly $3.90. */
+  const REGEN = [
+    50,51,52,53,54,55,56,57,58,59,   // Sports & Tennis — racket and towel props
+    90,91,92,93,94,95,96,97,98,99,   // Signature Gradients — brand text rendered in
+  ];
   const ver = (kind !== "p" && kind !== "b" && OPT[kind] && OPT[kind][i] && OPT[kind][i][2]) ? "-" + OPT[kind][i][2] : "";
-  const sv = (kind === "p" || kind === "b") && SCENE_V > 1 ? `-v${SCENE_V}` : "";
+  const sv = (kind === "p" || kind === "b") && REGEN.includes(i) ? "-r1" : "";
   const key = `${kind}-${i}${ver}${sv}`;
   const obj = await env.GALLERY.get(key);
   let buf = obj ? await obj.arrayBuffer() : null;

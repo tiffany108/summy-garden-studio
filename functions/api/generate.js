@@ -309,6 +309,14 @@ export async function onRequest(context) {
   // Rotate the vantage independently of the light/angle pair, so photos that
   // share a scene differ in where the subject stands as well as how it is lit.
   const vantage = VANTAGES[vi % VANTAGES.length];
+  /* Never send the brand to the image model. One scene is called "Summy Signature"
+     and described as "the Summy Garden Studio brand gradient" — the model was being
+     asked for that text and painted it across the picture. A customer choosing that
+     scene would have had it written into a photo they paid for. */
+  const sceneClean = String(scene || "a modern office")
+    .replace(/the Summy Garden Studio|the Summy Garden|the Summy/gi, "a")
+    .replace(/Summy Garden Studio|Summy Garden|Summy/gi, "")
+    .replace(/\s{2,}/g, " ").trim() || "a modern office";
   const nRefs = refImgs.length;
   const refLine = nRefs
     ? `You are given ${nRefs + 1} photographs of the SAME person from different angles. Use ALL of them together to build an accurate understanding of this individual's face. The FIRST image is the primary reference for framing. `
@@ -325,7 +333,7 @@ export async function onRequest(context) {
     // 3. Only then, the styling — explicitly scoped to everything EXCEPT the face structure.
     `Now, WITHOUT altering any of the above, re-photograph this person as a professional headshot. ` +
     `Change only the clothing, the background and the lighting. Dress them in ${outfitDesc}. ` +
-    `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
+    `Background: ${sceneClean} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
     `Behind them, show ${vantage}. ` +
     // Guard-rail for the line above: the background may vary between photos,
     // the subject may not. Off-centre framing or a smaller subject would cost

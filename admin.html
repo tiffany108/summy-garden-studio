@@ -142,6 +142,31 @@ tbody tr:hover{background:#e8f4fd}
       <tbody id="memberRows"><tr><td colspan="5" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
     </div>
 
+    <div class="sec-title"><span data-i18n="t_codes">Discount codes</span> <span style="text-transform:none;font-weight:600;color:#8fa6b3" data-i18n="t_codes_sub">· create a code, hand it out in a campaign, watch what it earns</span></div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div><label style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="lbl_code">Code</label>
+          <input id="ncCode" placeholder="SUMMER25" maxlength="24" style="width:170px;text-transform:uppercase"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="lbl_pct">% off</label>
+          <input type="number" id="ncPct" min="1" max="100" value="20" style="width:90px"></div>
+        <div style="flex:1;min-width:180px"><label style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="lbl_note">Campaign note (only you see this)</label>
+          <input id="ncLabel" placeholder="LinkedIn ads, September"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="lbl_max">Max uses</label>
+          <input type="number" id="ncMax" min="1" placeholder="∞" style="width:100px"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="lbl_starts">Starts</label>
+          <input type="date" id="ncStart" style="width:auto"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="lbl_expires">Expires</label>
+          <input type="date" id="ncEnd" style="width:auto"></div>
+        <button class="btn" onclick="createCode()" data-i18n="btn_addcode">＋ Create code</button>
+        <span class="save-note" id="ncNote"></span>
+      </div>
+      <div class="hint" data-i18n="hint_codes" style="margin-top:14px">💡 Percentage codes work in all five currencies without any extra setup. A code is only counted as used once a payment actually succeeds, so an abandoned checkout never burns a limited-use campaign code. Codes that have already been used are switched off rather than deleted, so past revenue stays attributable.</div>
+    </div>
+    <div class="card" style="margin-bottom:6px;overflow-x:auto">
+      <table><thead><tr><th data-i18n="th_code">Code</th><th data-i18n="th_pct">Off</th><th data-i18n="th_note">Campaign</th><th data-i18n="th_uses">Used</th><th data-i18n="th_earned">Revenue (≈US$)</th><th data-i18n="th_window">Window</th><th data-i18n="th_state">Status</th><th data-i18n="th_act">Actions</th></tr></thead>
+      <tbody id="codeRows"><tr><td colspan="8" style="color:#8fa6b3">Loading…</td></tr></tbody></table>
+    </div>
+
     <div class="sec-title"><span data-i18n="t_msgs">Contact messages</span> <span style="text-transform:none;font-weight:600;color:#8fa6b3" data-i18n="t_msgs_sub">· quotations, feedback & questions from the site</span></div>
     <div class="card">
       <table><thead><tr><th data-i18n="th_date">Date</th><th data-i18n="th_topic">Topic</th><th data-i18n="th_name">Name</th><th data-i18n="th_email">Email</th><th data-i18n="th_msg">Message</th><th data-i18n="th_act">Actions</th></tr></thead>
@@ -205,9 +230,9 @@ let session=null;
 
 /* ---------- Admin i18n (en / zh / zh-TW) ---------- */
 const AL={
-en:{badge_admin:"🔐 Super Admin",signout:"Sign out",login_h:"Admin sign in",login_p:"Restricted area — super-admin access only.",ph_email:"Admin email",ph_pw:"Password",btn_signin:"Sign in",t_overview:"Live overview",s_members:"Registered members",s_shots:"Headshots generated",s_credits:"Credits outstanding",s_refs:"Referral rewards",t_biz:"Business dashboard",lbl_from:"From",lbl_to:"To",lbl_cost:"Cost per AI image (US$)",btn_apply:"Apply",btn_export:"⬇ Export users CSV",btn_export_em:"✉️ Export emails",b_reg:"Registered accounts",b_conf:"Email confirmed",b_unconf:"Email not confirmed",b_pay:"Paying members",b_ret:"Returning members (2+ days active)",b_rev:"Revenue in range (≈US$)",b_tok:"AI token cost in range (est., US$)",b_net:"Net profit in range (≈US$)",th_email:"Email",th_name:"Name",th_conf:"Confirmed",th_credits:"Credits",th_shots:"Shots",th_spent:"Spent (≈US$)",th_ret:"Returning",th_joined:"Joined",th_last:"Last active",t_members:"Recent members",th_refcode:"Referral code",th_refs:"Referrals",t_msgs:"Contact messages",t_msgs_sub:"· quotations, feedback & questions from the site",th_date:"Date",th_topic:"Topic",th_msg:"Message",t_edit:"Edit marketing content",t_edit_sub:"· changes go live instantly, no deploy",lbl_annOn:"Show announcement banner at top of site",lbl_ann:"Announcement text",lbl_heroA:"Hero headline (before the highlighted words)",lbl_heroB:"Hero highlighted words",lbl_heroP:"Hero subtitle",lbl_badge:"Free badge text",btn_save:"💾 Save changes",btn_reset:"Reset",btn_liveedit:"✏️ Live-edit any text on the site",hint_pricing:"💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.",t_preview:"Live site preview",btn_fs:"⛶ Full screen",btn_newtab:"↗ Open in new tab",show_all:"Show all {n} members ▾",show_less:"Show less ▴",msg_expand:"Click to expand / collapse the full message",th_act:"Actions",act_reply:"✉️ Reply",act_fwd:"↗ Forward",cp_sec:"Account security",cp_title:"Change password",cp_cur:"Current password",cp_new:"New password",cp_new2:"Confirm new password",cp_btn:"Update password",pw_hint:"At least 8 characters, including an uppercase letter, a lowercase letter and a number.",cp_ok:"Password updated ✓",cp_wrong:"Current password is incorrect",cp_weak:"New password doesn’t meet the requirements",cp_mismatch:"New passwords don’t match",cp_same:"New password must be different from the current one"},
-zh:{badge_admin:"🔐 超级管理员",signout:"登出",login_h:"管理员登录",login_p:"受限区域 — 仅超级管理员可访问。",ph_email:"管理员邮箱",ph_pw:"密码",btn_signin:"登录",t_overview:"实时概览",s_members:"注册会员",s_shots:"已生成头像",s_credits:"未使用点数",s_refs:"推荐奖励",t_biz:"业务仪表板",lbl_from:"从",lbl_to:"至",lbl_cost:"每张 AI 图片成本（美元）",btn_apply:"应用",btn_export:"⬇ 导出用户 CSV",btn_export_em:"✉️ 导出邮箱",b_reg:"注册账户",b_conf:"邮箱已验证",b_unconf:"邮箱未验证",b_pay:"付费会员",b_ret:"回访会员（活跃 2 天以上）",b_rev:"区间收入（约美元）",b_tok:"区间 AI 成本（估算，美元）",b_net:"区间净利润（约美元）",th_email:"邮箱",th_name:"姓名",th_conf:"已验证",th_credits:"点数",th_shots:"生成数",th_spent:"消费（约美元）",th_ret:"回访",th_joined:"注册日期",th_last:"最近活跃",t_members:"最新会员",th_refcode:"推荐码",th_refs:"推荐人数",t_msgs:"联络消息",t_msgs_sub:"· 来自网站的询价、反馈与问题",th_date:"日期",th_topic:"主题",th_msg:"消息",t_edit:"编辑营销内容",t_edit_sub:"· 修改即时生效，无需部署",lbl_annOn:"在网站顶部显示公告横幅",lbl_ann:"公告文字",lbl_heroA:"主标题（高亮词之前）",lbl_heroB:"主标题高亮词",lbl_heroP:"主副标题",lbl_badge:"免费徽章文字",btn_save:"💾 保存修改",btn_reset:"重置",btn_liveedit:"✏️ 在网站上实时编辑任意文字",hint_pricing:"💡 价格与支付金额此处不可编辑 — 需与 Stripe 保持同步以确保收费正确。想改价请告诉我，我会安全地同步更新。",t_preview:"网站实时预览",btn_fs:"⛶ 全屏",btn_newtab:"↗ 新标签页打开",show_all:"显示全部 {n} 位会员 ▾",show_less:"收起 ▴",msg_expand:"点击展开 / 收起完整消息",th_act:"操作",act_reply:"✉️ 回复",act_fwd:"↗ 转发",cp_sec:"账户安全",cp_title:"修改密码",cp_cur:"当前密码",cp_new:"新密码",cp_new2:"确认新密码",cp_btn:"更新密码",pw_hint:"至少 8 位，包含大写字母、小写字母和数字。",cp_ok:"密码已更新 ✓",cp_wrong:"当前密码不正确",cp_weak:"新密码不符合要求",cp_mismatch:"两次输入的新密码不一致",cp_same:"新密码必须与当前密码不同"},
-"zh-TW":{badge_admin:"🔐 超級管理員",signout:"登出",login_h:"管理員登入",login_p:"受限區域 — 僅超級管理員可存取。",ph_email:"管理員電郵",ph_pw:"密碼",btn_signin:"登入",t_overview:"即時概覽",s_members:"註冊會員",s_shots:"已生成頭像",s_credits:"未使用點數",s_refs:"推薦獎勵",t_biz:"業務儀表板",lbl_from:"從",lbl_to:"至",lbl_cost:"每張 AI 圖片成本（美元）",btn_apply:"套用",btn_export:"⬇ 匯出用戶 CSV",btn_export_em:"✉️ 匯出電郵",b_reg:"註冊帳戶",b_conf:"電郵已驗證",b_unconf:"電郵未驗證",b_pay:"付費會員",b_ret:"回訪會員（活躍 2 天以上）",b_rev:"區間收入（約美元）",b_tok:"區間 AI 成本（估算，美元）",b_net:"區間淨利潤（約美元）",th_email:"電郵",th_name:"姓名",th_conf:"已驗證",th_credits:"點數",th_shots:"生成數",th_spent:"消費（約美元）",th_ret:"回訪",th_joined:"註冊日期",th_last:"最近活躍",t_members:"最新會員",th_refcode:"推薦碼",th_refs:"推薦人數",t_msgs:"聯絡訊息",t_msgs_sub:"· 來自網站的詢價、回饋與問題",th_date:"日期",th_topic:"主題",th_msg:"訊息",t_edit:"編輯行銷內容",t_edit_sub:"· 修改即時生效，無需部署",lbl_annOn:"在網站頂部顯示公告橫幅",lbl_ann:"公告文字",lbl_heroA:"主標題（醒目詞之前）",lbl_heroB:"主標題醒目詞",lbl_heroP:"主副標題",lbl_badge:"免費徽章文字",btn_save:"💾 儲存修改",btn_reset:"重設",btn_liveedit:"✏️ 在網站上即時編輯任意文字",hint_pricing:"💡 價格與付款金額此處不可編輯 — 需與 Stripe 保持同步以確保收費正確。想改價請告訴我，我會安全地同步更新。",t_preview:"網站即時預覽",btn_fs:"⛶ 全螢幕",btn_newtab:"↗ 新分頁開啟",show_all:"顯示全部 {n} 位會員 ▾",show_less:"收起 ▴",msg_expand:"點擊展開 / 收起完整訊息",th_act:"操作",act_reply:"✉️ 回覆",act_fwd:"↗ 轉寄",cp_sec:"帳戶安全",cp_title:"修改密碼",cp_cur:"目前密碼",cp_new:"新密碼",cp_new2:"確認新密碼",cp_btn:"更新密碼",pw_hint:"至少 8 位，包含大寫字母、小寫字母和數字。",cp_ok:"密碼已更新 ✓",cp_wrong:"目前密碼不正確",cp_weak:"新密碼不符合要求",cp_mismatch:"兩次輸入的新密碼不一致",cp_same:"新密碼必須與目前密碼不同"}};
+en:{badge_admin:"🔐 Super Admin",signout:"Sign out",login_h:"Admin sign in",login_p:"Restricted area — super-admin access only.",ph_email:"Admin email",ph_pw:"Password",btn_signin:"Sign in",t_overview:"Live overview",s_members:"Registered members",s_shots:"Headshots generated",s_credits:"Credits outstanding",s_refs:"Referral rewards",t_biz:"Business dashboard",lbl_from:"From",lbl_to:"To",lbl_cost:"Cost per AI image (US$)",btn_apply:"Apply",btn_export:"⬇ Export users CSV",btn_export_em:"✉️ Export emails",b_reg:"Registered accounts",b_conf:"Email confirmed",b_unconf:"Email not confirmed",b_pay:"Paying members",b_ret:"Returning members (2+ days active)",b_rev:"Revenue in range (≈US$)",b_tok:"AI token cost in range (est., US$)",b_net:"Net profit in range (≈US$)",th_email:"Email",th_name:"Name",th_conf:"Confirmed",th_credits:"Credits",th_shots:"Shots",th_spent:"Spent (≈US$)",th_ret:"Returning",th_joined:"Joined",th_last:"Last active",t_members:"Recent members",th_refcode:"Referral code",th_refs:"Referrals",t_msgs:"Contact messages",t_msgs_sub:"· quotations, feedback & questions from the site",th_date:"Date",th_topic:"Topic",th_msg:"Message",t_edit:"Edit marketing content",t_edit_sub:"· changes go live instantly, no deploy",lbl_annOn:"Show announcement banner at top of site",lbl_ann:"Announcement text",lbl_heroA:"Hero headline (before the highlighted words)",lbl_heroB:"Hero highlighted words",lbl_heroP:"Hero subtitle",lbl_badge:"Free badge text",btn_save:"💾 Save changes",btn_reset:"Reset",btn_liveedit:"✏️ Live-edit any text on the site",hint_pricing:"💡 Pricing and payment amounts are intentionally not editable here — they must stay in sync with Stripe to keep billing correct. Ask me to change a price and I'll update both safely.",t_preview:"Live site preview",btn_fs:"⛶ Full screen",btn_newtab:"↗ Open in new tab",show_all:"Show all {n} members ▾",show_less:"Show less ▴",msg_expand:"Click to expand / collapse the full message",th_act:"Actions",act_reply:"✉️ Reply",act_fwd:"↗ Forward",cp_sec:"Account security",cp_title:"Change password",cp_cur:"Current password",cp_new:"New password",cp_new2:"Confirm new password",cp_btn:"Update password",pw_hint:"At least 8 characters, including an uppercase letter, a lowercase letter and a number.",cp_ok:"Password updated ✓",cp_wrong:"Current password is incorrect",cp_weak:"New password doesn’t meet the requirements",cp_mismatch:"New passwords don’t match",cp_same:"New password must be different from the current one",t_codes:"Discount codes",t_codes_sub:"· create a code, hand it out in a campaign, watch what it earns",lbl_code:"Code",lbl_pct:"% off",lbl_note:"Campaign note (only you see this)",lbl_max:"Max uses",lbl_starts:"Starts",lbl_expires:"Expires",btn_addcode:"＋ Create code",hint_codes:"💡 Percentage codes work in all five currencies without any extra setup. A code is only counted as used once a payment actually succeeds, so an abandoned checkout never burns a limited-use campaign code. Codes that have already been used are switched off rather than deleted, so past revenue stays attributable.",th_code:"Code",th_pct:"Off",th_note:"Campaign",th_uses:"Used",th_earned:"Revenue (≈US$)",th_window:"Window",th_state:"Status"},
+zh:{badge_admin:"🔐 超级管理员",signout:"登出",login_h:"管理员登录",login_p:"受限区域 — 仅超级管理员可访问。",ph_email:"管理员邮箱",ph_pw:"密码",btn_signin:"登录",t_overview:"实时概览",s_members:"注册会员",s_shots:"已生成头像",s_credits:"未使用点数",s_refs:"推荐奖励",t_biz:"业务仪表板",lbl_from:"从",lbl_to:"至",lbl_cost:"每张 AI 图片成本（美元）",btn_apply:"应用",btn_export:"⬇ 导出用户 CSV",btn_export_em:"✉️ 导出邮箱",b_reg:"注册账户",b_conf:"邮箱已验证",b_unconf:"邮箱未验证",b_pay:"付费会员",b_ret:"回访会员（活跃 2 天以上）",b_rev:"区间收入（约美元）",b_tok:"区间 AI 成本（估算，美元）",b_net:"区间净利润（约美元）",th_email:"邮箱",th_name:"姓名",th_conf:"已验证",th_credits:"点数",th_shots:"生成数",th_spent:"消费（约美元）",th_ret:"回访",th_joined:"注册日期",th_last:"最近活跃",t_members:"最新会员",th_refcode:"推荐码",th_refs:"推荐人数",t_msgs:"联络消息",t_msgs_sub:"· 来自网站的询价、反馈与问题",th_date:"日期",th_topic:"主题",th_msg:"消息",t_edit:"编辑营销内容",t_edit_sub:"· 修改即时生效，无需部署",lbl_annOn:"在网站顶部显示公告横幅",lbl_ann:"公告文字",lbl_heroA:"主标题（高亮词之前）",lbl_heroB:"主标题高亮词",lbl_heroP:"主副标题",lbl_badge:"免费徽章文字",btn_save:"💾 保存修改",btn_reset:"重置",btn_liveedit:"✏️ 在网站上实时编辑任意文字",hint_pricing:"💡 价格与支付金额此处不可编辑 — 需与 Stripe 保持同步以确保收费正确。想改价请告诉我，我会安全地同步更新。",t_preview:"网站实时预览",btn_fs:"⛶ 全屏",btn_newtab:"↗ 新标签页打开",show_all:"显示全部 {n} 位会员 ▾",show_less:"收起 ▴",msg_expand:"点击展开 / 收起完整消息",th_act:"操作",act_reply:"✉️ 回复",act_fwd:"↗ 转发",cp_sec:"账户安全",cp_title:"修改密码",cp_cur:"当前密码",cp_new:"新密码",cp_new2:"确认新密码",cp_btn:"更新密码",pw_hint:"至少 8 位，包含大写字母、小写字母和数字。",cp_ok:"密码已更新 ✓",cp_wrong:"当前密码不正确",cp_weak:"新密码不符合要求",cp_mismatch:"两次输入的新密码不一致",cp_same:"新密码必须与当前密码不同",t_codes:"折扣码",t_codes_sub:"· 创建折扣码，用于推广活动，并查看成效",lbl_code:"折扣码",lbl_pct:"折扣百分比",lbl_note:"活动备注（仅你可见）",lbl_max:"最多可用次数",lbl_starts:"开始日期",lbl_expires:"结束日期",btn_addcode:"＋ 创建折扣码",hint_codes:"💡 百分比折扣码无需额外设置即可适用于全部五种货币。只有在付款真正成功后才计入使用次数，因此放弃结账不会消耗限量折扣码。已被使用过的折扣码只会被停用而不会删除，以保留活动收入记录。",th_code:"折扣码",th_pct:"折扣",th_note:"活动",th_uses:"已使用",th_earned:"收入（约美元）",th_window:"有效期",th_state:"状态"},
+"zh-TW":{badge_admin:"🔐 超級管理員",signout:"登出",login_h:"管理員登入",login_p:"受限區域 — 僅超級管理員可存取。",ph_email:"管理員電郵",ph_pw:"密碼",btn_signin:"登入",t_overview:"即時概覽",s_members:"註冊會員",s_shots:"已生成頭像",s_credits:"未使用點數",s_refs:"推薦獎勵",t_biz:"業務儀表板",lbl_from:"從",lbl_to:"至",lbl_cost:"每張 AI 圖片成本（美元）",btn_apply:"套用",btn_export:"⬇ 匯出用戶 CSV",btn_export_em:"✉️ 匯出電郵",b_reg:"註冊帳戶",b_conf:"電郵已驗證",b_unconf:"電郵未驗證",b_pay:"付費會員",b_ret:"回訪會員（活躍 2 天以上）",b_rev:"區間收入（約美元）",b_tok:"區間 AI 成本（估算，美元）",b_net:"區間淨利潤（約美元）",th_email:"電郵",th_name:"姓名",th_conf:"已驗證",th_credits:"點數",th_shots:"生成數",th_spent:"消費（約美元）",th_ret:"回訪",th_joined:"註冊日期",th_last:"最近活躍",t_members:"最新會員",th_refcode:"推薦碼",th_refs:"推薦人數",t_msgs:"聯絡訊息",t_msgs_sub:"· 來自網站的詢價、回饋與問題",th_date:"日期",th_topic:"主題",th_msg:"訊息",t_edit:"編輯行銷內容",t_edit_sub:"· 修改即時生效，無需部署",lbl_annOn:"在網站頂部顯示公告橫幅",lbl_ann:"公告文字",lbl_heroA:"主標題（醒目詞之前）",lbl_heroB:"主標題醒目詞",lbl_heroP:"主副標題",lbl_badge:"免費徽章文字",btn_save:"💾 儲存修改",btn_reset:"重設",btn_liveedit:"✏️ 在網站上即時編輯任意文字",hint_pricing:"💡 價格與付款金額此處不可編輯 — 需與 Stripe 保持同步以確保收費正確。想改價請告訴我，我會安全地同步更新。",t_preview:"網站即時預覽",btn_fs:"⛶ 全螢幕",btn_newtab:"↗ 新分頁開啟",show_all:"顯示全部 {n} 位會員 ▾",show_less:"收起 ▴",msg_expand:"點擊展開 / 收起完整訊息",th_act:"操作",act_reply:"✉️ 回覆",act_fwd:"↗ 轉寄",cp_sec:"帳戶安全",cp_title:"修改密碼",cp_cur:"目前密碼",cp_new:"新密碼",cp_new2:"確認新密碼",cp_btn:"更新密碼",pw_hint:"至少 8 位，包含大寫字母、小寫字母和數字。",cp_ok:"密碼已更新 ✓",cp_wrong:"目前密碼不正確",cp_weak:"新密碼不符合要求",cp_mismatch:"兩次輸入的新密碼不一致",cp_same:"新密碼必須與目前密碼不同",t_codes:"折扣碼",t_codes_sub:"· 建立折扣碼，用於推廣活動，並查看成效",lbl_code:"折扣碼",lbl_pct:"折扣百分比",lbl_note:"活動備註（僅你可見）",lbl_max:"最多可用次數",lbl_starts:"開始日期",lbl_expires:"結束日期",btn_addcode:"＋ 建立折扣碼",hint_codes:"💡 百分比折扣碼無需額外設定即可適用於全部五種貨幣。只有在付款真正成功後才計入使用次數，因此放棄結帳不會消耗限量折扣碼。已被使用過的折扣碼只會被停用而不會刪除，以保留活動收入記錄。",th_code:"折扣碼",th_pct:"折扣",th_note:"活動",th_uses:"已使用",th_earned:"收入（約美元）",th_window:"有效期",th_state:"狀態"}};
 let ALANG=localStorage.getItem('sgsAdminLang')||(function(){const l=(navigator.language||'').toLowerCase();
   if(l.startsWith('zh')) return (l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh'; return 'en';})();
 const AT=k=>(AL[ALANG]&&AL[ALANG][k])||AL.en[k]||k;
@@ -256,7 +281,78 @@ async function enterDash(){
   if(!session || session.user.email!==ADMIN_EMAIL){ return; }
   show('login',false); show('dash',true); show('signoutBtn',true);
   document.getElementById('whoami').textContent=session.user.email;
-  loadStats(); loadContent(); loadMessages(); loadBiz();
+  loadStats(); loadContent(); loadMessages(); loadBiz(); loadCodes();
+}
+
+/* ---------- Discount codes ----------
+   Everything goes through /api/admin-codes rather than writing to Supabase from
+   here, so the rules the admin page enforces are literally the same code that
+   validates a code at checkout. A code this page accepted but the checkout
+   rejects is the worst thing that can happen in the middle of a campaign. */
+/* esc() is already defined further down for the messages table — reused here. */
+async function codesApi(payload){
+  const r=await fetch('/api/admin-codes',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:session.access_token,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error||('HTTP '+r.status));
+  return j;
+}
+async function loadCodes(){
+  const tb=document.getElementById('codeRows'); if(!tb) return;
+  try{
+    const {codes}=await codesApi({action:'list'});
+    if(!codes||!codes.length){ tb.innerHTML='<tr><td colspan="8" style="color:#8fa6b3">No discount codes yet — create one above.</td></tr>'; return; }
+    const d=s=>s?String(s).slice(0,10):'';
+    tb.innerHTML=codes.map(c=>{
+      const win=[d(c.starts_at),d(c.expires_at)].filter(Boolean).join(' → ')||'always';
+      const cap=c.max_uses?`${c.stats.uses} / ${c.max_uses}`:String(c.stats.uses);
+      const expired=c.expires_at&&Date.now()>Date.parse(c.expires_at);
+      const state=!c.active?'<span style="color:#b42318;font-weight:700">off</span>'
+        :expired?'<span style="color:#b8860b;font-weight:700">expired</span>'
+        :'<span style="color:#178a52;font-weight:700">live</span>';
+      return `<tr>
+        <td><b style="letter-spacing:.05em">${esc(c.code)}</b></td>
+        <td>${c.percent_off}%</td>
+        <td style="color:#5c7688">${esc(c.label)||'—'}</td>
+        <td>${cap}</td>
+        <td>${c.stats.revenue?('$'+c.stats.revenue.toFixed(2)):'—'}</td>
+        <td style="color:#5c7688;white-space:nowrap">${esc(win)}</td>
+        <td>${state}</td>
+        <td style="white-space:nowrap">
+          <button class="btn dark" style="padding:5px 10px;font-size:11.5px" onclick="copyCode('${esc(c.code)}')">Copy link</button>
+          <button class="btn dark" style="padding:5px 10px;font-size:11.5px" onclick="toggleCode('${esc(c.code)}',${!c.active})">${c.active?'Turn off':'Turn on'}</button>
+          <button class="btn dark" style="padding:5px 10px;font-size:11.5px;color:#b42318" onclick="deleteCode('${esc(c.code)}')">Delete</button>
+        </td></tr>`;
+    }).join('');
+  }catch(e){ tb.innerHTML='<tr><td colspan="8" style="color:#b42318">Could not load codes: '+esc(e.message)+'</td></tr>'; }
+}
+async function createCode(){
+  const note=document.getElementById('ncNote');
+  const code=document.getElementById('ncCode').value.trim();
+  const percent=document.getElementById('ncPct').value;
+  try{
+    await codesApi({action:'create',code,percent,
+      label:document.getElementById('ncLabel').value.trim(),
+      maxUses:document.getElementById('ncMax').value||null,
+      startsAt:document.getElementById('ncStart').value||null,
+      expiresAt:document.getElementById('ncEnd').value||null});
+    note.textContent='Created ✓'; toast(code.toUpperCase()+' is live');
+    ['ncCode','ncLabel','ncMax','ncStart','ncEnd'].forEach(id=>document.getElementById(id).value='');
+    loadCodes();
+  }catch(e){ note.textContent=''; toast(e.message); }
+}
+async function toggleCode(code,active){ try{ await codesApi({action:'toggle',code,active}); loadCodes(); }catch(e){ toast(e.message); } }
+async function deleteCode(code){
+  // Irreversible for an unused code, so it asks first — same principle as photo
+  // deletion on the member side.
+  if(!confirm(`Delete ${code}?\n\nThis cannot be undone. If the code has already been used it will be switched off instead, so your campaign revenue stays attributable.`)) return;
+  try{ const r=await codesApi({action:'delete',code}); toast(r.deactivated?(code+' had been used — switched off instead'):(code+' deleted')); loadCodes(); }
+  catch(e){ toast(e.message); }
+}
+function copyCode(code){
+  // A ready-to-paste campaign link beats making you assemble the URL by hand.
+  const url=location.origin+'/?code='+encodeURIComponent(code)+'#pricing';
+  navigator.clipboard.writeText(url).then(()=>toast('Campaign link copied'),()=>toast(url));
 }
 
 /* ---------- Business dashboard ---------- */

@@ -2,6 +2,11 @@
 // Env: STRIPE_WEBHOOK_SECRET, SUPABASE_SECRET_KEY.
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 
+// Photo credits paid to the referrer when a referred friend first buys.
+// 30 photo credits convert into one free shoot, so this is 3 referrals = 1 shoot.
+// Keep in step with the same constant in referral.js.
+const PHOTOS_PER_REFERRAL = 10;
+
 async function verify(payload, sigHeader, secret) {
   const parts = Object.fromEntries((sigHeader || "").split(",").map(kv => kv.split("=")));
   const t = parts.t, v1 = parts.v1;
@@ -39,7 +44,8 @@ export async function onRequest(context) {
       });
       const inserted = rec.ok ? await rec.json() : [];
       // only credit the account when this event hasn't been processed before
-      if (!rec.ok || (Array.isArray(inserted) && inserted.length > 0)) {
+      const firstTime = !rec.ok || (Array.isArray(inserted) && inserted.length > 0);
+      if (firstTime) {
         const g = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${uid}&select=credits`, { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` } });
         const rows = g.ok ? await g.json() : [];
         const cur = rows[0]?.credits ?? 0;
@@ -48,6 +54,43 @@ export async function onRequest(context) {
           headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify({ credits: cur + add }),
         });
+      }
+
+      /* ---- Referral payout ----
+         This is the moment a referral becomes real: the friend has paid, so the
+         referrer earns their photo credits. Doing it here rather than at signup
+         is what makes the programme un-farmable — a fake account costs an
+         attacker nothing, a completed Stripe payment does not.
+
+         sgs_award_referral only pays a referral still marked 'pending' and flips
+         it in the same statement, so Stripe's at-least-once delivery cannot pay
+         the same referral twice even if this runs concurrently with a retry. It
+         is therefore safe to call unconditionally: a second purchase by the same
+         friend simply finds nothing pending and does nothing. */
+      try {
+        await fetch(`${SB_URL}/rest/v1/rpc/sgs_award_referral`, {
+          method: "POST",
+          headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_referred: uid, p_photo_credits: PHOTOS_PER_REFERRAL }),
+        });
+      } catch {}
+
+      /* ---- Discount redemption ----
+         Recorded only now, on a successful payment. Counting a redemption when
+         the code was merely typed would let an abandoned checkout burn a
+         limited-use campaign code. Keyed on session_id, so retries are no-ops. */
+      const dcode = s.metadata?.discount_code;
+      if (firstTime && dcode) {
+        try {
+          await fetch(`${SB_URL}/rest/v1/rpc/sgs_redeem_discount`, {
+            method: "POST",
+            headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              p_code: dcode, p_user: uid, p_session: s.id,
+              p_percent: parseInt(s.metadata?.discount_percent || "0", 10) || 0,
+            }),
+          });
+        } catch {}
       }
     }
   }

@@ -1,5 +1,8 @@
 // Summy Garden Studio — create a Stripe Checkout Session.
-// Env: STRIPE_SECRET_KEY. Verifies the Supabase session so credits land on the right account.
+// Env: STRIPE_SECRET_KEY, SUPABASE_SECRET_KEY (the latter only for discount codes).
+// Verifies the Supabase session so credits land on the right account.
+import { checkCode } from "./discount.js";
+
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
@@ -68,6 +71,17 @@ export async function onRequest(context) {
   const user = await sbUser(token);
   if (!user?.id) return Response.json({ error: "sign in required" }, { status: 401, headers });
 
+  /* The discount is re-validated here rather than trusted from the browser. The
+     price the customer was shown is only a preview; this is the number Stripe
+     actually charges, so it has to come from the database on every session. */
+  stage = "discount";
+  let disc = null;
+  if (body.discount) {
+    const chk = await checkCode(env, body.discount, user.id);
+    if (!chk.ok) return Response.json({ error: "invalid discount code", reason: chk.reason }, { status: 400, headers });
+    disc = chk;
+  }
+
   const origin = req.headers.get("origin") || "https://summygarden.com";
   const form = new URLSearchParams();
   form.set("mode", "payment");
@@ -82,6 +96,36 @@ export async function onRequest(context) {
   form.set("line_items[0][price_data][currency]", cur);
   form.set("line_items[0][price_data][unit_amount]", String(P[cur]));
   form.set("line_items[0][price_data][product_data][name]", `Summy Garden Studio — ${pack} pack (${P.credits} credits)`);
+
+  /* Apply the discount as a Stripe coupon rather than by quietly lowering
+     unit_amount. Stripe then shows the customer the full price with the discount
+     itemised beneath it — which is both more persuasive and what the receipt and
+     your Stripe reporting need in order to attribute revenue to a campaign. The
+     coupon is created per session and marked once-redeemable so it cannot leak
+     and be reused outside the campaign. */
+  if (disc) {
+    stage = "coupon";
+    const cf = new URLSearchParams();
+    cf.set("percent_off", String(disc.percent));
+    cf.set("duration", "once");
+    cf.set("name", `${disc.code} — ${disc.percent}% off`);
+    cf.set("max_redemptions", "1");
+    cf.set("metadata[code]", disc.code);
+    const cr = await fetchT("https://api.stripe.com/v1/coupons", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: cf.toString(),
+    }, 15000);
+    const cd = await cr.json().catch(() => ({}));
+    if (!cr.ok || !cd.id) {
+      return Response.json({ error: cd?.error?.message || "could not apply that code", stage }, { status: 502, headers });
+    }
+    form.set("discounts[0][coupon]", cd.id);
+    // Carried through to the webhook so the redemption is recorded against the
+    // code only when the payment actually succeeds.
+    form.set("metadata[discount_code]", disc.code);
+    form.set("metadata[discount_percent]", String(disc.percent));
+  }
   // payment_method_types is deliberately NOT set. Omitting it makes Stripe Checkout
   // offer exactly the methods enabled in the dashboard, so nothing breaks when one
   // is switched on or off. (Hardcoding ["card","alipay"] failed every session with

@@ -97,8 +97,15 @@ nav{position:sticky;top:0;z-index:50;background:rgba(6,44,69,.85);backdrop-filte
 .lang-sel option{color:#111827}
 .cat-sel{width:100%;color:#fff;border:none;border-radius:12px;padding:13px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:2px;background:linear-gradient(rgba(8,48,72,.6),rgba(8,48,72,.6)) padding-box,var(--grad-brand) border-box;border:2px solid transparent;box-shadow:0 0 0 rgba(56,189,248,.5);animation:sceneGlow 2.2s ease-in-out infinite;appearance:none;background-repeat:no-repeat;background-position:right 14px center,0 0;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>"),linear-gradient(rgba(8,48,72,.6),rgba(8,48,72,.6)),var(--grad-brand)}
 @keyframes sceneGlow{0%,100%{box-shadow:0 0 0 0 rgba(56,189,248,.0)}50%{box-shadow:0 0 16px 2px rgba(56,189,248,.55)}}
-.scene-hint{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#7dd3fc;margin:8px 0 2px}
-.scene-hint .pin{animation:pinBounce 1.4s ease-in-out infinite}
+/* Nothing is ticked when the page loads, so this line is the only thing telling
+   the customer what to do next. It was 12.5px and easy to skim past; it now
+   reads as a proper instruction — larger, white, on a tinted band. */
+.scene-hint{display:flex;align-items:center;gap:9px;font-size:15px;line-height:1.45;font-weight:700;
+  color:#fff;margin:10px 0 4px;padding:11px 14px;border-radius:12px;
+  background:linear-gradient(120deg,rgba(56,189,248,.16),rgba(74,222,128,.1));
+  box-shadow:inset 0 0 0 1px rgba(56,189,248,.32)}
+.scene-hint .pin{font-size:18px;flex:0 0 auto;animation:pinBounce 1.4s ease-in-out infinite}
+@media(max-width:600px){.scene-hint{font-size:14px;padding:10px 12px}}
 .scene-note{font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.5);margin:2px 0 8px}
 .up-actions{display:flex;gap:10px;margin-top:12px}
 .up-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:rgba(255,255,255,.08);color:#fff;font-weight:700;font-size:13px;border-radius:12px;padding:11px 10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:.15s}
@@ -176,23 +183,34 @@ header.hero{position:relative;overflow:hidden;background:var(--bg-deep);color:#f
 .btn-ghost:hover{background:rgba(255,255,255,.1)}
 /* ---- Trust bar, before/after, FAQ ---- */
 /* ---- Animated "how to take your photos" guide (SVG, no video file) ---- */
-.how-banner{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 24px;cursor:pointer;
-  border:0;border-radius:15px;padding:14px 18px;text-align:left;font-family:inherit;
-  background:linear-gradient(120deg,rgba(56,189,248,.18),rgba(74,222,128,.14));
-  box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.42);transition:.18s}
-.how-banner:hover{transform:translateY(-1px);
-  background:linear-gradient(120deg,rgba(56,189,248,.28),rgba(74,222,128,.2));
-  box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.7), 0 10px 24px rgba(56,189,248,.18)}
-.hb-ico{font-size:22px;flex:0 0 auto;line-height:1}
+/* This banner is the first thing a customer should read, and upload quality is
+   the single biggest factor in whether the result looks like them — so it is
+   deliberately loud: a full brand-gradient border, a brighter fill and a slow
+   breathing glow that catches the eye without flashing. */
+.how-banner{display:flex;align-items:center;gap:15px;width:100%;margin:0 0 24px;cursor:pointer;
+  border:2px solid transparent;border-radius:16px;padding:16px 18px;text-align:left;font-family:inherit;
+  background:linear-gradient(120deg,rgba(56,189,248,.3),rgba(74,222,128,.22)) padding-box,
+             var(--grad-brand) border-box;
+  animation:howGlow 2.6s ease-in-out infinite;transition:.18s}
+@keyframes howGlow{0%,100%{box-shadow:0 0 0 0 rgba(56,189,248,0)}50%{box-shadow:0 0 20px 2px rgba(56,189,248,.5)}}
+.how-banner:hover{transform:translateY(-1px);animation:none;
+  background:linear-gradient(120deg,rgba(56,189,248,.42),rgba(74,222,128,.3)) padding-box,
+             var(--grad-brand) border-box;
+  box-shadow:0 10px 26px rgba(56,189,248,.28)}
+.hb-ico{font-size:26px;flex:0 0 auto;line-height:1;animation:pinBounce 1.8s ease-in-out infinite}
 .hb-txt{flex:1;min-width:0}
-.hb-txt b{display:block;color:#fff;font-size:15px;font-weight:800;letter-spacing:-.01em}
-.hb-txt i{display:block;font-style:normal;color:rgba(255,255,255,.62);font-size:12.5px;margin-top:2px}
-.hb-go{flex:0 0 auto;color:var(--accent-bright);font-size:19px;font-weight:900;transition:.18s}
+.hb-txt b{display:block;color:#fff;font-size:17px;font-weight:800;letter-spacing:-.01em}
+.hb-txt i{display:block;font-style:normal;color:rgba(255,255,255,.82);font-size:13.5px;margin-top:3px}
+.hb-go{flex:0 0 auto;color:#fff;font-size:20px;font-weight:900;transition:.18s;
+  width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  background:var(--grad-brand);box-shadow:0 2px 10px rgba(56,189,248,.45)}
 .how-banner:hover .hb-go{transform:translateX(3px)}
 @media(max-width:600px){
-  .how-banner{gap:11px;padding:12px 14px;margin-bottom:18px}
-  .hb-txt b{font-size:14px}
-  .hb-txt i{font-size:11.5px}
+  .how-banner{gap:12px;padding:14px;margin-bottom:18px}
+  .hb-ico{font-size:23px}
+  .hb-txt b{font-size:15.5px}
+  .hb-txt i{font-size:12.5px}
+  .hb-go{width:28px;height:28px;font-size:17px}
 }
 .how-stage{background:#08202e;border-radius:14px;padding:18px;margin-bottom:14px}
 .how-svg{width:100%;height:auto;display:block;border-radius:10px;background:linear-gradient(160deg,#0a2433,#0d2b3c)}
@@ -1870,7 +1888,9 @@ async function composeVariant(bg, person, extra){
    Customers pick THEMES (up to 6), not individual photos. The studio then chooses
    the strongest scenes inside each theme and splits the 30 shots between them. */
 const MAX_THEMES=6;
-let selectedCats=[studioCat];
+/* No theme ticked on load either. studioCat stays as a harmless default for the
+   scene-library strip; it does not mean the theme is selected. */
+let selectedCats=[];
 const catLabel=cat=>{ try{ return TX('c'+(CATEGORIES.indexOf(cat)+1))||cat; }catch(e){ return cat; } };
 function renderCatChecks(){
   const el=document.getElementById('catChecks'); if(!el) return;
@@ -1896,8 +1916,7 @@ function renderCatChecks(){
 function toggleCat(cat){
   const i=selectedCats.indexOf(cat);
   if(i>=0){
-    if(selectedCats.length===1) return;                 // always keep at least one
-    selectedCats.splice(i,1);
+    selectedCats.splice(i,1);   // a second click always unticks, including the last one
     // Drop this theme's scenes; the customer's other picks are untouched.
     selectedBgs=selectedBgs.filter(id=>{ const b=bgById(id); return b && b.cat!==cat; });
   } else {
@@ -1907,7 +1926,7 @@ function toggleCat(cat){
     // A newly ticked theme contributes no scenes until the customer picks some
     // from the grid below.
   }
-  studioCat=selectedCats[0];
+  studioCat=selectedCats[0]||studioCat;   // keep a sane default when nothing is ticked
   syncScenesFromThemes();
   if(selectedBgs.length) selectedBg=selectedBgs[0];
   renderCatChecks(); renderSwatches();
@@ -2105,7 +2124,7 @@ function selectBg(id,opts={}){
     if(selectedBgs.length>=SCENES_PER_SHOOT) selectedBgs.pop();
     selectedBgs.unshift(id);
   }
-  studioCat=selectedCats[0]; syncScenesFromThemes(); renderCatChecks();
+  studioCat=selectedCats[0]||studioCat; syncScenesFromThemes(); renderCatChecks();
   const b=bgById(id);
   if(!opts.fromStudio){ studioCat=b.cat; renderCatStrip(); }
   renderSwatches();

@@ -200,6 +200,19 @@ header.hero{position:relative;overflow:hidden;background:var(--bg-deep);color:#f
 .how-cap b{display:block;font-size:15.5px;color:#0b1f2b;margin-bottom:5px}
 .how-cap span{font-size:13.5px;color:#51707f;line-height:1.55}
 /* Paired wrong/right examples for the photo guide. */
+/* Step arrows, vertically centred over the example photos. The dots alone
+   worked but asked the customer to aim at an 8px target; these are the obvious
+   way to move through a sequence. */
+.how-view{position:relative}
+.how-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;
+  width:38px;height:38px;border:0;border-radius:50%;cursor:pointer;
+  background:rgba(8,32,46,.62);color:#fff;font-size:24px;line-height:1;
+  display:grid;place-items:center;padding:0 0 3px;font-family:inherit;
+  backdrop-filter:blur(4px);box-shadow:0 2px 10px rgba(0,0,0,.3);transition:.15s;opacity:.82}
+.how-nav:hover{background:rgba(8,32,46,.88);opacity:1;transform:translateY(-50%) scale(1.07)}
+.how-nav.prev{left:9px}
+.how-nav.next{right:9px}
+@media(hover:none) and (pointer:coarse){ .how-nav{width:44px;height:44px;opacity:.9} }
 .how-pairs{display:none}
 .how-pairs.on{display:block;margin-bottom:4px}
 /* Stacked, not side by side: the examples are landscape (and step 3 is a
@@ -918,9 +931,13 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
          Images live in /guide/ as 01-bad.jpg / 01-good.jpg … 05-*.jpg. Any that
          are missing fall back to the animated diagram below, so the guide keeps
          working whether or not the photos have been produced yet. -->
-    <div class="how-pairs" id="howPairs"></div>
-    <div class="how-stage" id="howStage">
-      <svg class="how-svg" id="howSvg" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="how-view">
+      <div class="how-pairs" id="howPairs"></div>
+      <div class="how-stage" id="howStage">
+        <svg class="how-svg" id="howSvg" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <button type="button" class="how-nav prev" onclick="howPrev()" aria-label="Previous">‹</button>
+      <button type="button" class="how-nav next" onclick="howNext()" aria-label="Next">›</button>
     </div>
     <div class="how-cap" id="howCap"></div>
     <div class="how-dots" id="howDots"></div>
@@ -2978,7 +2995,9 @@ function howRender(){
   const d=document.getElementById('howDots');
   if(d) d.innerHTML=Array.from({length:HOW_N},(_,i)=>'<div class="how-dot'+(i===howStep?' on':'')+'" onclick="howGo('+i+')"></div>').join('');
 }
-function howGo(i){ howStep=i%HOW_N; howRender(); howPlay(); }
+function howGo(i){ howStep=((i%HOW_N)+HOW_N)%HOW_N; howRender(); howPlay(); }
+function howPrev(){ howGo(howStep-1); }
+function howNext(){ howGo(howStep+1); }
 function howPlay(){ clearInterval(howTimer); howTimer=setInterval(()=>{ howStep=(howStep+1)%HOW_N; howRender(); },4200); }
 function openHow(){ howStep=0; howProbeImages(); howRender(); howPlay(); openModal('howModal'); }
 try{ renderTrust(); renderLegal(); }catch(e){}

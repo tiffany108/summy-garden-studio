@@ -1263,8 +1263,13 @@ async function getSceneImg(bg){
   catch(e){ sceneCache[bg.id]=await loadImg(bg.image); }
   return sceneCache[bg.id];
 }
+/* /api/sample answers with Cache-Control: immutable, max-age=1 year, so the
+   browser will not re-request a tile whose URL has not changed. Regenerating an
+   image server-side is therefore invisible — the browser simply never asks
+   again. Bump SAMPLE_V whenever tiles are re-rendered. */
+const SAMPLE_V='2';
 function aiSampleURL(bg,i){
-  return '/api/sample?kind=p&i='+i;
+  return '/api/sample?kind=p&i='+i+'&v='+SAMPLE_V;
 }
 
 /* ---------- Storage & membership ---------- */
@@ -2134,7 +2139,7 @@ let outfitFilter='all';
 /* OPTSPECIAL (the "Auto"/"Original" outfit tiles and the "Match my photo" pose and
    expression tiles) went with the look panel. "Match my photo" is now the permanent,
    unconditional behaviour rather than one option among several. */
-function optImg(kind,i){ return '/api/sample?kind='+kind+'&i='+i; }
+function optImg(kind,i){ return '/api/sample?kind='+kind+'&i='+i+'&v='+SAMPLE_V; }
 function retryOpt(el){ const n=(+el.dataset.r||0)+1; el.dataset.r=n; if(n>3){el.parentElement.classList.add('noimg');el.remove();return;} const src=el.src; el.removeAttribute('src'); setTimeout(()=>{el.src=src;},5000*n); }
 
 /* ---------- Scene plan preview ----------

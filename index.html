@@ -2953,10 +2953,15 @@ function howScene(i){
    is missing the animated diagram is used for that step instead, so the guide is
    never broken by images that do not exist yet. */
 const HOW_IMG_DIR='/guide/';
+/* Bump when a guide image is replaced. The filenames stay the same, so without
+   this the browser and Cloudflare's edge keep serving the previous copy and a
+   swapped image appears not to have taken effect. */
+const HOW_IMG_V='2';
 let _howHasImg={};
 function howImgPair(i){
   const n=String(i+1).padStart(2,'0');
-  return [HOW_IMG_DIR+n+'-bad.jpg', HOW_IMG_DIR+n+'-good.jpg'];
+  const q='?v='+HOW_IMG_V;
+  return [HOW_IMG_DIR+n+'-bad.jpg'+q, HOW_IMG_DIR+n+'-good.jpg'+q];
 }
 function howProbeImages(){
   for(let i=0;i<HOW_N;i++){

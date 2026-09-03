@@ -11,8 +11,9 @@ const apiFor = (m) => `https://generativelanguage.googleapis.com/v1beta/models/$
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
-// 30 renders per credit. Variety comes from LIGHTING and CAMERA POSITION only —
-// never from changing the face — so every shot still looks like the same person.
+// 30 renders per credit. Variety comes from LIGHTING, CAMERA ANGLE and WHERE IN
+// THE SCENE the subject stands — never from changing the face — so every shot
+// still looks like the same person.
 const LIGHTS = [
   "even, soft studio key light with a large softbox",
   "soft north-facing window light from camera left",
@@ -29,6 +30,19 @@ const ANGLES = [
   "camera at eye level, straight on",
   "camera a touch above eye level, flattering downward angle",
   "camera at eye level with a very slight lateral offset",
+];
+/* Where in the setting the subject stands. Without this, every photo of a given
+   scene was framed identically and only the light changed, so five shots of
+   "Downtown Morning" looked like one photo relit five times. Varying the vantage
+   makes them read as different corners of the same location — which is what a
+   photographer moving around a real place would produce. */
+const VANTAGES = [
+  "standing in the foreground with the setting opening up behind them",
+  "positioned slightly left of centre, the setting receding to the right",
+  "positioned slightly right of centre, the setting receding to the left",
+  "framed against a quieter corner of the setting with less background detail",
+  "framed with a distinctive architectural feature of the setting behind them",
+  "set a little deeper into the scene so more of the location is visible",
 ];
 const VARIANTS = Array.from({ length: LIGHTS.length * ANGLES.length }, (_, i) =>
   `${LIGHTS[i % LIGHTS.length]}, ${ANGLES[Math.floor(i / LIGHTS.length) % ANGLES.length]}`
@@ -284,6 +298,9 @@ export async function onRequest(context) {
     .slice(0, 2)
     .map((r) => ({ mime_type: r.slice(5, r.indexOf(";")), data: r.split(",")[1] }));
   const lightByVariant = VARIANTS[vi] || VARIANTS[0];
+  // Rotate the vantage independently of the light/angle pair, so photos that
+  // share a scene differ in where the subject stands as well as how it is lit.
+  const vantage = VANTAGES[vi % VANTAGES.length];
   const nRefs = refImgs.length;
   const refLine = nRefs
     ? `You are given ${nRefs + 1} photographs of the SAME person from different angles. Use ALL of them together to build an accurate understanding of this individual's face. The FIRST image is the primary reference for framing. `
@@ -301,6 +318,7 @@ export async function onRequest(context) {
     `Now, WITHOUT altering any of the above, re-photograph this person as a professional headshot. ` +
     `Change only the clothing, the background and the lighting. Dress them in ${outfitDesc}. ` +
     `Background: ${scene || "a modern office"} (${category || "professional"} setting), softly blurred with shallow depth of field. ` +
+    `Vary the framing within that setting: the subject is ${vantage}. ` +
     `The person is ${poseDesc}, with ${exprDesc}. ` +
     // 4. Retouching limited to what a photographer does with light and grading — not facial edits.
     `Grade and light it like a high-end studio photographer: ${styleDesc}. ${lightByVariant}. Even, flattering key light with a soft catchlight in the eyes, balanced colour, and a clean natural complexion achieved through lighting rather than by editing the skin. Reduce only transient shine and stray flyaway hairs. Keep every permanent feature. ` +

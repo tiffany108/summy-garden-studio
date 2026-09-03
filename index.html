@@ -264,27 +264,16 @@ section{padding:72px 0}
 .cat-chk.full{opacity:.45}
 .cat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:11.5px;font-weight:700;color:var(--accent)}
 .sc-reset{color:var(--accent-bright);cursor:pointer;text-decoration:underline;font-weight:700}
-/* Expandable per-theme scene picker: every scene in the theme, with its thumbnail. */
-.cat-wrap{display:contents}
-.cat-wrap.open{display:block}
+/* Theme row: name, plus a badge counting how many of its backgrounds are in the shoot. */
 .cat-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cat-exp{background:rgba(255,255,255,.1);color:#fff;border:0;border-radius:8px;padding:3px 7px;font-size:10.5px;
-  font-weight:700;cursor:pointer;flex:0 0 auto;line-height:1.4;transition:.15s;font-family:inherit}
-.cat-exp:hover{background:rgba(255,255,255,.2)}
-.cat-exp.open{background:var(--grad-brand);color:#04263a}
-.cat-exp b{font-weight:900}
-.sc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:7px;
-  margin:7px 0 4px;padding:9px;border-radius:11px;background:rgba(255,255,255,.045);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
-.sc-chip{position:relative;border:0;padding:0;background:none;cursor:pointer;border-radius:9px;overflow:hidden;
-  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14);transition:.15s;font-family:inherit}
-.sc-chip:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.32)}
-.sc-chip img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:rgba(255,255,255,.05)}
-.sc-chip span{display:block;padding:4px 5px;font-size:9.5px;font-weight:700;color:#fff;line-height:1.3;
-  background:rgba(6,44,69,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sc-chip.sel{box-shadow:0 0 0 2.5px var(--accent-bright),0 6px 14px rgba(56,189,248,.36)}
-.sc-chip.sel::after{content:'✓';position:absolute;top:5px;right:5px;width:19px;height:19px;border-radius:50%;
-  background:var(--grad-brand);color:#04263a;font-size:11px;font-weight:900;display:grid;place-items:center}
+.cat-cnt{background:var(--grad-brand);color:#04263a;border-radius:999px;min-width:19px;height:19px;padding:0 6px;
+  font-size:10.5px;font-weight:900;display:grid;place-items:center;flex:0 0 auto}
+/* Scene grid below: every background in the chosen themes, selected ones highlighted. */
+.sw-head{grid-column:1/-1;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);margin:8px 0 -2px}
+.sw-head:first-child{margin-top:2px}
+.swatch.off{opacity:.42;filter:saturate(.55)}
+.swatch.off:hover{opacity:.9;filter:none}
 .swatch{aspect-ratio:1/1;border-radius:12px;cursor:pointer;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:.15s;background-size:cover;background-position:center}
 .swatch:hover{transform:translateY(-2px)}
 .swatch.active{box-shadow:0 0 0 2.5px var(--accent-bright), 0 6px 14px rgba(56,189,248,.4)}
@@ -1785,25 +1774,15 @@ function renderCatChecks(){
         (scenesTouched?' · <a class="sc-reset" onclick="resetScenes()">'+T('sc_auto','auto')+'</a>':'')+
       '</span></div>'+
     CATEGORIES.map(cat=>{
+      /* The count is a plain badge, not a button. An earlier version expanded a
+         second scene list here, but the swatch grid below now shows every
+         background in the chosen themes and is itself selectable — two pickers
+         for the same job was just confusing. */
       const on=selectedCats.includes(cat);
-      const open=openThemes.has(cat);
-      const mine=BACKGROUNDS.filter(b=>b.cat===cat);
-      const used=mine.filter(b=>selectedBgs.includes(b.id)).length;
-      let h='<div class="cat-wrap'+(open?' open':'')+'" style="grid-column:'+(open?'1/-1':'auto')+'">'+
-        '<div class="cat-chk'+(on?' on':(full?' full':''))+'" onclick="toggleCat('+q(cat)+')">'+
-          '<span class="box"></span><span class="cat-nm">'+catLabel(cat)+'</span>'+
-          (on?'<button class="cat-exp'+(open?' open':'')+'" title="'+T('sc_pick_one','Choose scenes')+'" '+
-              'onclick="toggleThemeScenes('+q(cat)+',event)">'+(used?'<b>'+used+'</b>':'')+' ▾</button>':'')+
-        '</div>';
-      if(on&&open){
-        h+='<div class="sc-list">'+mine.map(b=>{
-          const sel=selectedBgs.includes(b.id);
-          return '<button class="sc-chip'+(sel?' sel':'')+'" onclick="toggleScene('+q(b.id)+',event)">'+
-                 '<img loading="lazy" src="'+aiSampleURL(b,bgIndex(b.id))+'" onerror="retryOpt(this)" alt="">'+
-                 '<span>'+xl(bgName(b))+'</span></button>';
-        }).join('')+'</div>';
-      }
-      return h+'</div>';
+      const used=BACKGROUNDS.filter(b=>b.cat===cat&&selectedBgs.includes(b.id)).length;
+      return '<div class="cat-chk'+(on?' on':(full?' full':''))+'" onclick="toggleCat('+q(cat)+')">'+
+             '<span class="box"></span><span class="cat-nm">'+catLabel(cat)+'</span>'+
+             (on&&used?'<span class="cat-cnt">'+used+'</span>':'')+'</div>';
     }).join('');
 }
 function toggleCat(cat){
@@ -1811,7 +1790,6 @@ function toggleCat(cat){
   if(i>=0){
     if(selectedCats.length===1) return;                 // always keep at least one
     selectedCats.splice(i,1);
-    openThemes.delete(cat);
     if(scenesTouched){
       // Manual mode: drop only this theme's scenes, keep the rest of their picks.
       selectedBgs=selectedBgs.filter(id=>{ const b=bgById(id); return b && b.cat!==cat; });
@@ -1821,7 +1799,8 @@ function toggleCat(cat){
     if(selectedCats.length>=MAX_THEMES){ toast(TX('th_max').replace('{m}',MAX_THEMES)); return; }
     selectedCats.push(cat);
     // In manual mode a new theme starts empty; the customer opens it and picks.
-    if(scenesTouched) openThemes.add(cat);
+    // In manual mode a newly ticked theme contributes no scenes until the
+    // customer picks some from the grid below.
   }
   studioCat=selectedCats[0];
   syncScenesFromThemes();
@@ -1858,12 +1837,6 @@ function syncScenesFromThemes(){
    manual mode, so the automatic spread stops overwriting the customer's picks.
    Without this, 4 of every 10 scenes were unreachable — 100 scenes advertised,
    about 60 actually obtainable. */
-let openThemes=new Set();
-function toggleThemeScenes(cat,ev){
-  if(ev) ev.stopPropagation();
-  if(openThemes.has(cat)) openThemes.delete(cat); else openThemes.add(cat);
-  renderCatChecks();
-}
 function toggleScene(id,ev){
   if(ev) ev.stopPropagation();
   const i=selectedBgs.indexOf(id);
@@ -1894,16 +1867,31 @@ function resetScenes(){
   if(typeof updateCombo==='function') updateCombo();
 }
 function renderCatStrip(){ renderCatChecks(); }
+/* Every background in the chosen themes, not just the six we suggested.
+   Previously this rendered only the already-selected scenes and marked all of
+   them active, so clicking a thumbnail changed nothing visible — it looked like
+   a picker that did not work. Now the whole theme is shown, the suggested ones
+   are ticked, and clicking any thumbnail selects or deselects it. */
 function renderSwatches(){
-  const grid=document.getElementById('swatchGrid'); grid.innerHTML='';
-  BACKGROUNDS.filter(b=>selectedBgs.includes(b.id)).forEach(b=>{
-    const sw=document.createElement('div');
-    const pos=selectedBgs.indexOf(b.id);
-    sw.className='swatch'+(pos>=0?' active':'');
-    if(pos>=0) sw.dataset.n=pos+1;
-    sw.style.backgroundImage=`url("${aiSampleURL(b,bgIndex(b.id))}"), url("${b.image}")`; sw.title=bgName(b);
-    sw.onclick=()=>{ selectedBg=b.id; renderSelInfo(); updateCombo(); };
-    grid.appendChild(sw);
+  const grid=document.getElementById('swatchGrid'); if(!grid) return;
+  grid.innerHTML='';
+  const multi=selectedCats.length>1;
+  selectedCats.forEach(cat=>{
+    if(multi){
+      const h=document.createElement('div');
+      h.className='sw-head'; h.textContent=catLabel(cat);
+      grid.appendChild(h);
+    }
+    BACKGROUNDS.filter(b=>b.cat===cat).forEach(b=>{
+      const on=selectedBgs.includes(b.id);
+      const sw=document.createElement('div');
+      sw.className='swatch'+(on?' active':' off');
+      if(on) sw.dataset.n=selectedBgs.indexOf(b.id)+1;
+      sw.style.backgroundImage=`url("${aiSampleURL(b,bgIndex(b.id))}"), url("${b.image}")`;
+      sw.title=bgName(b);
+      sw.onclick=()=>toggleScene(b.id);
+      grid.appendChild(sw);
+    });
   });
   renderSelInfo();
 }

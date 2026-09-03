@@ -335,9 +335,13 @@ export async function onRequest(context) {
     // 4. Retouching limited to what a photographer does with light and grading — not facial edits.
     `Grade and light it like a high-end studio photographer: ${styleDesc}. ${lightByVariant}. Even, flattering key light with a soft catchlight in the eyes, balanced colour, and a clean natural complexion achieved through lighting rather than by editing the skin. Reduce only transient shine and stray flyaway hairs. Keep every permanent feature. ` +
     `${frameDesc}, photorealistic, 85mm portrait lens, shot on a full-frame camera, sharp focus on the eyes, natural skin texture retained, high-end professional photography. Not an illustration, not a painting, not AI-smoothed. ` +
-    // Image models invent signage and captions unprompted; one sample tile came
-    // back with a hallucinated "Summy Garden Studio" across it. The real watermark
-    // is drawn on the canvas afterwards and removed on download.
+    // Two things the model adds unprompted. (1) Props: it reads the scene as an
+    // activity and hands the subject equipment — a tennis scene produced a suited
+    // man holding a racket with a towel over his shoulder. The customer is posing
+    // for a headshot, not playing. (2) Text: one tile came back with a hallucinated
+    // "Summy Garden Studio" across it. Our real watermark is drawn on the canvas
+    // afterwards and removed on download.
+    `The location is only a blurred backdrop: they are posing for a portrait, NOT taking part in any activity. Empty hands — no props, no equipment, no racket, no ball, no bag, no towel, no cup, no book, no phone, nothing held or carried and nothing draped over the shoulder. ` +
     `No text, no lettering, no words, no watermark, no logo, no signage and no captions anywhere in the image.`;
 
   try {

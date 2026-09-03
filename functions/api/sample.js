@@ -145,20 +145,15 @@ const OPT = {
 function buildPrompt(kind, i) {
   if (kind === "p") {
     const m = META[i];
-    /* Attire has to follow the setting. This previously ended "professional attire"
-       for every scene, which put a business suit on a tennis court and a boardroom
-       jacket in a café — incoherent sample tiles that undersell the scene.
-       Also an explicit no-text negative: image models like to invent signage, and
-       one tile came back with "Summy Garden Studio" hallucinated across it. */
-    const ATTIRE = {
-      "sports & tennis": "smart athletic sportswear appropriate for a tennis club, no suit jacket",
-      "caf\u00e9 & canteen": "smart-casual professional clothing",
-      "campus & library": "smart-casual professional clothing",
-      "park & garden": "smart business-casual clothing",
-      "lakeside": "smart business-casual clothing",
-    };
-    const attire = ATTIRE[m.c.toLowerCase()] || "professional business attire";
-    return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, wearing ${attire}. Absolutely no text, no lettering, no words, no watermark, no logo, no signage and no captions anywhere in the image.`;
+    /* The scene is a BACKDROP, not an activity. Left to itself the model infers the
+       activity from the location and hands the subject props — a tennis court
+       produced a man in a business suit holding a racket with a towel over his
+       shoulder. The scene descriptions never mention props; the model invents them.
+       Business attire is correct everywhere (a headshot in a suit at a tennis club
+       is fine); what breaks the photo is the racket. Hence an explicit no-props
+       rule, plus a no-text rule — one tile came back with "Summy Garden Studio"
+       hallucinated across it. */
+    return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, professional business attire. The location is only a blurred backdrop: the subject is posing for a portrait, NOT taking part in any activity. Empty hands — no props, no equipment, no racket, no ball, no bag, no towel, no cup, no book, no phone, nothing held or carried and nothing draped over the shoulder. No text, no lettering, no words, no watermark, no logo, no signage and no captions anywhere in the image.`;
   }
   if (kind === "b") { const m = META[i]; return `Empty professional photography backdrop: ${m.n.toLowerCase()} (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, absolutely no people, photorealistic, soft bokeh, shallow depth of field.`; }
   const set = OPT[kind]; if (!set || !set[i]) return null;

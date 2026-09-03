@@ -334,7 +334,11 @@ export async function onRequest(context) {
     `The person is ${poseDesc}, with ${exprDesc}. ` +
     // 4. Retouching limited to what a photographer does with light and grading — not facial edits.
     `Grade and light it like a high-end studio photographer: ${styleDesc}. ${lightByVariant}. Even, flattering key light with a soft catchlight in the eyes, balanced colour, and a clean natural complexion achieved through lighting rather than by editing the skin. Reduce only transient shine and stray flyaway hairs. Keep every permanent feature. ` +
-    `${frameDesc}, photorealistic, 85mm portrait lens, shot on a full-frame camera, sharp focus on the eyes, natural skin texture retained, high-end professional photography. Not an illustration, not a painting, not AI-smoothed.`;
+    `${frameDesc}, photorealistic, 85mm portrait lens, shot on a full-frame camera, sharp focus on the eyes, natural skin texture retained, high-end professional photography. Not an illustration, not a painting, not AI-smoothed. ` +
+    // Image models invent signage and captions unprompted; one sample tile came
+    // back with a hallucinated "Summy Garden Studio" across it. The real watermark
+    // is drawn on the canvas afterwards and removed on download.
+    `No text, no lettering, no words, no watermark, no logo, no signage and no captions anywhere in the image.`;
 
   try {
     const model = quality === "pro" ? MODEL_PRO : MODEL_STD;

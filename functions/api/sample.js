@@ -143,7 +143,23 @@ const OPT = {
 };
 
 function buildPrompt(kind, i) {
-  if (kind === "p") { const m = META[i]; return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, professional attire.`; }
+  if (kind === "p") {
+    const m = META[i];
+    /* Attire has to follow the setting. This previously ended "professional attire"
+       for every scene, which put a business suit on a tennis court and a boardroom
+       jacket in a café — incoherent sample tiles that undersell the scene.
+       Also an explicit no-text negative: image models like to invent signage, and
+       one tile came back with "Summy Garden Studio" hallucinated across it. */
+    const ATTIRE = {
+      "sports & tennis": "smart athletic sportswear appropriate for a tennis club, no suit jacket",
+      "caf\u00e9 & canteen": "smart-casual professional clothing",
+      "campus & library": "smart-casual professional clothing",
+      "park & garden": "smart business-casual clothing",
+      "lakeside": "smart business-casual clothing",
+    };
+    const attire = ATTIRE[m.c.toLowerCase()] || "professional business attire";
+    return `Professional corporate headshot photograph of ${SUBJECTS[i % 6]}, ${m.n.toLowerCase()} setting (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, photorealistic, 85mm portrait lens, shallow depth of field, looking at camera, head and shoulders, wearing ${attire}. Absolutely no text, no lettering, no words, no watermark, no logo, no signage and no captions anywhere in the image.`;
+  }
   if (kind === "b") { const m = META[i]; return `Empty professional photography backdrop: ${m.n.toLowerCase()} (${m.c.toLowerCase()}), ${m.d.toLowerCase().replace(/\./g,"")}, absolutely no people, photorealistic, soft bokeh, shallow depth of field.`; }
   const set = OPT[kind]; if (!set || !set[i]) return null;
   return set[i][1] + ", photorealistic, high quality, soft professional lighting.";
@@ -155,8 +171,15 @@ export async function onRequest(context) {
   const kind = ["p","b","style","outfit","pose","expr","osp"].includes(url.searchParams.get("kind")) ? url.searchParams.get("kind") : "p";
   const maxI = kind === "p" || kind === "b" ? META.length : (OPT[kind] ? OPT[kind].length : 1);
   const i = Math.min(Math.max(parseInt(url.searchParams.get("i") || "0", 10) || 0, 0), maxI - 1);
+  /* Scene tiles are cached in R2 and served immutable for a year, so a prompt
+     change does NOT alter images already generated. Bump SCENE_V to force the
+     scene tiles (kinds p and b) to be regenerated the next time each is viewed.
+     That costs roughly $0.039 per tile — about $3.90 for all 100 — billed as
+     visitors browse, so only bump it when you actually want to pay for a refresh. */
+  const SCENE_V = 1;
   const ver = (kind !== "p" && kind !== "b" && OPT[kind] && OPT[kind][i] && OPT[kind][i][2]) ? "-" + OPT[kind][i][2] : "";
-  const key = `${kind}-${i}${ver}`;
+  const sv = (kind === "p" || kind === "b") && SCENE_V > 1 ? `-v${SCENE_V}` : "";
+  const key = `${kind}-${i}${ver}${sv}`;
   const obj = await env.GALLERY.get(key);
   let buf = obj ? await obj.arrayBuffer() : null;
   if (!buf) {

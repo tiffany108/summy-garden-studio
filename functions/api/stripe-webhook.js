@@ -91,6 +91,32 @@ export async function onRequest(context) {
             }),
           });
         } catch {}
+
+        /* ---- Partner commission ----
+           If that code belongs to a sales partner, record what they earned. The
+           base is amount_total — what the customer ACTUALLY paid after their
+           discount — so a partner can never raise their own commission by
+           discounting harder, and what we owe is always a share of money we
+           genuinely received.
+
+           sgs_record_commission decides everything (is this a partner code, at
+           what rate, minus self-purchases) and is idempotent on session_id, so a
+           replayed Stripe event cannot pay twice. An ordinary campaign code
+           simply matches no partner and writes nothing. */
+        try {
+          await fetch(`${SB_URL}/rest/v1/rpc/sgs_record_commission`, {
+            method: "POST",
+            headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              p_code: dcode,
+              p_session: s.id,
+              p_customer: uid,
+              p_pack: s.metadata?.pack || "",
+              p_amount: (s.amount_total ?? 0) / 100,
+              p_currency: s.currency || "usd",
+            }),
+          });
+        } catch {}
       }
     }
   }

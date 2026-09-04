@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partner Portal · Summy Garden Studio</title>
+<!-- A private dashboard, never a search result. -->
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
+  --accent:#0284c7;--bg-deep:#062c45;--ink:#0c1c26;--muted:#54707e;--body:#eef6fb;
+  --card:0 1px 2px rgba(7,44,69,.05),0 8px 20px rgba(7,44,69,.08),inset 0 0 0 1px rgba(7,44,69,.05);
+  --glow:0 8px 22px rgba(14,165,233,.38);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--body);color:var(--ink);line-height:1.55}
+.wrap{max-width:1000px;margin:0 auto;padding:26px 22px}
+h1,h2,h3{letter-spacing:-.02em}
+button{font-family:inherit;border:none;cursor:pointer}
+.top{background:var(--bg-deep);color:#fff;padding:15px 0}
+.top .wrap{display:flex;align-items:center;gap:14px;padding-top:0;padding-bottom:0;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;color:#fff;text-decoration:none}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);box-shadow:var(--glow);display:grid;place-items:center}
+.top .sp{flex:1}
+.badge-p{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700}
+.btn{background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:10px;padding:9px 16px;box-shadow:var(--glow)}
+.btn.ghost{background:rgba(255,255,255,.09);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.btn.dark{background:#eef0f4;color:#334;box-shadow:none}
+#login{max-width:420px;margin:64px auto;background:#fff;border-radius:18px;box-shadow:var(--card);padding:34px;text-align:center}
+#login .logo-mark{margin:0 auto 16px;width:52px;height:52px;border-radius:15px;font-size:22px}
+#login h2{font-size:22px;margin-bottom:6px}
+#login p{color:var(--muted);font-size:14px;margin-bottom:20px}
+input,select{width:100%;padding:12px 15px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14.5px;margin-bottom:11px;outline:none;color:var(--ink)}
+input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
+#login .btn{width:100%;justify-content:center;padding:13px}
+.msg{font-size:13px;font-weight:600;color:#c0392b;margin-top:12px;min-height:18px}
+.sec{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:26px 0 13px}
+.card{background:#fff;border-radius:16px;box-shadow:var(--card);padding:22px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.stat{background:#fff;border-radius:15px;box-shadow:var(--card);padding:18px 20px}
+.stat b{display:block;font-size:26px;font-weight:800;letter-spacing:-.02em}
+.stat span{font-size:12px;color:var(--muted)}
+.stat i{display:block;font-style:normal;font-size:11px;color:#8fa6b3;margin-top:3px;line-height:1.4}
+.codebox{background:linear-gradient(120deg,#eaf6fd,#e8fbf1);border-radius:14px;padding:16px 18px;box-shadow:inset 0 0 0 1px rgba(7,44,69,.08);margin-bottom:16px}
+.codebox small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.codebox .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.codebox code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;font-weight:800;letter-spacing:.14em;color:#0b3a52;user-select:all}
+.filters{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px}
+.filters label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px}
+.filters input{width:auto;margin:0}
+.quick{display:flex;gap:7px;flex-wrap:wrap}
+.quick button{background:#eef0f4;color:#334;font-size:12px;font-weight:700;border-radius:8px;padding:8px 12px}
+.quick button.on{background:var(--grad-brand);color:#fff;box-shadow:var(--glow)}
+canvas{width:100%;height:280px;display:block}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid #e6edf2}
+td{padding:10px;border-bottom:1px solid #f0f4f7}
+.pill{font-size:11px;font-weight:800;border-radius:999px;padding:3px 9px}
+.pill.pending{background:#fff3d6;color:#8a6d1a}
+.pill.confirmed{background:#e7f6ee;color:#178a52}
+.pill.paid{background:#e8eefc;color:#31489c}
+.hint{background:#fff8e1;color:#8a6d1a;border-radius:12px;padding:13px 16px;font-size:13px;line-height:1.6;margin-top:14px}
+.empty{font-size:13.5px;color:var(--muted);text-align:center;padding:26px}
+@media(max-width:640px){.wrap{padding:20px 16px}.codebox code{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <a class="logo" href="/"><span class="logo-mark">◆</span> Summy Garden Studio</a>
+  <span class="badge-p">🤝 Partner</span>
+  <span class="sp"></span>
+  <span id="whoami" style="font-size:13px;opacity:.85"></span>
+  <button class="btn ghost" id="outBtn" onclick="signOut()" style="display:none">Sign out</button>
+</div></div>
+
+<div class="wrap">
+  <div id="login">
+    <div class="logo-mark">🤝</div>
+    <h2>Partner sign in</h2>
+    <p>For Summy Garden Studio sales partners and creators.</p>
+    <input type="email" id="email" placeholder="Your email" autocomplete="username">
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+    <button class="btn" onclick="doLogin()">Sign in</button>
+    <div class="msg" id="msg"></div>
+    <p style="font-size:12px;color:#8fa6b3;margin:16px 0 0">
+      Not a partner yet? <a href="/#join" style="color:var(--accent);font-weight:600">Apply to join</a>.
+    </p>
+  </div>
+
+  <div id="dash" style="display:none">
+    <div class="codebox">
+      <small>Your code — customers get 20% off with it</small>
+      <div class="row">
+        <code id="pCode">––––––</code>
+        <button class="btn dark" onclick="copyCode()" id="copyBtn">Copy code</button>
+        <button class="btn dark" onclick="copyLink()" id="copyLinkBtn">Copy share link</button>
+        <span style="font-size:12.5px;color:var(--muted)" id="rateLine"></span>
+      </div>
+    </div>
+
+    <div class="sec">Your earnings</div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="filters">
+        <div><label for="from">From</label><input type="date" id="from"></div>
+        <div><label for="to">To</label><input type="date" id="to"></div>
+        <button class="btn" onclick="load()">Apply</button>
+        <div class="quick" id="quick">
+          <button data-d="7">7 days</button>
+          <button data-d="30" class="on">30 days</button>
+          <button data-d="90">90 days</button>
+          <button data-d="365">1 year</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats" style="margin-bottom:18px">
+      <div class="stat"><b id="sSales">–</b><span>customers used your code</span></div>
+      <div class="stat"><b id="sEarned">–</b><span>earned in this period</span><i>≈US$, all statuses</i></div>
+      <div class="stat"><b id="sPending">–</b><span>pending</span><i>confirms 30 days after each sale</i></div>
+      <div class="stat"><b id="sConfirmed">–</b><span>ready to be paid</span></div>
+      <div class="stat"><b id="sPaid">–</b><span>already paid to you</span></div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+        <b style="font-size:15px">Over time</b>
+        <div class="quick">
+          <button id="mEarn" class="on" onclick="setMetric('earned')">Earnings</button>
+          <button id="mSales" onclick="setMetric('sales')">Customers</button>
+        </div>
+      </div>
+      <canvas id="chart"></canvas>
+      <div class="empty" id="chartEmpty" style="display:none">No activity in this period yet.</div>
+    </div>
+
+    <div class="sec">Recent sales</div>
+    <div class="card" style="overflow-x:auto">
+      <table><thead><tr><th>Date</th><th>Pack</th><th>Customer paid</th><th>You earned</th><th>Status</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table>
+      <div class="hint">
+        <b>How this works.</b> You earn a share of what the customer actually pays, after their discount.
+        Each sale shows as <b>pending</b> for 30 days while the customer's quality guarantee runs, then becomes
+        <b>ready to be paid</b>. Payouts are made by transfer — we will be in touch to arrange them.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
+const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+let session=null, me=null, DATA=null, metric='earned';
+
+const $=id=>document.getElementById(id);
+const show=(id,on)=>{const e=$(id); if(e) e.style.display=on?'':'none';};
+const money=n=>'$'+(Number(n)||0).toFixed(2);
+
+async function doLogin(){
+  const email=$('email').value.trim().toLowerCase(), pw=$('pw').value;
+  $('msg').textContent='';
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error){ $('msg').textContent=error.message; return; }
+  session=data.session; $('pw').value='';
+  await enter();
+}
+async function signOut(){ await sb.auth.signOut(); session=null; location.reload(); }
+
+async function api(payload){
+  const r=await fetch('/api/partner',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:session.access_token,...payload})});
+  return await r.json().catch(()=>({}));
+}
+
+async function enter(){
+  const who=await api({action:'me'});
+  if(!who.partner){
+    /* A signed-in customer who is not a partner lands here. Say so plainly and
+       send them somewhere useful rather than showing an empty dashboard. */
+    $('msg').innerHTML='This account is not a partner account. '+
+      '<a href="/#join" style="color:var(--accent)">Apply to join</a>, or '+
+      '<a href="/" style="color:var(--accent)">go to the studio</a>.';
+    await sb.auth.signOut(); session=null; return;
+  }
+  me=who;
+  show('login',false); show('dash',true); show('outBtn',true);
+  $('whoami').textContent=who.name||'';
+  $('pCode').textContent=who.code;
+  $('rateLine').textContent='You earn '+who.rate+'% of what each customer pays';
+  quickRange(30);
+  await load();
+}
+
+function quickRange(days){
+  const to=new Date(), from=new Date(Date.now()-(days-1)*86400000);
+  $('to').value=to.toISOString().slice(0,10);
+  $('from').value=from.toISOString().slice(0,10);
+  document.querySelectorAll('#quick button').forEach(b=>b.classList.toggle('on',+b.dataset.d===days));
+}
+document.querySelectorAll('#quick button').forEach(b=>b.onclick=()=>{ quickRange(+b.dataset.d); load(); });
+
+async function load(){
+  const d=await api({action:'stats', from:$('from').value, to:$('to').value});
+  if(!d || d.partner===false) return;
+  DATA=d;
+  const t=d.totals||{};
+  $('sSales').textContent=t.sales||0;
+  $('sEarned').textContent=money(t.earnedUSD);
+  $('sPending').textContent=money(t.pendingUSD);
+  $('sConfirmed').textContent=money(t.confirmedUSD);
+  $('sPaid').textContent=money(t.paidUSD);
+  drawChart();
+  drawRows();
+}
+
+function setMetric(m){
+  metric=m;
+  $('mEarn').classList.toggle('on',m==='earned');
+  $('mSales').classList.toggle('on',m==='sales');
+  drawChart();
+}
+
+/* Drawn by hand rather than pulling in a charting library: it is one series over
+   time, and a 200KB dependency for that would slow the page more than it helps.
+   Redraws on resize so it stays sharp on any width. */
+function drawChart(){
+  const c=$('chart'); if(!c||!DATA) return;
+  const s=DATA.series||[];
+  const any=s.some(p=>(metric==='earned'?p.earned:p.sales)>0);
+  show('chartEmpty',!any); c.style.display=any?'block':'none';
+  if(!any) return;
+
+  const dpr=window.devicePixelRatio||1;
+  const W=c.clientWidth, H=280;
+  c.width=W*dpr; c.height=H*dpr;
+  const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+  x.clearRect(0,0,W,H);
+
+  const padL=52, padR=14, padT=16, padB=30;
+  const w=W-padL-padR, h=H-padT-padB;
+  const vals=s.map(p=>metric==='earned'?p.earned:p.sales);
+  const max=Math.max(...vals,metric==='earned'?10:4);
+  const nice=Math.ceil(max/4)*4;
+
+  // Grid + axis labels
+  x.strokeStyle='#e6edf2'; x.fillStyle='#8fa6b3'; x.font='11px Inter,system-ui,sans-serif'; x.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=padT+h-(h*i/4);
+    x.beginPath(); x.moveTo(padL,y); x.lineTo(padL+w,y); x.stroke();
+    const v=nice*i/4;
+    x.textAlign='right'; x.fillText(metric==='earned'?('$'+v.toFixed(0)):String(Math.round(v)), padL-8, y+4);
+  }
+
+  const px=i=>padL+(s.length<2?w/2:w*i/(s.length-1));
+  const py=v=>padT+h-(h*(v/nice));
+
+  // Filled area under the line, for weight
+  const g=x.createLinearGradient(0,padT,0,padT+h);
+  g.addColorStop(0,'rgba(56,189,248,.28)'); g.addColorStop(1,'rgba(56,189,248,0)');
+  x.beginPath(); x.moveTo(px(0),py(vals[0]));
+  vals.forEach((v,i)=>x.lineTo(px(i),py(v)));
+  x.lineTo(px(vals.length-1),padT+h); x.lineTo(px(0),padT+h); x.closePath();
+  x.fillStyle=g; x.fill();
+
+  x.beginPath(); x.moveTo(px(0),py(vals[0]));
+  vals.forEach((v,i)=>x.lineTo(px(i),py(v)));
+  x.strokeStyle='#0284c7'; x.lineWidth=2.5; x.lineJoin='round'; x.stroke();
+
+  // Points, but only when there are few enough to read
+  if(s.length<=62){
+    vals.forEach((v,i)=>{ if(v<=0) return;
+      x.beginPath(); x.arc(px(i),py(v),3.5,0,Math.PI*2);
+      x.fillStyle='#0284c7'; x.fill();
+      x.strokeStyle='#fff'; x.lineWidth=2; x.stroke(); });
+  }
+
+  // Date labels: about six, evenly spaced, never overlapping
+  x.fillStyle='#8fa6b3'; x.textAlign='center';
+  const step=Math.max(1,Math.ceil(s.length/6));
+  s.forEach((p,i)=>{ if(i%step && i!==s.length-1) return;
+    x.fillText(p.date.slice(5), px(i), padT+h+18); });
+}
+window.addEventListener('resize',()=>{ try{ drawChart(); }catch(e){} });
+
+const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PACK={Starter:'Essential',Pro:'Professional','Career+':'Studio'};
+const LABEL={pending:'pending',confirmed:'ready to pay',paid:'paid'};
+
+function drawRows(){
+  const tb=$('rows'); const rows=(DATA&&DATA.rows)||[];
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="empty">No sales in this period yet.</td></tr>'; return; }
+  /* Amounts are shown in the currency the customer actually paid in — converting
+     everything to dollars in this table would misreport what happened. The
+     headline figures above are the ≈US$ roll-up. */
+  tb.innerHTML=rows.map(r=>`<tr>
+    <td style="white-space:nowrap">${esc(r.date)}</td>
+    <td>${esc(PACK[r.pack]||r.pack||'—')}</td>
+    <td style="color:var(--muted)">${esc(r.currency)} ${r.paid.toFixed(2)}</td>
+    <td><b>${esc(r.currency)} ${r.earned.toFixed(2)}</b></td>
+    <td><span class="pill ${esc(r.status)}">${esc(LABEL[r.status]||r.status)}</span></td></tr>`).join('');
+}
+
+function copyCode(){ copy(me.code, 'copyBtn', 'Copied ✓'); }
+function copyLink(){ copy(location.origin+'/?code='+encodeURIComponent(me.code)+'#pricing', 'copyLinkBtn', 'Copied ✓'); }
+function copy(text, btnId, label){
+  const b=$(btnId); const restore=b.dataset.o||b.textContent; b.dataset.o=restore;
+  const done=()=>{ b.textContent=label; setTimeout(()=>b.textContent=restore,1800); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done,done);
+  else done();
+}
+
+sb.auth.getSession().then(({data})=>{ session=data.session; if(session) enter(); });
+</script>
+</body>
+</html>

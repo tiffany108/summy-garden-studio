@@ -23,6 +23,12 @@ const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 const ADMIN_EMAIL = "tiffany123@hotmail.com.hk";
 const SITE = "https://summygarden.com";
 
+/* Photo credits given for a first review, whatever the rating. Same unit a
+   referral pays in: 30 photo credits convert into one free shoot, so this is a
+   thank-you rather than a payment. Deliberately NOT tied to the Trustpilot
+   invitation — see the note at the award site below. */
+const REVIEW_REWARD = 5;
+
 function fetchT(url, opts, ms) {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), ms);
@@ -160,6 +166,12 @@ async function submit(env, body, headers) {
     token,
   };
 
+  /* Is this their FIRST review? Checked before the write, because the reward
+     below must be payable exactly once — otherwise editing a review repeatedly
+     becomes a way to mint credits. */
+  const existing = await jget(await svc(env, `/rest/v1/reviews?user_id=eq.${user.id}&select=user_id&limit=1`));
+  const isFirst = !(Array.isArray(existing) && existing.length);
+
   // One review per member: re-submitting replaces theirs and returns to pending.
   const r = await svc(env, "/rest/v1/reviews?on_conflict=user_id", {
     method: "POST",
@@ -171,10 +183,31 @@ async function submit(env, body, headers) {
     return Response.json({ error: `could not save: ${t.slice(0, 160)}` }, { status: 502, headers });
   }
 
+  /* Thank-you credits for taking the time. Paid for ANY rating — a reward that
+     only arrived for five stars would be buying praise rather than feedback, and
+     the reviews it produced would be worthless to you and misleading to readers.
+     Paid on the FIRST review only, and paid for the on-site review alone: the
+     Trustpilot invitation carries no reward, because incentivised reviews breach
+     Trustpilot's guidelines and get removed along with, potentially, the whole
+     business profile. Customers are told about this reward before they submit,
+     and approved reviews carry a visible note that credits were given. */
+  let awarded = 0;
+  if (isFirst) {
+    try {
+      const p = await jget(await svc(env, `/rest/v1/profiles?id=eq.${user.id}&select=photo_credits`));
+      const cur = (Array.isArray(p) && p[0] && p[0].photo_credits) || 0;
+      const up = await svc(env, `/rest/v1/profiles?id=eq.${user.id}`, {
+        method: "PATCH", headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ photo_credits: cur + REVIEW_REWARD }),
+      });
+      if (up.ok) awarded = REVIEW_REWARD;
+    } catch {}
+  }
+
   // Tell the owner. Best effort — a mail hiccup must not lose the review.
   try { await notify(env, row, user.email); } catch {}
 
-  return Response.json({ saved: true, status: "pending" }, { status: 200, headers });
+  return Response.json({ saved: true, status: "pending", awarded }, { status: 200, headers });
 }
 
 async function notify(env, row, customerEmail) {

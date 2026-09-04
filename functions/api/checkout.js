@@ -110,6 +110,13 @@ export async function onRequest(context) {
     cf.set("duration", "once");
     cf.set("name", `${disc.code} — ${disc.percent}% off`);
     cf.set("max_redemptions", "1");
+    /* Self-destruct after 24 hours. A coupon object is created for every checkout
+       attempt, and most checkouts are abandoned — without an expiry the Stripe
+       account slowly fills with thousands of dead single-use coupons that can
+       never be cleaned up in bulk. A day is far longer than anyone spends on a
+       payment page, and it caps the window in which an abandoned session's
+       coupon id could be reused. */
+    cf.set("redeem_by", String(Math.floor(Date.now() / 1000) + 86400));
     cf.set("metadata[code]", disc.code);
     const cr = await fetchT("https://api.stripe.com/v1/coupons", {
       method: "POST",

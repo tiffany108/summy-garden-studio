@@ -8,6 +8,7 @@
 // mid-campaign.
 //
 // Env: SUPABASE_SECRET_KEY.
+import { mfaValid } from "./admin-mfa.js";
 
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
@@ -64,6 +65,12 @@ export async function onRequest(context) {
   try { body = await req.json(); } catch {}
   const admin = await adminVerify(body.token);
   if (!admin) return Response.json({ error: "admin only" }, { status: 403, headers });
+  /* Second factor, enforced server-side for the same reason as admin-stats: a
+     code screen that only hides the UI still leaves this endpoint — which can
+     create money-off codes — reachable with just the password. */
+  if (!(await mfaValid(env, admin.id, body.mfa))) {
+    return Response.json({ error: "mfa required", mfa: true }, { status: 401, headers });
+  }
 
   const action = body.action || "list";
   try {

@@ -3,6 +3,8 @@
 // service key (bypasses RLS): all auth users (email + confirmation status),
 // profiles, generation timestamps and purchases.
 // Env: SUPABASE_SECRET_KEY.
+import { mfaValid } from "./admin-mfa.js";
+
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 const ADMIN_EMAIL = "tiffany123@hotmail.com.hk";
@@ -48,6 +50,13 @@ export async function onRequest(context) {
   if (!body.token) return Response.json({ error: "sign in required" }, { status: 401, headers });
   const caller = await sbVerify(body.token);
   if (!caller?.email || caller.email !== ADMIN_EMAIL) return Response.json({ error: "admin only" }, { status: 403, headers });
+  /* Second factor. Checked HERE and not only in the browser: hiding the
+     dashboard behind a code screen would leave this endpoint answering a direct
+     request made with nothing but the password session, which is exactly the
+     attack MFA is supposed to stop. */
+  if (!(await mfaValid(env, caller.id, body.mfa))) {
+    return Response.json({ error: "mfa required", mfa: true }, { status: 401, headers });
+  }
 
   const svc = { apikey: key, Authorization: `Bearer ${key}` };
   const get = async (url) => { const r = await fetch(url, { headers: svc }); return r.ok ? await r.json() : null; };

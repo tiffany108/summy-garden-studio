@@ -48,12 +48,22 @@ async function adminVerify(token) {
   return { id: p.sub, email: p.email };
 }
 
+/* Never let an upstream call hang the Worker. An unbounded fetch is what turns a
+   slow dependency into a Cloudflare 502 with an HTML body — which swallows every
+   error message this file tries to return and makes the failure undiagnosable.
+   checkout.js learned this the hard way; this file should have started with it. */
+function fetchT(url, opts, ms) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), ms);
+  return fetch(url, { ...opts, signal: c.signal }).finally(() => clearTimeout(t));
+}
+
 function svc(env, path, opts = {}) {
   const key = env.SUPABASE_SECRET_KEY;
-  return fetch(`${SB_URL}${path}`, {
+  return fetchT(`${SB_URL}${path}`, {
     ...opts,
     headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(opts.headers || {}) },
-  });
+  }, 10000);
 }
 const jget = async (r) => (r.ok ? await r.json().catch(() => null) : null);
 
@@ -169,7 +179,9 @@ async function send(env, req, admin, headers) {
 
   const from = env.EMAIL_FROM || "Summy Garden Studio <onboarding@resend.dev>";
   const when = new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC";
-  const mail = await fetch("https://api.resend.com/emails", {
+  let mail;
+  try {
+    mail = await fetchT("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -185,10 +197,18 @@ async function send(env, req, admin, headers) {
         `<p style="font-size:13px;color:#b42318;margin:12px 0 0"><b>If you did not just try to sign in, change your admin password immediately</b> — somebody else has it. Requested ${when}${ip ? ` from ${ip}` : ""}.</p>` +
         `</div>`,
     }),
-  });
+    }, 12000);
+  } catch (e) {
+    // Aborted or refused. Answering with a real message beats letting Cloudflare
+    // return an HTML 502 that hides everything.
+    const why = e?.name === "AbortError"
+      ? "email failed: Resend did not respond within 12 seconds"
+      : `email failed: ${String(e?.message || e).slice(0, 200)}`;
+    return Response.json({ error: why }, { status: 502, headers });
+  }
   if (!mail.ok) {
     const t = await mail.text().catch(() => "");
-    return Response.json({ error: `email failed: ${t.slice(0, 200)}` }, { status: 502, headers });
+    return Response.json({ error: `email failed: HTTP ${mail.status} ${t.slice(0, 220)}` }, { status: 502, headers });
   }
 
   // Opportunistic cleanup; never allowed to affect the response.

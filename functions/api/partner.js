@@ -61,6 +61,50 @@ async function sbVerify(token) {
 // YYYY-MM-DD, or null. Anything else is ignored rather than trusted into a query.
 const day = (s) => (/^\d{4}-\d{2}-\d{2}$/.test(String(s || "")) ? String(s) : null);
 
+/* Show only the last four characters of an account. Enough for the partner to
+   recognise which account is on file, useless to anyone reading over a shoulder
+   or scrolling a screen recording. */
+function mask(v) {
+  const t = String(v || "").trim();
+  if (!t) return "";
+  if (t.includes("@")) {                       // a PayPal address
+    const [u, d] = t.split("@");
+    return (u.slice(0, 2) || "") + "•••@" + (d || "");
+  }
+  return t.length <= 4 ? "••••" : "•••• " + t.slice(-4);
+}
+
+/* Payment details are written by the partner, for themselves, and only these
+   fields. Commission, code and active state are protected in the database by a
+   trigger as well — this list is the first of two defences, not the only one. */
+async function saveDetails(env, user, body, headers) {
+  const t = (v, n) => String(v || "").trim().slice(0, n);
+  const method = ["bank", "paypal", "fps", "other"].includes(body.payout_method) ? body.payout_method : "";
+  const patch = {
+    real_name: t(body.real_name, 120),
+    phone: t(body.phone, 40),
+    address: t(body.address, 300),
+    channel_url: t(body.channel_url, 300),
+    payout_method: method,
+    payout_name: t(body.payout_name, 120),
+    payout_bank: t(body.payout_bank, 120),
+  };
+  // Only overwrite the account when a new one is actually supplied, so saving
+  // the form without retyping it does not wipe what is on file.
+  const detail = t(body.payout_detail, 120);
+  if (detail) patch.payout_detail = detail;
+
+  const r = await svc(env, `/rest/v1/partners?user_id=eq.${user.id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(patch),
+  });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => "");
+    return Response.json({ error: `could not save: ${txt.slice(0, 160)}` }, { status: 502, headers });
+  }
+  return Response.json({ saved: true, masked: mask(detail || "") }, { status: 200, headers });
+}
+
 export async function onRequest(context) {
   const { request: req, env } = context;
   const headers = {
@@ -79,7 +123,7 @@ export async function onRequest(context) {
   if (!user) return Response.json({ error: "sign in required" }, { status: 401, headers });
 
   const prows = await jget(await svc(env,
-    `/rest/v1/partners?user_id=eq.${user.id}&select=name,code,commission,kind,active&limit=1`));
+    `/rest/v1/partners?user_id=eq.${user.id}&select=*&limit=1`));
   const partner = Array.isArray(prows) && prows[0];
   if (!partner || !partner.active) {
     // Deliberately not "you are not a partner": this endpoint should not tell a
@@ -91,8 +135,21 @@ export async function onRequest(context) {
     return Response.json({
       partner: true, name: partner.name || user.name,
       code: partner.code, rate: partner.commission, kind: partner.kind,
+      details: {
+        real_name: partner.real_name || "", phone: partner.phone || "",
+        address: partner.address || "", channel_url: partner.channel_url || "",
+        payout_method: partner.payout_method || "", payout_name: partner.payout_name || "",
+        payout_bank: partner.payout_bank || "",
+        /* The account itself is returned MASKED. A partner needs to confirm the
+           right account is on file, not to read the number back — and a portal
+           that prints full bank details is one shoulder-surf from a problem. */
+        payout_detail_masked: mask(partner.payout_detail || ""),
+        has_payout: !!(partner.payout_detail || "").trim(),
+      },
     }, { status: 200, headers });
   }
+
+  if (body.action === "details") return await saveDetails(env, user, body, headers);
 
   try {
     return await stats(env, user, partner, body, headers);

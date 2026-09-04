@@ -815,7 +815,7 @@ async function loadMessages(){
     reply.href='mailto:'+encodeURIComponent(m.email)+'?subject='+encodeURIComponent('Re: ['+m.topic+'] Summy Garden Studio')+'&body='+encodeURIComponent('\n\n'+quoted);
     const fwd=document.createElement('a'); fwd.className='btn dark'; fwd.style.cssText='padding:5px 10px;font-size:11.5px;text-decoration:none';
     fwd.textContent=AT('act_fwd');
-    fwd.href='mailto:gogonewnews@gmail.com?subject='+encodeURIComponent('Fwd: ['+m.topic+'] from '+(m.name||m.email))+'&body='+encodeURIComponent('From: '+(m.name||'—')+' <'+m.email+'>\nDate: '+(m.created_at||'')+'\nTopic: '+m.topic+'\n\n'+m.message);
+    fwd.href='mailto:tiffany123@hotmail.com.hk?subject='+encodeURIComponent('Fwd: ['+m.topic+'] from '+(m.name||m.email))+'&body='+encodeURIComponent('From: '+(m.name||'—')+' <'+m.email+'>\nDate: '+(m.created_at||'')+'\nTopic: '+m.topic+'\n\n'+m.message);
     act.appendChild(reply); act.appendChild(fwd);
     tr.appendChild(act);
     tb.appendChild(tr);

@@ -65,6 +65,13 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
 .pill.paid{background:#e8eefc;color:#31489c}
 .hint{background:#fff8e1;color:#8a6d1a;border-radius:12px;padding:13px 16px;font-size:13px;line-height:1.6;margin-top:14px}
 .empty{font-size:13.5px;color:var(--muted);text-align:center;padding:26px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.card label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 5px}
+.paybox{background:#f4f9fc;border-radius:14px;padding:18px 20px;margin:8px 0 18px;
+  box-shadow:inset 0 0 0 1px rgba(7,44,69,.08)}
+.onfile{font-size:12.5px;color:#178a52;font-weight:700;background:#e7f6ee;border-radius:9px;
+  padding:9px 12px;margin-top:4px}
+@media(max-width:620px){.grid2{grid-template-columns:1fr}}
 @media(max-width:640px){.wrap{padding:20px 16px}.codebox code{font-size:20px}}
 </style>
 </head>
@@ -87,7 +94,7 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
     <button class="btn" onclick="doLogin()">Sign in</button>
     <div class="msg" id="msg"></div>
     <p style="font-size:12px;color:#8fa6b3;margin:16px 0 0">
-      Not a partner yet? <a href="/#join" style="color:var(--accent);font-weight:600">Apply to join</a>.
+      Not a partner yet? <a href="/?join=1" style="color:var(--accent);font-weight:600">Apply to join</a>.
     </p>
   </div>
 
@@ -137,6 +144,49 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
       <div class="empty" id="chartEmpty" style="display:none">No activity in this period yet.</div>
     </div>
 
+    <div class="sec">Your details &amp; payment</div>
+    <div class="card" style="margin-bottom:18px">
+      <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+        We need these to pay you and to put your name on the agreement. Only you and Summy Garden Studio can see them.
+      </p>
+      <div class="grid2">
+        <div><label>Full legal name</label><input id="dName" placeholder="As it appears on your bank account"></div>
+        <div><label>Contact phone</label><input id="dPhone" placeholder="+852 …"></div>
+      </div>
+      <label>Address</label>
+      <input id="dAddr" placeholder="Street, city, country">
+      <label>Your channel or profile</label>
+      <input id="dUrl" placeholder="https://…">
+
+      <div class="paybox">
+        <b style="display:block;font-size:14.5px;margin-bottom:4px">How should we pay you?</b>
+        <span style="font-size:12.5px;color:var(--muted);display:block;margin-bottom:14px">
+          Stored securely and shown back to you masked. We will only ever ask for these here, inside your portal — never by email.
+        </span>
+        <div class="grid2">
+          <div><label>Method</label>
+            <select id="dMethod">
+              <option value="">Choose…</option>
+              <option value="bank">Bank transfer</option>
+              <option value="fps">FPS (Hong Kong)</option>
+              <option value="paypal">PayPal</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div><label>Name on the account</label><input id="dPayName" placeholder="Exactly as the bank has it"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Bank or provider</label><input id="dBank" placeholder="e.g. HSBC"></div>
+          <div><label>Account number / FPS ID / PayPal email</label>
+            <input id="dDetail" placeholder="Leave blank to keep the one on file" autocomplete="off"></div>
+        </div>
+        <div id="dOnFile" class="onfile" style="display:none"></div>
+      </div>
+
+      <button class="btn" onclick="saveDetails()" id="dSave">Save details</button>
+      <span class="msg" id="dMsg" style="display:inline-block;margin-left:12px;min-height:0"></span>
+    </div>
+
     <div class="sec">Recent sales</div>
     <div class="card" style="overflow-x:auto">
       <table><thead><tr><th>Date</th><th>Pack</th><th>Customer paid</th><th>You earned</th><th>Status</th></tr></thead>
@@ -182,7 +232,7 @@ async function enter(){
     /* A signed-in customer who is not a partner lands here. Say so plainly and
        send them somewhere useful rather than showing an empty dashboard. */
     $('msg').innerHTML='This account is not a partner account. '+
-      '<a href="/#join" style="color:var(--accent)">Apply to join</a>, or '+
+      '<a href="/?join=1" style="color:var(--accent)">Apply to join</a>, or '+
       '<a href="/" style="color:var(--accent)">go to the studio</a>.';
     await sb.auth.signOut(); session=null; return;
   }
@@ -191,6 +241,7 @@ async function enter(){
   $('whoami').textContent=who.name||'';
   $('pCode').textContent=who.code;
   $('rateLine').textContent='You earn '+who.rate+'% of what each customer pays';
+  fillDetails(who.details||{});
   quickRange(30);
   await load();
 }
@@ -302,6 +353,44 @@ function drawRows(){
     <td style="color:var(--muted)">${esc(r.currency)} ${r.paid.toFixed(2)}</td>
     <td><b>${esc(r.currency)} ${r.earned.toFixed(2)}</b></td>
     <td><span class="pill ${esc(r.status)}">${esc(LABEL[r.status]||r.status)}</span></td></tr>`).join('');
+}
+
+function fillDetails(d){
+  const set=(id,v)=>{const e=$(id); if(e) e.value=v||'';};
+  set('dName',d.real_name); set('dPhone',d.phone); set('dAddr',d.address); set('dUrl',d.channel_url);
+  set('dPayName',d.payout_name); set('dBank',d.payout_bank);
+  const m=$('dMethod'); if(m) m.value=d.payout_method||'';
+  /* The account is never filled back into the input — it is shown masked below
+     it instead, so the field stays empty unless the partner is deliberately
+     replacing what is on file. */
+  const of=$('dOnFile');
+  if(of){
+    if(d.has_payout){ of.style.display='block'; of.textContent='On file: '+(d.payout_detail_masked||'••••'); }
+    else { of.style.display='none'; }
+  }
+}
+
+async function saveDetails(){
+  const g=id=>($(id)?$(id).value.trim():'');
+  const msg=$('dMsg'), btn=$('dSave');
+  msg.style.color='#c0392b';
+  if(!g('dName')){ msg.textContent='Please give the name on your account'; return; }
+  if(btn) btn.disabled=true;
+  const r=await api({action:'details',
+    real_name:g('dName'), phone:g('dPhone'), address:g('dAddr'), channel_url:g('dUrl'),
+    payout_method:g('dMethod'), payout_name:g('dPayName'), payout_bank:g('dBank'),
+    payout_detail:g('dDetail')});
+  if(btn) btn.disabled=false;
+  if(r&&r.saved){
+    msg.style.color='#178a52'; msg.textContent='Saved ✓';
+    if(g('dDetail')){
+      $('dDetail').value='';
+      const of=$('dOnFile'); if(of){ of.style.display='block'; of.textContent='On file: '+(r.masked||'••••'); }
+    }
+    setTimeout(()=>{ msg.textContent=''; }, 2600);
+  } else {
+    msg.textContent=(r&&r.error)||'Could not save — please try again';
+  }
 }
 
 function copyCode(){ copy(me.code, 'copyBtn', 'Copied ✓'); }

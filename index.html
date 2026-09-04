@@ -467,8 +467,39 @@ section{padding:72px 0}
 .currency-toggle button.active{background:var(--grad-brand);color:#fff;box-shadow:var(--brand-glow)}
 .price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px;position:relative}
 .price-card{background:rgba(255,255,255,.05);border-radius:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);padding:30px 26px;text-align:left;position:relative;transition:.2s}
-.price-card:hover{transform:translateY(-4px)}
-.price-card.featured{background:linear-gradient(160deg,rgba(56,189,248,.16),rgba(74,222,128,.12));box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.5), 0 16px 40px rgba(56,189,248,.22)}
+/* Professional is highlighted by default — it is the pack most people should
+   buy, and an unhighlighted grid gives the eye nowhere to land. */
+.price-card.featured{background:linear-gradient(160deg,rgba(56,189,248,.16),rgba(74,222,128,.12));
+  box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.5), 0 16px 40px rgba(56,189,248,.22)}
+
+/* Hovering any card promotes it to the same treatment, so the customer's
+   attention and the visual emphasis stay in the same place. */
+.price-card:hover{transform:translateY(-6px);
+  background:linear-gradient(160deg,rgba(56,189,248,.2),rgba(74,222,128,.15));
+  box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65), 0 20px 46px rgba(56,189,248,.28)}
+
+/* ...and while another card is hovered, Professional steps back to ordinary.
+   Two cards shouting at once is worse than none: the default highlight is a
+   suggestion, and the moment the customer expresses a preference it should
+   defer to them. :has() is ignored by older browsers, which simply leaves both
+   emphasised — a graceful way to fail. */
+.price-grid:has(.price-card:hover) .price-card.featured:not(:hover){
+  background:rgba(255,255,255,.05);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.price-grid:has(.price-card:hover) .price-card.featured:not(:hover) .popular-tag{opacity:.5}
+.popular-tag{transition:opacity .2s}
+
+/* Touch devices have no hover: a tap would otherwise leave a card stuck in the
+   hovered state until you tapped elsewhere. */
+@media(hover:none){
+  .price-card:hover{transform:none;background:rgba(255,255,255,.05);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+  .price-card.featured:hover{background:linear-gradient(160deg,rgba(56,189,248,.16),rgba(74,222,128,.12));
+    box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.5), 0 16px 40px rgba(56,189,248,.22)}
+  .price-grid:has(.price-card:hover) .price-card.featured:not(:hover){
+    background:linear-gradient(160deg,rgba(56,189,248,.16),rgba(74,222,128,.12));
+    box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.5), 0 16px 40px rgba(56,189,248,.22)}
+}
 .price-card .plan{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-bright);margin-bottom:12px}
 .price-card .amount{font-size:34px;font-weight:900;letter-spacing:-.03em;margin-bottom:4px}
 .price-card .per{color:var(--on-dark-muted);font-size:13px;margin-bottom:18px}
@@ -539,11 +570,16 @@ section{padding:72px 0}
    made it hard to read was 11.5px bold, crammed line height and a saturated cyan
    on a cyan tint, which the eye resolves as mush even when the numbers pass.
    Bigger, lighter, roomier, and the icon separated from the text. */
-.pack-share{display:flex;gap:9px;align-items:flex-start;font-size:13px;font-weight:600;line-height:1.55;
+/* NOT display:flex. In a flex container every bare text run and every inline
+   child becomes its own flex item, so "Use across <b>3 people</b> or 3 sessions"
+   was laid out as four separate boxes with the gap wedged between them. A block
+   with an inline-block icon lets the sentence wrap as one piece of prose.
+   Measured 8.2:1 on the tinted background. */
+.pack-share{display:block;font-size:13px;font-weight:600;line-height:1.55;
   color:#dff2ff;background:rgba(56,189,248,.22);border-radius:10px;padding:10px 13px;margin:4px 0 14px;
   box-shadow:inset 0 0 0 1px rgba(125,211,252,.4)}
-.pack-share::before{content:"👥";font-size:15px;line-height:1.35;flex:0 0 auto}
-.pack-share b{color:#fff;font-weight:800}
+.pack-share::before{content:"👥";display:inline-block;font-size:14px;margin-right:7px;vertical-align:-1px}
+.pack-share b{color:#fff;font-weight:800;white-space:nowrap}
 .bulk-note{display:flex;gap:14px;align-items:flex-start;text-align:left;max-width:720px;
   margin:22px auto 0;padding:16px 20px;border-radius:16px;
   background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
@@ -1731,6 +1767,11 @@ async function loadProfile(){
      referral hiccup must never stop somebody using the studio they paid for. */
   try{ await attachRefCode(); }catch(e){}
   try{ await loadReferral(); }catch(e){}
+  /* Now that we know who this is, re-check any discount. Codes are once per
+     account, and that can only be enforced against a known account — so a code
+     applied while signed out has to be proven again here rather than at the
+     checkout button, where being refused is both confusing and too late. */
+  try{ await revalidatePromo(); }catch(e){}
 }
 async function loadShots(){
   if(!sb||!user) return;
@@ -2393,6 +2434,36 @@ async function showOffer(){
     bar.dataset.code=j.code;
     bar.style.display='';
   }catch(e){ bar.style.display='none'; }
+}
+
+/* Re-runs the discount check as the signed-in user and repaints accordingly.
+   Silent when everything is fine; when the code turns out to be spent it clears
+   the prices and says why, at a point where the customer can still choose. */
+async function revalidatePromo(){
+  if(!sbSession) return;
+  let code=promoCode; if(!code){ try{ code=store.getItem('sgsPromo'); }catch(e){} }
+  if(code){
+    try{
+      const r=await fetch('/api/discount',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({code, token:sbSession.access_token})});
+      const j=await r.json();
+      if(j.ok){ promoCode=j.code; promoPct=j.percent; }
+      else{
+        promoCode=''; promoPct=0;
+        try{ store.removeItem('sgsPromo'); }catch(e){}
+        const inp=document.getElementById('promoInput'); if(inp) inp.value='';
+        if(j.reason==='already_used'){
+          promoSay(TX('pr_already'),'err');
+          const box=document.getElementById('promoBox'); if(box) box.classList.add('on');
+        }
+      }
+      renderPrices();
+    }catch(e){}
+  }
+  // And re-decide whether the banner should still be advertising it.
+  const bar=document.getElementById('offerBar');
+  if(bar){ bar.classList.remove('done'); bar.onclick=claimOffer; }
+  try{ await showOffer(); }catch(e){}
 }
 
 async function claimOffer(){

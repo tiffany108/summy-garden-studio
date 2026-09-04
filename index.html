@@ -596,8 +596,15 @@ section{padding:72px 0}
 .amount.cut{position:relative}
 .amount .was{display:block;font-size:.5em;font-weight:700;color:rgba(255,255,255,.5);
   text-decoration:line-through;text-decoration-thickness:2px;letter-spacing:0;margin-bottom:2px}
+/* Pink, because it is the one warm colour on an otherwise blue-green page and
+   the eye goes straight to it. Dark ink rather than white: measured, white on
+   #f472b6 is only 2.65:1 and fails AA outright, while #2b0716 gives 6.93:1 —
+   and the pill itself sits at 5.52:1 against the card, so the shape reads too.
+   The margins matter as much as the colour: it was 6px above and nothing below,
+   so it collided with "1 shoot · 30 photos" underneath. */
 .price-card .save{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.04em;
-  text-transform:uppercase;color:#04311f;background:#4ade80;border-radius:999px;padding:3px 10px;margin-top:6px}
+  text-transform:uppercase;color:#2b0716;background:#f472b6;border-radius:999px;
+  padding:5px 12px;margin:12px 0 14px;box-shadow:0 3px 12px rgba(244,114,182,.35)}
 
 /* ---- Review reward + prompts ---- */
 .rv-reward{background:rgba(74,222,128,.16);border-radius:10px;padding:9px 12px;margin-bottom:12px;

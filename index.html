@@ -1630,7 +1630,12 @@ async function sendReset(){
   if(!sb){ m.textContent=TX('pr_fail'); m.style.color='#d14343'; return; }
   if(btn) btn.disabled=true;
   try{
-    await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin+'/?recover=1' });
+    /* Plain origin, no query string. Nothing reads ?recover=1 — the form opens
+       off Supabase's PASSWORD_RECOVERY event — and a query string has to survive
+       Supabase's redirect allow-list matching, which is one more thing to get
+       wrong for no benefit. The existing https://summygarden.com/** entry covers
+       this exactly. */
+    await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin+'/' });
   }catch(e){}
   /* Always the same confirmation, whether or not the address is registered.
      Saying "no such account" would let anyone test which of their contacts has

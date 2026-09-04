@@ -90,11 +90,31 @@ export async function onRequest(context) {
 }
 
 async function status(env, user, headers) {
-  const p = await jget(await svc(env, `/rest/v1/profiles?id=eq.${user.id}&select=ref_code,ref_count,photo_credits,credits,referred_by`));
-  const prof = (p && p[0]) || {};
+  /* Degrade rather than disappear. `ref_code` has existed on this project for a
+     long time, but `photo_credits` / `referred_by` and the `referrals` table only
+     arrive with the 2026-09-03 migration. PostgREST rejects the WHOLE select if
+     any one column is missing, so asking for everything at once meant the member
+     lost their referral code too — the one part that already worked. Ask for the
+     new columns, and on failure fall back to the columns that have always been
+     there. Sharing then works immediately; the earnings ledger lights up once the
+     migration has run. */
+  let prof = null, ledgerReady = true;
+  const full = await jget(await svc(env,
+    `/rest/v1/profiles?id=eq.${user.id}&select=ref_code,ref_count,photo_credits,credits,referred_by`));
+  if (full && full[0]) {
+    prof = full[0];
+  } else {
+    ledgerReady = false;
+    const basic = await jget(await svc(env, `/rest/v1/profiles?id=eq.${user.id}&select=ref_code,ref_count,credits`));
+    prof = (basic && basic[0]) || {};
+  }
 
-  const refs = await jget(await svc(env,
-    `/rest/v1/referrals?referrer_id=eq.${user.id}&select=status,photo_credits,created_at,earned_at&order=created_at.desc&limit=100`)) || [];
+  // Same story for the referrals table: absent until the migration runs.
+  let refs = [];
+  if (ledgerReady) {
+    refs = await jget(await svc(env,
+      `/rest/v1/referrals?referrer_id=eq.${user.id}&select=status,photo_credits,created_at,earned_at&order=created_at.desc&limit=100`)) || [];
+  }
 
   const earned = refs.filter((r) => r.status === "earned").length;
   const pending = refs.filter((r) => r.status === "pending").length;
@@ -115,6 +135,10 @@ async function status(env, user, headers) {
     canConvert: photo >= PHOTOS_PER_SHOOT,
     friendCode: FRIEND_CODE,
     wasReferred: !!prof.referred_by,
+    // false = the migration has not run, so sharing works but nothing can be
+    // earned yet. The dashboard uses this to hide the earnings figures rather
+    // than show zeroes that would never move.
+    ledgerReady,
   }, { status: 200, headers });
 }
 

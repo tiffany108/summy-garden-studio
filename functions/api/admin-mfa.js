@@ -177,7 +177,11 @@ async function send(env, req, admin, headers) {
     return Response.json({ error: `could not create code: ${t.slice(0, 160)}` }, { status: 502, headers });
   }
 
-  const from = env.EMAIL_FROM || "Summy Garden Studio <onboarding@resend.dev>";
+  // summygarden.com is a VERIFIED domain in Resend, so it can send to any
+  // recipient. The old default, onboarding@resend.dev, is Resend's shared test
+  // sender and may ONLY deliver to the Resend account owner - every send to any
+  // other address comes back 403. EMAIL_FROM still overrides this.
+  const from = env.EMAIL_FROM || "Summy Garden Studio <admin@summygarden.com>";
   const when = new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC";
   let mail;
   try {

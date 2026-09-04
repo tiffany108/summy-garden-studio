@@ -30,7 +30,11 @@ export async function onRequest(context) {
     method: "POST",
     headers: { Authorization: `Bearer ${rk}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: env.EMAIL_FROM || "Summy Garden Studio <onboarding@resend.dev>",
+      // summygarden.com is a VERIFIED domain in Resend, so it can send to any
+      // recipient. The old default, onboarding@resend.dev, is Resend's shared test
+      // sender and may ONLY deliver to the Resend account owner - every send to any
+      // other address comes back 403. EMAIL_FROM still overrides this.
+      from: env.EMAIL_FROM || "Summy Garden Studio <no-reply@summygarden.com>",
       to: [NOTIFY_TO],
       reply_to: email,
       subject: `[${topic}] New message from ${name || email}`,

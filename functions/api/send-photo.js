@@ -53,7 +53,11 @@ export async function onRequest(context) {
   const mime = image.slice(5, image.indexOf(";"));
   const b64 = image.split(",")[1];
   const ext = mime.includes("jpeg") ? "jpg" : "png";
-  const from = env.EMAIL_FROM || "Summy Garden Studio <onboarding@resend.dev>";
+  // summygarden.com is a VERIFIED domain in Resend, so it can send to any
+  // recipient. The old default, onboarding@resend.dev, is Resend's shared test
+  // sender and may ONLY deliver to the Resend account owner - every send to any
+  // other address comes back 403. EMAIL_FROM still overrides this.
+  const from = env.EMAIL_FROM || "Summy Garden Studio <no-reply@summygarden.com>";
 
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",

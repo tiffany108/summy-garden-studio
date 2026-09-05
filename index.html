@@ -534,7 +534,13 @@ section{padding:72px 0}
 .modal h3{font-size:22px;font-weight:800;margin-bottom:10px}
 .modal p{color:var(--muted);font-size:14.5px;margin-bottom:22px}
 .modal .close-x{position:absolute;top:14px;right:18px;background:none;font-size:22px;color:#8fb6cc}
-.modal input[type=text],.modal input[type=email],.modal input[type=password]{width:100%;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:15px;margin-bottom:12px;outline:none;color:var(--ink);box-sizing:border-box}
+/* Listing types one by one is how the phone and channel-link boxes ended up
+   unstyled: type=tel and type=url were simply not on the list, so they fell
+   back to the browser default and looked half-finished next to the rest.
+   Excluding the types that must NOT be full width is safer than naming the
+   ones that must. */
+.modal input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=submit]):not([type=button]),
+.modal select{width:100%;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:15px;margin-bottom:12px;outline:none;color:var(--ink);box-sizing:border-box}
 .modal textarea{width:100%;min-height:110px;padding:13px 16px;border:none;border-radius:12px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:15px;margin-bottom:12px;outline:none;color:var(--ink);box-sizing:border-box;resize:vertical}
 /* admin live text edit mode */
 .editable{outline:1.5px dashed rgba(56,189,248,.55);outline-offset:2px;cursor:text}
@@ -942,8 +948,7 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
    16px. Ours were 15px, so tapping "email" on the sign-up form threw
    the layout off centre. 16px stops it; nothing else does. */
 @media(max-width:760px){
-  .modal input[type=text],.modal input[type=email],.modal input[type=password],
-  .modal textarea,.search-bar input,.ref-box input,.lang-sel,select,input{font-size:16px}
+  .modal input,.modal textarea,.search-bar input,.ref-box input,.lang-sel,select,input{font-size:16px}
   .modal input::placeholder{font-size:14.5px}
 }
 
@@ -1341,7 +1346,11 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
     <input type="text" id="jnAud" placeholder="Roughly how many people follow you? (optional)">
     <textarea id="jnMsg" rows="3" placeholder="Anything else we should know?"></textarea>
     <!-- No bank details here, deliberately — see jn_nobank. -->
-    <div class="jn-safe" id="jnSafe">🔒 We never ask for bank or payment details on this form. You will enter those yourself, inside your own portal, after we agree terms.</div>
+    <!-- The "we never ask for bank details" notice used to sit here. Moved, not
+         deleted: it is now in the acknowledgement email and in the partner
+         portal. A stranger filling in this form has no relationship to protect
+         yet; an approved partner receiving a spoofed email does. -->
+
     <button class="btn-primary" id="jnSend" style="width:100%;justify-content:center" onclick="submitJoin()">Send</button>
     <p id="jnFoot" style="font-size:11.5px;margin-top:14px;margin-bottom:0;color:#8fa6b3">We reply by email, usually within 1–2 working days. Already a partner? <a href="/partner.html" style="color:var(--accent);font-weight:600">Sign in to your portal</a>.</p>
   </div>
@@ -4081,7 +4090,9 @@ function applyLang(code){
   const ph=(id,v)=>{const e=Q(id); if(e) e.placeholder=v||'';};
   ph('#jnName', t.jn_ph_name); ph('#jnPhone', t.jn_ph_phone); ph('#jnAddr', t.jn_ph_addr);
   ph('#jnUrl', t.jn_ph_url); ph('#jnAud', t.jn_ph_aud);
-  st(Q('#jnSafe'), t.jn_nobank);
+  /* #jnSafe was removed from the form. st() is a no-op on a missing node, but
+     the call is dropped rather than left to rot. The jn_nobank strings stay in
+     the language tables — translated, ready if the notice is ever wanted back. */
   /* auth modal */
   st(Q('#tabReg'), TX('a_tab_reg')); st(Q('#tabIn'), TX('a_tab_in'));
   const rp=Q('#regPw'); if(rp) rp.placeholder=TX('ph_pw');

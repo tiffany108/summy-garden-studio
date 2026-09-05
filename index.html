@@ -1334,10 +1334,14 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
     <div class="icon-tile tile-teal">🤝</div>
     <h3 id="jnH">Work with us</h3>
     <p id="jnP" style="margin-bottom:18px">Creators, recruiters and career coaches: share Summy Garden Studio with your audience and earn a share of every sale. Tell us a little about you and we will be in touch to discuss the details.</p>
-    <div class="cat-pills" id="jnRoles" style="margin-bottom:14px">
-      <button class="cat-pill active" data-r="partner" onclick="jnRole(this)" id="jnR1">🎬 Partner / creator</button>
-      <button class="cat-pill" data-r="salesperson" onclick="jnRole(this)" id="jnR2">💼 Salesperson</button>
-    </div>
+    <!-- This used to be two pills that switched between two identical forms,
+         which read as a control that did nothing. It is one ordinary field now:
+         same information for the admin page, no phantom choice for the
+         applicant. -->
+    <select id="jnKind">
+      <option value="partner">🎬 Partner / creator</option>
+      <option value="salesperson">💼 Salesperson</option>
+    </select>
     <input type="text" id="jnName" placeholder="Full name (as it will appear on the agreement)">
     <input type="email" id="jnEmail" placeholder="Email address">
     <input type="tel" id="jnPhone" placeholder="Contact phone">
@@ -2667,11 +2671,14 @@ function injectRatingSchema(j){
    Rides on the existing contact pipeline: the message is tagged with the role so
    it is obvious in your inbox, but there is no second delivery path to keep
    working. One inbox, one thing that can break. */
-let jnSel='partner';
-function jnRole(b){ jnSel=b.dataset.r; document.querySelectorAll('#jnRoles .cat-pill').forEach(x=>x.classList.toggle('active',x===b)); }
+/* The role is read from the dropdown at submit time rather than tracked in a
+   module variable, so there is only one place it can be wrong. */
+const jnKind=()=>{ const e=document.getElementById('jnKind');
+  return e && e.value==='salesperson' ? 'salesperson' : 'partner'; };
 function openJoin(){
   ['jnName','jnEmail','jnPhone','jnAddr','jnUrl','jnAud','jnMsg']
     .forEach(id=>{const e=document.getElementById(id); if(e) e.value='';});
+  const k=document.getElementById('jnKind'); if(k) k.selectedIndex=0;
   openModal('joinModal');
 }
 async function submitJoin(){
@@ -2683,7 +2690,8 @@ async function submitJoin(){
   if(!phone){ toast(TX('jn_need_phone')); return; }
   if(!url){ toast(TX('jn_need_url')); return; }
   const btn=document.getElementById('jnSend'); if(btn) btn.disabled=true;
-  const topic = jnSel==='salesperson' ? 'Join us — salesperson' : 'Join us — partner';
+  const kind = jnKind();
+  const topic = kind==='salesperson' ? 'Join us — salesperson' : 'Join us — partner';
   const summary=[name,email,phone,address,url,audience&&('audience: '+audience),msg]
     .filter(Boolean).join('\n');
   try{
@@ -2693,7 +2701,7 @@ async function submitJoin(){
          watch — and so a lead is never lost if the new table is missing. */
       try{
         await sb.from('partner_applications').insert({
-          kind: jnSel, name, email, phone, address,
+          kind, name, email, phone, address,
           channel: url, channel_url: url, audience, message: msg });
       }catch(e){}
       await sb.from('contact_messages').insert({ name, email, topic, message: summary,
@@ -4080,7 +4088,14 @@ function applyLang(code){
   const fa=QA('footer a'); [TX('fo1'),TX('fo2'),TX('fo3'),TX('fo4'),TX('fo5')].forEach((v,i)=>st(fa[i],v));
   const _jl=Q('#joinLink');
   if(_jl) _jl.innerHTML=xl(t.fo6||'Join us')+'<span class="join-tag">'+xl(t.fo6_tag||'Partners')+'</span>';
-  st(Q('#jnH'), t.jn_h); st(Q('#jnP'), t.jn_p); st(Q('#jnR1'), t.jn_r1); st(Q('#jnR2'), t.jn_r2);
+  st(Q('#jnH'), t.jn_h); st(Q('#jnP'), t.jn_p);
+  /* The two role pills became one dropdown. Their translated labels are reused
+     as the option text, so this stayed localised without new strings. */
+  const _jk=Q('#jnKind');
+  if(_jk && _jk.options.length===2){
+    if(t.jn_r1) _jk.options[0].textContent=t.jn_r1;
+    if(t.jn_r2) _jk.options[1].textContent=t.jn_r2;
+  }
   st(Q('#jnSend'), t.jn_send);
   const _jf=Q('#jnFoot');
   if(_jf) _jf.innerHTML=xl(t.jn_foot||'')+' <a href="/partner.html" style="color:var(--accent);font-weight:600">'+xl(t.jn_signin||'')+'</a>';

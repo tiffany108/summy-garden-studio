@@ -141,8 +141,30 @@ begin
   return n;
 end $fn$;
 
+/* Look up a user id from an email address.
+
+   The admin page needs this to turn "jasmie1008@gmail.com" into the account it
+   belongs to. It used to ask Supabase's /auth/v1/admin/users endpoint, which
+   HANGS when called from a Cloudflare Worker on this project — the request
+   never returns, Cloudflare gives up first, and the admin page shows a bare 502
+   with no explanation. PostgREST answers in about 20ms, so the lookup lives
+   here instead.
+
+   security definer because auth.users is not readable by any API role. The
+   revoke below means only the service key can call it, so this cannot be used
+   to enumerate accounts from the browser. */
+create or replace function public.sgs_user_id_by_email(p_email text)
+returns uuid language plpgsql security definer set search_path = public, auth as $fn$
+declare uid uuid;
+begin
+  select id into uid from auth.users
+   where lower(email) = lower(trim(p_email)) limit 1;
+  return uid;
+end $fn$;
+
 revoke execute on function public.sgs_record_commission(text, text, uuid, text, numeric, text) from anon, authenticated;
 revoke execute on function public.sgs_confirm_commissions() from anon, authenticated;
+revoke execute on function public.sgs_user_id_by_email(text) from anon, authenticated;
 
 -- Run it nightly, just after the photo pruning job.
 select cron.unschedule('confirm-commissions')

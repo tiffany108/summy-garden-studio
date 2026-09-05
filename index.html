@@ -731,7 +731,7 @@ section{padding:72px 0}
 .rs-btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
 .rs-wa{background:#25d366}
 .rs-li{background:#0a66c2}
-.rs-em{background:#5c7688}
+
 .rs-native{background:var(--grad-brand);box-shadow:var(--brand-glow)}
 .ref-box{display:flex;gap:8px;margin:8px 0 4px}
 .ref-box input{flex:1;padding:11px 14px;border:none;border-radius:10px;background:#eef6fb;box-shadow:inset 0 0 0 1px rgba(7,44,69,.08);font-size:12px;color:var(--ink);font-family:inherit;outline:none}
@@ -1479,7 +1479,11 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
         <button class="rs-btn rs-native" id="refShareNative" onclick="shareRef('native')" style="display:none">📤 <span id="refShareTxt">Share</span></button>
         <button class="rs-btn rs-wa" onclick="shareRef('whatsapp')" title="WhatsApp">WhatsApp</button>
         <button class="rs-btn rs-li" onclick="shareRef('linkedin')" title="LinkedIn">LinkedIn</button>
-        <button class="rs-btn rs-em" onclick="shareRef('email')" title="Email">Email</button>
+        <!-- The Email button is gone. mailto: does nothing at all unless the
+             device has a desktop mail client registered, which on most phones
+             and on Chrome-without-Outlook it does not — so it looked broken
+             because it was. Share (native) already offers email wherever the
+             device actually supports it. -->
       </div>
       <div class="ref-bar"><i id="refBarFill" style="width:0%"></i></div>
       <div class="ref-prog" id="refProg"></div>
@@ -2403,7 +2407,6 @@ function shareRef(via){
   // LinkedIn's share endpoint takes only a URL; the message is dropped, so the
   // page's own og: tags are what people will see.
   else if(via==='linkedin') open('https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(url));
-  else if(via==='email') location.href='mailto:?subject='+encodeURIComponent(TX('ref_share_t'))+'&body='+encodeURIComponent(msg);
 }
 
 async function claimFreeShoot(){

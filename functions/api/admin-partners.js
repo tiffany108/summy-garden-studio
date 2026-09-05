@@ -138,15 +138,26 @@ async function create(env, body, headers) {
   /* The person must already have an account. Creating auth users from here would
      mean handling their password, which is exactly the thing we never want to
      touch — so they sign up normally first, then you promote them. */
-  const users = await jget(await svc(env, `/rest/v1/profiles?select=id,name&limit=1&id=not.is.null&email=eq.${encodeURIComponent(email)}`));
-  let userId = Array.isArray(users) && users[0] && users[0].id;
-
-  if (!userId) {
-    // profiles may not carry email; fall back to the auth admin listing.
-    const au = await jget(await svc(env, `/auth/v1/admin/users?filter=${encodeURIComponent(email)}`));
-    const found = au && (Array.isArray(au.users) ? au.users : []).find((u) => (u.email || "").toLowerCase() === email);
-    userId = found && found.id;
+  /* One PostgREST call. The previous version queried profiles.email — a column
+     that does not exist — and then fell back to /auth/v1/admin/users, which
+     hangs from a Worker on this project. The result was a bare Cloudflare 502
+     for the commonest case in the world: a partner whose account is perfectly
+     fine. Everything now goes through the RPC in the partners migration. */
+  const look = await svc(env, "/rest/v1/rpc/sgs_user_id_by_email", {
+    method: "POST", body: JSON.stringify({ p_email: email }),
+  });
+  if (!look.ok) {
+    const t = await look.text().catch(() => "");
+    // Naming the missing piece beats a generic failure: this is what an unrun
+    // migration looks like, and it is the first thing to check.
+    const missing = /sgs_user_id_by_email|does not exist|schema cache/i.test(t);
+    return Response.json({
+      error: missing
+        ? "The partner database setup has not been run yet. In Supabase → SQL Editor, run migrations/2026-09-04-partners.sql, then 2026-09-04-partner-applications.sql, then try again."
+        : `could not look up the account: ${t.slice(0, 160)}`,
+    }, { status: missing ? 503 : 502, headers });
   }
+  const userId = await look.json().catch(() => null);
   if (!userId) {
     return Response.json({
       error: `No account found for ${email}. Ask them to sign up at ${SITE} first, then create the partner.`,

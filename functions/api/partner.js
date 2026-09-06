@@ -14,6 +14,8 @@
 //
 // Env: SUPABASE_SECRET_KEY.
 
+import { partnerMfaValid } from "./partner-mfa.js";
+
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
@@ -121,6 +123,13 @@ export async function onRequest(context) {
 
   const user = await sbVerify(body.token);
   if (!user) return Response.json({ error: "sign in required" }, { status: 401, headers });
+
+  /* Second factor, enforced HERE rather than in the browser. Hiding the
+     dashboard behind a code screen while this endpoint still answered a
+     password-only request would be decoration, not security. */
+  if (!(await partnerMfaValid(env, user.id, body.mfa))) {
+    return Response.json({ error: "verification required", mfa: true }, { status: 401, headers });
+  }
 
   const prows = await jget(await svc(env,
     `/rest/v1/partners?user_id=eq.${user.id}&select=*&limit=1`));

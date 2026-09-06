@@ -98,6 +98,26 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
     </p>
   </div>
 
+  <!-- Second factor. Shown after the password is accepted and before any
+       partner data is fetched. The server enforces it independently — this
+       screen is the courtesy, not the control. -->
+  <div id="mfa" style="display:none">
+    <div class="logo-mark">🔐</div>
+    <h2>Check your email</h2>
+    <p>We have sent a 6-digit code to <b id="mfaTo">your address</b>. It is valid for 10 minutes.</p>
+    <input type="text" id="mfaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+           placeholder="000000" style="text-align:center;letter-spacing:.5em;font-size:22px;font-weight:700">
+    <button class="btn" onclick="mfaVerify()" id="mfaGo">Continue</button>
+    <div class="msg" id="mfaMsg"></div>
+    <p style="font-size:12px;color:#8fa6b3;margin:14px 0 0">
+      No code? <a onclick="mfaSend(true)" id="mfaResend" style="color:var(--accent);font-weight:600;cursor:pointer">Send another</a>
+      &middot; <a onclick="signOut()" style="color:var(--accent);cursor:pointer">Use a different account</a>
+    </p>
+    <p style="font-size:11.5px;color:#8fa6b3;margin:10px 0 0;line-height:1.5">
+      We will never ask you for this code, or for your bank details, by email or message.
+    </p>
+  </div>
+
   <div id="dash" style="display:none">
     <div class="codebox">
       <small>Your code — customers get 20% off with it</small>
@@ -218,16 +238,71 @@ async function doLogin(){
   session=data.session; $('pw').value='';
   await enter();
 }
-async function signOut(){ await sb.auth.signOut(); session=null; location.reload(); }
+async function signOut(){ setMfa(null); await sb.auth.signOut(); session=null; location.reload(); }
+
+/* The MFA session lives in sessionStorage, not localStorage: closing the tab
+   ends it. A partner portal left open on a shared machine should not still be
+   authenticated tomorrow. */
+let mfaTok=null;
+try{ mfaTok=sessionStorage.getItem('sgsPartnerMfa')||null; }catch(e){}
+function setMfa(t){ mfaTok=t; try{ t?sessionStorage.setItem('sgsPartnerMfa',t):sessionStorage.removeItem('sgsPartnerMfa'); }catch(e){} }
 
 async function api(payload){
   const r=await fetch('/api/partner',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({token:session.access_token,...payload})});
-  return await r.json().catch(()=>({}));
+    body:JSON.stringify({token:session.access_token,mfa:mfaTok,...payload})});
+  const j=await r.json().catch(()=>({}));
+  /* A session that expires mid-visit must send them back to the code screen
+     rather than showing a broken dashboard. */
+  if(r.status===401&&j.mfa){ setMfa(null); askMfa(); return {mfaRequired:true}; }
+  return j;
 }
 
-async function enter(){
+async function mfaApi(payload){
+  const r=await fetch('/api/partner-mfa',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:session.access_token,...payload})});
+  return {status:r.status, body:await r.json().catch(()=>({}))};
+}
+
+function askMfa(){
+  show('login',false); show('dash',false); show('mfa',true); show('outBtn',true);
+  const e=$('mfaTo'); if(e&&session&&session.user) e.textContent=session.user.email||'your address';
+  const c=$('mfaCode'); if(c){ c.value=''; c.focus(); }
+}
+
+async function mfaSend(again){
+  const m=$('mfaMsg'); if(m){ m.style.color='var(--muted)'; m.textContent='Sending…'; }
+  const {status,body}=await mfaApi({action:'send'});
+  if(body.disabled){ /* emergency switch is on; go straight through */ await enter(true); return; }
+  if(status!==200){
+    if(m){ m.style.color='#c0392b'; m.textContent=body.error||'Could not send a code. Please try again.'; }
+    return;
+  }
+  if(m){ m.style.color='#178a52'; m.textContent=again?'A new code is on its way.':'Code sent.'; }
+}
+
+async function mfaVerify(){
+  const code=($('mfaCode').value||'').replace(/\D/g,'');
+  const m=$('mfaMsg'), b=$('mfaGo');
+  m.style.color='#c0392b';
+  if(code.length!==6){ m.textContent='Enter the 6-digit code.'; return; }
+  if(b) b.disabled=true;
+  const {status,body}=await mfaApi({action:'verify',code});
+  if(b) b.disabled=false;
+  if(status!==200){ m.textContent=body.error==='no_code'?'Ask for a code first.':(body.error||'That did not work.'); return; }
+  setMfa(body.mfa); m.textContent='';
+  await enter(true);
+}
+
+async function enter(passedMfa){
+  /* Without a live MFA session, do not even ask the API who this is — send them
+     to the code screen first. */
+  if(!passedMfa){
+    if(!mfaTok){ askMfa(); await mfaSend(false); return; }
+    const {body}=await mfaApi({action:'check',mfa:mfaTok});
+    if(!body.valid){ setMfa(null); askMfa(); await mfaSend(false); return; }
+  }
   const who=await api({action:'me'});
+  if(who.mfaRequired) return;
   if(!who.partner){
     /* A signed-in customer who is not a partner lands here. Say so plainly and
        send them somewhere useful rather than showing an empty dashboard. */
@@ -237,7 +312,7 @@ async function enter(){
     await sb.auth.signOut(); session=null; return;
   }
   me=who;
-  show('login',false); show('dash',true); show('outBtn',true);
+  show('login',false); show('mfa',false); show('dash',true); show('outBtn',true);
   $('whoami').textContent=who.name||'';
   $('pCode').textContent=who.code;
   $('rateLine').textContent='You earn '+who.rate+'% of what each customer pays';
@@ -403,6 +478,10 @@ function copy(text, btnId, label){
 }
 
 sb.auth.getSession().then(({data})=>{ session=data.session; if(session) enter(); });
+/* Enter submits the code, which is what anyone typing six digits expects. */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&$('mfa')&&$('mfa').style.display!=='none') mfaVerify();
+});
 </script>
 </body>
 </html>

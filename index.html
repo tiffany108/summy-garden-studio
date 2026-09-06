@@ -725,6 +725,10 @@ section{padding:72px 0}
   border-radius:12px;background:var(--grad-brand);color:#fff;font-weight:800;font-size:14.5px;
   text-align:center;text-decoration:none;box-shadow:0 6px 18px rgba(14,165,233,.28)}
 .pc-btn:hover{filter:brightness(1.06)}
+/* The Turnstile widget renders as a fixed-size iframe; this only centres it
+   and gives it room. It collapses to nothing when no challenge is shown. */
+.cf-box{display:flex;justify-content:center;margin:2px 0 14px}
+.cf-box:empty{margin:0}
 .refer-card{background:#fff;border-radius:18px;box-shadow:var(--card-shadow);padding:22px;margin-top:18px;text-align:left}
 .refer-card .rc-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .refer-card .rc-h b{font-size:16px;font-weight:800}
@@ -1370,6 +1374,7 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
          portal. A stranger filling in this form has no relationship to protect
          yet; an approved partner receiving a spoofed email does. -->
 
+    <div class="cf-box" id="jnCf"></div>
     <button class="btn-primary" id="jnSend" style="width:100%;justify-content:center" onclick="submitJoin()">Send</button>
     <p id="jnFoot" style="font-size:11.5px;margin-top:14px;margin-bottom:0;color:#8fa6b3">We reply by email, usually within 1–2 working days. Already a partner? <a href="/partner.html" style="color:var(--accent);font-weight:600">Sign in to your portal</a>.</p>
   </div>
@@ -1388,6 +1393,7 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
     <input type="text" id="ctName" placeholder="Your name">
     <input type="email" id="ctEmail" placeholder="Your email">
     <textarea id="ctMsg" placeholder="Tell us what you need…"></textarea>
+    <div class="cf-box" id="ctCf"></div>
     <button class="btn-primary" id="ctSend" style="width:100%;justify-content:center" onclick="submitContact()">Send message</button>
   </div>
 </div>
@@ -1663,6 +1669,9 @@ footer{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<!-- Cloudflare Turnstile. Loaded lazily (defer) and rendered only when a form
+     modal is opened, so it costs a visitor who never contacts us nothing. -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
 <script>
 /* ================= Scene engine: 10 themes x 10 variants ================= */
 const enc = s => 'data:image/svg+xml;utf8,' + encodeURIComponent(s);
@@ -2744,6 +2753,36 @@ function injectRatingSchema(j){
    Rides on the existing contact pipeline: the message is tagged with the role so
    it is obvious in your inbox, but there is no second delivery path to keep
    working. One inbox, one thing that can break. */
+/* ---------- Cloudflare Turnstile ----------
+   Proves a person is behind the Join and Contact forms before we send email on
+   their behalf. The site key is public by design — it identifies the widget,
+   and the matching secret never leaves Cloudflare.
+
+   Rendered on demand rather than at page load: a visitor who never opens a form
+   never pays for the widget, and a widget rendered into a hidden modal measures
+   itself wrong anyway. */
+const CF_SITE_KEY='0x4AAAAAAEqid8mDVw7UJOy1';
+const cfIds={};
+function cfRender(slotId){
+  const el=document.getElementById(slotId);
+  if(!el || !window.turnstile) return;
+  if(cfIds[slotId]!==undefined){ try{ window.turnstile.reset(cfIds[slotId]); }catch(e){} return; }
+  try{
+    cfIds[slotId]=window.turnstile.render('#'+slotId,{sitekey:CF_SITE_KEY, theme:'light', size:'flexible'});
+  }catch(e){ /* leave the slot empty; the server decides what to do about it */ }
+}
+function cfToken(slotId){
+  if(!window.turnstile || cfIds[slotId]===undefined) return '';
+  try{ return window.turnstile.getResponse(cfIds[slotId])||''; }catch(e){ return ''; }
+}
+/* A token is single-use. Without this reset, a second message in the same visit
+   is sent with a spent token and refused — which would look like a broken form
+   rather than a security control. */
+function cfReset(slotId){
+  if(!window.turnstile || cfIds[slotId]===undefined) return;
+  try{ window.turnstile.reset(cfIds[slotId]); }catch(e){}
+}
+
 /* The role is read from the dropdown at submit time rather than tracked in a
    module variable, so there is only one place it can be wrong. */
 const jnKind=()=>{ const e=document.getElementById('jnKind');
@@ -2753,6 +2792,7 @@ function openJoin(){
     .forEach(id=>{const e=document.getElementById(id); if(e) e.value='';});
   const k=document.getElementById('jnKind'); if(k) k.selectedIndex=0;
   openModal('joinModal');
+  cfRender('jnCf');
 }
 async function submitJoin(){
   const g=id=>(document.getElementById(id).value||'').trim();
@@ -2780,7 +2820,8 @@ async function submitJoin(){
       await sb.from('contact_messages').insert({ name, email, topic, message: summary,
         user_id: sbSession?sbSession.user.id:null });
       try{ await fetch('/api/contact-notify',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name,email,topic,message:summary})}); }catch(e){}
+        body:JSON.stringify({name,email,topic,message:summary,cf:cfToken('jnCf')})}); }catch(e){}
+      cfReset('jnCf');
     } else {
       location.href='mailto:admin@summygarden.com?subject='+encodeURIComponent(topic)+'&body='+encodeURIComponent(summary);
     }
@@ -2797,6 +2838,7 @@ function openContact(){
   // Start blank every time — the sender fills in their own details.
   ['ctName','ctEmail','ctMsg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   openModal('contactModal');
+  cfRender('ctCf');
 }
 async function submitContact(){
   const name=document.getElementById('ctName').value.trim();
@@ -2809,7 +2851,8 @@ async function submitContact(){
   if(error){ toast('Could not send — please email admin@summygarden.com'); return; }
   // fire-and-forget: forward a copy to the studio mailbox (no-op until email is configured)
   try{ fetch('/api/contact-notify',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name,email,topic:ctSel,message:msg})}); }catch(e){}
+    body:JSON.stringify({name,email,topic:ctSel,message:msg,cf:cfToken('ctCf')})}); }catch(e){}
+  cfReset('ctCf');
   document.getElementById('ctMsg').value='';
   closeModal('contactModal');
   toast('✉️ Thanks — message received! We\'ll reply to '+email);

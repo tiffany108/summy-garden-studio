@@ -26,17 +26,19 @@ button{font-family:inherit;border:none;cursor:pointer}
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;color:#fff;text-decoration:none}
 .logo-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);box-shadow:var(--glow);display:grid;place-items:center}
 .top .sp{flex:1}
+.lang-sel{width:auto;margin-bottom:0;background:rgba(255,255,255,.08);color:#fff;border:none;border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font-family:inherit;cursor:pointer;flex-shrink:0}
+.lang-sel option{color:#111827}
 .badge-p{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700}
 .btn{background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:10px;padding:9px 16px;box-shadow:var(--glow)}
 .btn.ghost{background:rgba(255,255,255,.09);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
 .btn.dark{background:#eef0f4;color:#334;box-shadow:none}
-#login{max-width:420px;margin:64px auto;background:#fff;border-radius:18px;box-shadow:var(--card);padding:34px;text-align:center}
-#login .logo-mark{margin:0 auto 16px;width:52px;height:52px;border-radius:15px;font-size:22px}
-#login h2{font-size:22px;margin-bottom:6px}
-#login p{color:var(--muted);font-size:14px;margin-bottom:20px}
+#login,#mfa{max-width:420px;margin:64px auto;background:#fff;border-radius:18px;box-shadow:var(--card);padding:34px;text-align:center}
+#login .logo-mark,#mfa .logo-mark{margin:0 auto 16px;width:52px;height:52px;border-radius:15px;font-size:22px}
+#login h2,#mfa h2{font-size:22px;margin-bottom:6px}
+#login p,#mfa p{color:var(--muted);font-size:14px;margin-bottom:20px}
 input,select{width:100%;padding:12px 15px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14.5px;margin-bottom:11px;outline:none;color:var(--ink)}
 input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
-#login .btn{width:100%;justify-content:center;padding:13px}
+#login .btn,#mfa .btn{width:100%;justify-content:center;padding:13px}
 .msg{font-size:13px;font-weight:600;color:#c0392b;margin-top:12px;min-height:18px}
 .sec{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:26px 0 13px}
 .card{background:#fff;border-radius:16px;box-shadow:var(--card);padding:22px}
@@ -78,7 +80,8 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
 <body>
 <div class="top"><div class="wrap">
   <a class="logo" href="/"><span class="logo-mark">◆</span> Summy Garden Studio</a>
-  <span class="badge-p">🤝 Partner</span>
+  <span class="badge-p">🤝 <span id="pBadge">Partner</span></span>
+  <select id="pLangSel" class="lang-sel" title="Language"></select>
   <span class="sp"></span>
   <span id="whoami" style="font-size:13px;opacity:.85"></span>
   <button class="btn ghost" id="outBtn" onclick="signOut()" style="display:none">Sign out</button>
@@ -87,13 +90,13 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
 <div class="wrap">
   <div id="login">
     <div class="logo-mark">🤝</div>
-    <h2>Partner sign in</h2>
-    <p>For Summy Garden Studio sales partners and creators.</p>
+    <h2 id="pH">Partner sign in</h2>
+    <p id="pP">For Summy Garden Studio sales partners and creators.</p>
     <input type="email" id="email" placeholder="Your email" autocomplete="username">
     <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
-    <button class="btn" onclick="doLogin()">Sign in</button>
+    <button class="btn" id="pInBtn" onclick="doLogin()">Sign in</button>
     <div class="msg" id="msg"></div>
-    <p style="font-size:12px;color:#8fa6b3;margin:16px 0 0">
+    <p id="pNotYet" style="font-size:12px;color:#8fa6b3;margin:16px 0 0">
       Not a partner yet? <a href="/?join=1" style="color:var(--accent);font-weight:600">Apply to join</a>.
     </p>
   </div>
@@ -103,17 +106,17 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
        screen is the courtesy, not the control. -->
   <div id="mfa" style="display:none">
     <div class="logo-mark">🔐</div>
-    <h2>Check your email</h2>
-    <p>We have sent a 6-digit code to <b id="mfaTo">your address</b>. It is valid for 10 minutes.</p>
+    <h2 id="pMfaH">Check your email</h2>
+    <p id="pMfaP">We have sent a 6-digit code to <b id="mfaTo">your address</b>. It is valid for 10 minutes.</p>
     <input type="text" id="mfaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
            placeholder="000000" style="text-align:center;letter-spacing:.5em;font-size:22px;font-weight:700">
     <button class="btn" onclick="mfaVerify()" id="mfaGo">Continue</button>
     <div class="msg" id="mfaMsg"></div>
-    <p style="font-size:12px;color:#8fa6b3;margin:14px 0 0">
+    <p id="pNoCodeP" style="font-size:12px;color:#8fa6b3;margin:14px 0 0">
       No code? <a onclick="mfaSend(true)" id="mfaResend" style="color:var(--accent);font-weight:600;cursor:pointer">Send another</a>
       &middot; <a onclick="signOut()" style="color:var(--accent);cursor:pointer">Use a different account</a>
     </p>
-    <p style="font-size:11.5px;color:#8fa6b3;margin:10px 0 0;line-height:1.5">
+    <p id="pWarn" style="font-size:11.5px;color:#8fa6b3;margin:10px 0 0;line-height:1.5">
       We will never ask you for this code, or for your bank details, by email or message.
     </p>
   </div>
@@ -230,11 +233,86 @@ const $=id=>document.getElementById(id);
 const show=(id,on)=>{const e=$(id); if(e) e.style.display=on?'':'none';};
 const money=n=>'$'+(Number(n)||0).toFixed(2);
 
+/* ---------- Language ----------
+   The studio site keeps the visitor's choice in localStorage under 'sgsLang';
+   reading the same key means a partner who browsed the site in Traditional
+   Chinese does not land on an English sign-in screen. Only the sign-in and
+   code screens are translated — the dashboard behind them is still English. */
+const PT={
+en:{"p_out":"Sign out","p_badge":"Partner","p_h":"Partner sign in","p_p":"For Summy Garden Studio sales partners and creators.","p_ph_email":"Your email","p_ph_pw":"Password","p_in":"Sign in","p_notyet":"Not a partner yet?","p_apply":"Apply to join","p_mfa_h":"Check your email","p_mfa_p":"We have sent a 6-digit code to {e}. It is valid for 10 minutes.","p_mfa_go":"Continue","p_nocode":"No code?","p_resend":"Send another","p_switch":"Use a different account","p_warn":"We will never ask you for this code, or for your bank details, by email or message.","p_m_sending":"Sending…","p_m_sent":"Code sent.","p_m_resent":"A new code is on its way.","p_m_nosend":"Could not send a code. Please try again.","p_m_six":"Enter the 6-digit code.","p_m_first":"Ask for a code first.","p_m_fail":"That did not work.","p_m_nopartner":"This account is not a partner account.","p_m_studio":"go to the studio","p_m_bad":"Wrong email or password.","p_addr":"your address"},
+zh:{"p_out":"退出登录","p_badge":"合作伙伴","p_h":"合作伙伴登录","p_p":"供 Summy Garden Studio 的销售伙伴与创作者使用。","p_ph_email":"你的邮箱","p_ph_pw":"密码","p_in":"登录","p_notyet":"还不是合作伙伴？","p_apply":"申请加入","p_mfa_h":"请查收邮件","p_mfa_p":"我们已将 6 位验证码发送至 {e}，有效期为 10 分钟。","p_mfa_go":"继续","p_nocode":"没收到验证码？","p_resend":"重新发送","p_switch":"使用其他账户","p_warn":"我们绝不会通过邮件或消息向你索取此验证码或你的银行信息。","p_m_sending":"发送中…","p_m_sent":"验证码已发送。","p_m_resent":"新的验证码正在发送。","p_m_nosend":"验证码发送失败，请重试。","p_m_six":"请输入 6 位验证码。","p_m_first":"请先获取验证码。","p_m_fail":"操作未成功。","p_m_nopartner":"此账户不是合作伙伴账户。","p_m_studio":"前往工作室","p_m_bad":"邮箱或密码有误。","p_addr":"你的邮箱"},
+"zh-TW":{"p_out":"登出","p_badge":"合作夥伴","p_h":"合作夥伴登入","p_p":"供 Summy Garden Studio 的銷售夥伴與創作者使用。","p_ph_email":"你的電郵","p_ph_pw":"密碼","p_in":"登入","p_notyet":"還不是合作夥伴？","p_apply":"申請加入","p_mfa_h":"請查收電郵","p_mfa_p":"我們已將 6 位驗證碼發送至 {e}，有效期為 10 分鐘。","p_mfa_go":"繼續","p_nocode":"沒收到驗證碼？","p_resend":"重新發送","p_switch":"使用其他帳戶","p_warn":"我們絕不會透過電郵或訊息向你索取此驗證碼或你的銀行資料。","p_m_sending":"發送中…","p_m_sent":"驗證碼已發送。","p_m_resent":"新的驗證碼正在發送。","p_m_nosend":"驗證碼發送失敗，請重試。","p_m_six":"請輸入 6 位驗證碼。","p_m_first":"請先取得驗證碼。","p_m_fail":"操作未成功。","p_m_nopartner":"此帳戶不是合作夥伴帳戶。","p_m_studio":"前往工作室","p_m_bad":"電郵或密碼有誤。","p_addr":"你的電郵"},
+es:{"p_out":"Cerrar sesión","p_badge":"Socio","p_h":"Acceso para socios","p_p":"Para socios comerciales y creadores de Summy Garden Studio.","p_ph_email":"Tu correo electrónico","p_ph_pw":"Contraseña","p_in":"Iniciar sesión","p_notyet":"¿Aún no eres socio?","p_apply":"Solicita unirte","p_mfa_h":"Revisa tu correo","p_mfa_p":"Hemos enviado un código de 6 dígitos a {e}. Es válido durante 10 minutos.","p_mfa_go":"Continuar","p_nocode":"¿No recibiste el código?","p_resend":"Enviar otro","p_switch":"Usar otra cuenta","p_warn":"Nunca te pediremos este código ni tus datos bancarios por correo o mensaje.","p_m_sending":"Enviando…","p_m_sent":"Código enviado.","p_m_resent":"Un nuevo código está en camino.","p_m_nosend":"No se pudo enviar el código. Inténtalo de nuevo.","p_m_six":"Introduce el código de 6 dígitos.","p_m_first":"Pide un código primero.","p_m_fail":"No ha funcionado.","p_m_nopartner":"Esta cuenta no es una cuenta de socio.","p_m_studio":"ir al estudio","p_m_bad":"Correo o contraseña incorrectos.","p_addr":"tu dirección"},
+hi:{"p_out":"साइन आउट","p_badge":"पार्टनर","p_h":"पार्टनर साइन इन","p_p":"Summy Garden Studio के सेल्स पार्टनर और क्रिएटर के लिए।","p_ph_email":"आपका ईमेल","p_ph_pw":"पासवर्ड","p_in":"साइन इन","p_notyet":"अभी तक पार्टनर नहीं हैं?","p_apply":"जुड़ने के लिए आवेदन करें","p_mfa_h":"अपना ईमेल देखें","p_mfa_p":"हमने {e} पर 6 अंकों का कोड भेजा है। यह 10 मिनट तक मान्य है।","p_mfa_go":"जारी रखें","p_nocode":"कोड नहीं मिला?","p_resend":"दूसरा भेजें","p_switch":"दूसरे खाते का उपयोग करें","p_warn":"हम आपसे यह कोड या आपके बैंक विवरण ईमेल या संदेश से कभी नहीं मांगेंगे।","p_m_sending":"भेजा जा रहा है…","p_m_sent":"कोड भेज दिया गया।","p_m_resent":"नया कोड भेजा जा रहा है।","p_m_nosend":"कोड नहीं भेजा जा सका। कृपया फिर से प्रयास करें।","p_m_six":"6 अंकों का कोड दर्ज करें।","p_m_first":"पहले कोड मंगाएं।","p_m_fail":"यह काम नहीं कर सका।","p_m_nopartner":"यह खाता पार्टनर खाता नहीं है।","p_m_studio":"स्टूडियो पर जाएं","p_m_bad":"ईमेल या पासवर्ड गलत है।","p_addr":"आपका पता"},
+ar:{"p_out":"تسجيل الخروج","p_badge":"شريك","p_h":"تسجيل دخول الشركاء","p_p":"لشركاء المبيعات والمبدعين في Summy Garden Studio.","p_ph_email":"بريدك الإلكتروني","p_ph_pw":"كلمة المرور","p_in":"تسجيل الدخول","p_notyet":"لست شريكاً بعد؟","p_apply":"قدّم طلب الانضمام","p_mfa_h":"تحقّق من بريدك","p_mfa_p":"أرسلنا رمزاً من 6 أرقام إلى {e}. صالح لمدة 10 دقائق.","p_mfa_go":"متابعة","p_nocode":"لم يصلك الرمز؟","p_resend":"أرسل رمزاً آخر","p_switch":"استخدام حساب آخر","p_warn":"لن نطلب منك هذا الرمز أو بيانات حسابك المصرفي عبر البريد أو الرسائل أبداً.","p_m_sending":"جارٍ الإرسال…","p_m_sent":"تم إرسال الرمز.","p_m_resent":"رمز جديد في الطريق.","p_m_nosend":"تعذّر إرسال الرمز. حاول مرة أخرى.","p_m_six":"أدخل الرمز المكوّن من 6 أرقام.","p_m_first":"اطلب رمزاً أولاً.","p_m_fail":"لم تنجح العملية.","p_m_nopartner":"هذا الحساب ليس حساب شريك.","p_m_studio":"الذهاب إلى الاستوديو","p_m_bad":"البريد الإلكتروني أو كلمة المرور غير صحيحة.","p_addr":"عنوانك"},
+fr:{"p_out":"Se déconnecter","p_badge":"Partenaire","p_h":"Connexion partenaire","p_p":"Pour les partenaires commerciaux et créateurs de Summy Garden Studio.","p_ph_email":"Votre e-mail","p_ph_pw":"Mot de passe","p_in":"Se connecter","p_notyet":"Pas encore partenaire ?","p_apply":"Demander à rejoindre","p_mfa_h":"Consultez vos e-mails","p_mfa_p":"Nous avons envoyé un code à 6 chiffres à {e}. Il est valable 10 minutes.","p_mfa_go":"Continuer","p_nocode":"Pas de code ?","p_resend":"En envoyer un autre","p_switch":"Utiliser un autre compte","p_warn":"Nous ne vous demanderons jamais ce code ni vos coordonnées bancaires par e-mail ou par message.","p_m_sending":"Envoi…","p_m_sent":"Code envoyé.","p_m_resent":"Un nouveau code est en route.","p_m_nosend":"Impossible d'envoyer le code. Veuillez réessayer.","p_m_six":"Saisissez le code à 6 chiffres.","p_m_first":"Demandez d'abord un code.","p_m_fail":"Cela n'a pas fonctionné.","p_m_nopartner":"Ce compte n'est pas un compte partenaire.","p_m_studio":"aller au studio","p_m_bad":"E-mail ou mot de passe incorrect.","p_addr":"votre adresse"},
+pt:{"p_out":"Terminar sessão","p_badge":"Parceiro","p_h":"Entrada de parceiros","p_p":"Para parceiros comerciais e criadores da Summy Garden Studio.","p_ph_email":"O seu e-mail","p_ph_pw":"Palavra-passe","p_in":"Entrar","p_notyet":"Ainda não é parceiro?","p_apply":"Candidate-se","p_mfa_h":"Verifique o seu e-mail","p_mfa_p":"Enviámos um código de 6 dígitos para {e}. É válido durante 10 minutos.","p_mfa_go":"Continuar","p_nocode":"Não recebeu o código?","p_resend":"Enviar outro","p_switch":"Usar outra conta","p_warn":"Nunca lhe pediremos este código nem os seus dados bancários por e-mail ou mensagem.","p_m_sending":"A enviar…","p_m_sent":"Código enviado.","p_m_resent":"Um novo código está a caminho.","p_m_nosend":"Não foi possível enviar o código. Tente novamente.","p_m_six":"Introduza o código de 6 dígitos.","p_m_first":"Peça primeiro um código.","p_m_fail":"Não funcionou.","p_m_nopartner":"Esta conta não é uma conta de parceiro.","p_m_studio":"ir para o estúdio","p_m_bad":"E-mail ou palavra-passe incorretos.","p_addr":"o seu endereço"},
+ru:{"p_out":"Выйти","p_badge":"Партнёр","p_h":"Вход для партнёров","p_p":"Для партнёров по продажам и авторов Summy Garden Studio.","p_ph_email":"Ваш e-mail","p_ph_pw":"Пароль","p_in":"Войти","p_notyet":"Ещё не партнёр?","p_apply":"Подать заявку","p_mfa_h":"Проверьте почту","p_mfa_p":"Мы отправили 6-значный код на {e}. Он действует 10 минут.","p_mfa_go":"Продолжить","p_nocode":"Код не пришёл?","p_resend":"Отправить ещё раз","p_switch":"Войти в другой аккаунт","p_warn":"Мы никогда не запросим этот код или ваши банковские данные по почте или в сообщении.","p_m_sending":"Отправка…","p_m_sent":"Код отправлен.","p_m_resent":"Новый код уже в пути.","p_m_nosend":"Не удалось отправить код. Попробуйте ещё раз.","p_m_six":"Введите 6-значный код.","p_m_first":"Сначала запросите код.","p_m_fail":"Не получилось.","p_m_nopartner":"Этот аккаунт не является партнёрским.","p_m_studio":"перейти в студию","p_m_bad":"Неверный e-mail или пароль.","p_addr":"ваш адрес"},
+ja:{"p_out":"サインアウト","p_badge":"パートナー","p_h":"パートナーサインイン","p_p":"Summy Garden Studio の販売パートナーおよびクリエイター向けです。","p_ph_email":"メールアドレス","p_ph_pw":"パスワード","p_in":"サインイン","p_notyet":"まだパートナーではありませんか？","p_apply":"参加を申し込む","p_mfa_h":"メールをご確認ください","p_mfa_p":"{e}に6桁のコードを送信しました。有効期限は10分です。","p_mfa_go":"続ける","p_nocode":"コードが届きませんか？","p_resend":"再送する","p_switch":"別のアカウントを使う","p_warn":"このコードや銀行口座情報を、メールやメッセージでお尋ねすることは決してありません。","p_m_sending":"送信中…","p_m_sent":"コードを送信しました。","p_m_resent":"新しいコードを送信しています。","p_m_nosend":"コードを送信できませんでした。もう一度お試しください。","p_m_six":"6桁のコードを入力してください。","p_m_first":"先にコードを取得してください。","p_m_fail":"うまくいきませんでした。","p_m_nopartner":"このアカウントはパートナーアカウントではありません。","p_m_studio":"スタジオへ移動","p_m_bad":"メールアドレスまたはパスワードが違います。","p_addr":"あなたのアドレス"},
+de:{"p_out":"Abmelden","p_badge":"Partner","p_h":"Partner-Anmeldung","p_p":"Für Vertriebspartner und Creator von Summy Garden Studio.","p_ph_email":"Ihre E-Mail","p_ph_pw":"Passwort","p_in":"Anmelden","p_notyet":"Noch kein Partner?","p_apply":"Jetzt bewerben","p_mfa_h":"Prüfen Sie Ihre E-Mails","p_mfa_p":"Wir haben einen 6-stelligen Code an {e} gesendet. Er ist 10 Minuten gültig.","p_mfa_go":"Weiter","p_nocode":"Kein Code erhalten?","p_resend":"Neuen Code senden","p_switch":"Anderes Konto verwenden","p_warn":"Wir werden Sie niemals per E-Mail oder Nachricht nach diesem Code oder Ihren Bankdaten fragen.","p_m_sending":"Senden…","p_m_sent":"Code gesendet.","p_m_resent":"Ein neuer Code ist unterwegs.","p_m_nosend":"Code konnte nicht gesendet werden. Bitte erneut versuchen.","p_m_six":"Geben Sie den 6-stelligen Code ein.","p_m_first":"Fordern Sie zuerst einen Code an.","p_m_fail":"Das hat nicht funktioniert.","p_m_nopartner":"Dieses Konto ist kein Partnerkonto.","p_m_studio":"zum Studio","p_m_bad":"E-Mail oder Passwort falsch.","p_addr":"Ihre Adresse"}
+};
+const P_LANGS=[["en","English"],["zh","中文 (简体)"],["zh-TW","中文 (繁體)"],["es","Español"],["hi","हिन्दी"],["ar","العربية"],["fr","Français"],["pt","Português"],["ru","Русский"],["ja","日本語"],["de","Deutsch"]];
+let PLANG='en';
+const PTX=k=>{const v=(PT[PLANG]||PT.en)[k];return v!==undefined?v:PT.en[k];};
+let MFA_EMAIL='';
+function renderMfaP(){
+  const el=$('pMfaP'); if(!el) return;
+  const b=document.createElement('b'); b.id='mfaTo';
+  b.textContent=MFA_EMAIL||PTX('p_addr');
+  const parts=PTX('p_mfa_p').split('{e}');
+  el.textContent=''; el.append(parts[0]||''); el.append(b); el.append(parts[1]||'');
+}
+function applyPLang(code){
+  PLANG=PT[code]?code:'en';
+  try{ localStorage.setItem('sgsLang',PLANG); }catch(e){}
+  document.documentElement.lang=PLANG;
+  /* Only the two screens this dictionary covers are mirrored; the dashboard
+     behind them is still English and stays left-to-right. */
+  const rtl=(PLANG==='ar'?'rtl':'ltr');
+  ['login','mfa'].forEach(id=>{const e=$(id); if(e) e.dir=rtl;});
+  const st=(id,v)=>{const e=$(id); if(e&&v!=null) e.textContent=v;};
+  st('pBadge',PTX('p_badge')); st('outBtn',PTX('p_out'));
+  st('pH',PTX('p_h')); st('pP',PTX('p_p'));
+  st('pInBtn',PTX('p_in'));
+  const em=$('email'); if(em) em.placeholder=PTX('p_ph_email');
+  const pw=$('pw');    if(pw) pw.placeholder=PTX('p_ph_pw');
+  const ny=$('pNotYet');
+  if(ny) ny.innerHTML=pesc(PTX('p_notyet'))+' <a href="/?join=1" style="color:var(--accent);font-weight:600">'+pesc(PTX('p_apply'))+'</a>.';
+  st('pMfaH',PTX('p_mfa_h')); renderMfaP();
+  st('mfaGo',PTX('p_mfa_go')); st('pWarn',PTX('p_warn'));
+  const nc=$('pNoCodeP');
+  if(nc) nc.innerHTML=pesc(PTX('p_nocode'))+' <a onclick="mfaSend(true)" id="mfaResend" style="color:var(--accent);font-weight:600;cursor:pointer">'+pesc(PTX('p_resend'))+'</a>'
+                     +' &middot; <a onclick="signOut()" style="color:var(--accent);cursor:pointer">'+pesc(PTX('p_switch'))+'</a>';
+}
+function pesc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+(function initLang(){
+  const sel=$('pLangSel'); if(!sel) return;
+  P_LANGS.forEach(([c,l])=>{const o=document.createElement('option');o.value=c;o.textContent=l;sel.appendChild(o);});
+  let saved=null;
+  try{ saved=new URLSearchParams(location.search).get('lang'); }catch(e){}
+  if(!PT[saved]){ try{ saved=localStorage.getItem('sgsLang'); }catch(e){ saved=null; } }
+  if(!PT[saved]){
+    const l=(navigator.language||'en').toLowerCase();
+    if(l.startsWith('zh')) saved=(l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh';
+    else { const p=l.split('-')[0]; saved=PT[p]?p:'en'; }
+  }
+  sel.value=PT[saved]?saved:'en';
+  sel.onchange=()=>applyPLang(sel.value);
+  applyPLang(sel.value);
+})();
+
+
 async function doLogin(){
   const email=$('email').value.trim().toLowerCase(), pw=$('pw').value;
   $('msg').textContent='';
   const {data,error}=await sb.auth.signInWithPassword({email,password:pw});
-  if(error){ $('msg').textContent=error.message; return; }
+  if(error){
+    /* Supabase answers in English. Map the one message customers actually hit;
+       anything rarer falls through in its original wording rather than being
+       swallowed. */
+    $('msg').textContent=/invalid login credentials/i.test(error.message||'')?PTX('p_m_bad'):error.message;
+    return;
+  }
   session=data.session; $('pw').value='';
   await enter();
 }
@@ -265,30 +343,30 @@ async function mfaApi(payload){
 
 function askMfa(){
   show('login',false); show('dash',false); show('mfa',true); show('outBtn',true);
-  const e=$('mfaTo'); if(e&&session&&session.user) e.textContent=session.user.email||'your address';
+  MFA_EMAIL=(session&&session.user&&session.user.email)||''; renderMfaP();
   const c=$('mfaCode'); if(c){ c.value=''; c.focus(); }
 }
 
 async function mfaSend(again){
-  const m=$('mfaMsg'); if(m){ m.style.color='var(--muted)'; m.textContent='Sending…'; }
+  const m=$('mfaMsg'); if(m){ m.style.color='var(--muted)'; m.textContent=PTX('p_m_sending'); }
   const {status,body}=await mfaApi({action:'send'});
   if(body.disabled){ /* emergency switch is on; go straight through */ await enter(true); return; }
   if(status!==200){
-    if(m){ m.style.color='#c0392b'; m.textContent=body.error||'Could not send a code. Please try again.'; }
+    if(m){ m.style.color='#c0392b'; m.textContent=body.error||PTX('p_m_nosend'); }
     return;
   }
-  if(m){ m.style.color='#178a52'; m.textContent=again?'A new code is on its way.':'Code sent.'; }
+  if(m){ m.style.color='#178a52'; m.textContent=again?PTX('p_m_resent'):PTX('p_m_sent'); }
 }
 
 async function mfaVerify(){
   const code=($('mfaCode').value||'').replace(/\D/g,'');
   const m=$('mfaMsg'), b=$('mfaGo');
   m.style.color='#c0392b';
-  if(code.length!==6){ m.textContent='Enter the 6-digit code.'; return; }
+  if(code.length!==6){ m.textContent=PTX('p_m_six'); return; }
   if(b) b.disabled=true;
   const {status,body}=await mfaApi({action:'verify',code});
   if(b) b.disabled=false;
-  if(status!==200){ m.textContent=body.error==='no_code'?'Ask for a code first.':(body.error||'That did not work.'); return; }
+  if(status!==200){ m.textContent=body.error==='no_code'?PTX('p_m_first'):(body.error||PTX('p_m_fail')); return; }
   setMfa(body.mfa); m.textContent='';
   await enter(true);
 }
@@ -306,9 +384,9 @@ async function enter(passedMfa){
   if(!who.partner){
     /* A signed-in customer who is not a partner lands here. Say so plainly and
        send them somewhere useful rather than showing an empty dashboard. */
-    $('msg').innerHTML='This account is not a partner account. '+
-      '<a href="/?join=1" style="color:var(--accent)">Apply to join</a>, or '+
-      '<a href="/" style="color:var(--accent)">go to the studio</a>.';
+    $('msg').innerHTML=pesc(PTX('p_m_nopartner'))+' '+
+      '<a href="/?join=1" style="color:var(--accent)">'+pesc(PTX('p_apply'))+'</a>, '+
+      '<a href="/" style="color:var(--accent)">'+pesc(PTX('p_m_studio'))+'</a>.';
     await sb.auth.signOut(); session=null; return;
   }
   me=who;

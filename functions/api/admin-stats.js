@@ -76,5 +76,27 @@ export async function onRequest(context) {
   const generations = await get(`${SB_URL}/rest/v1/generations?select=user_id,created_at&order=created_at.desc&limit=20000`) || [];
   const purchases = await get(`${SB_URL}/rest/v1/purchases?select=user_id,session_id,pack,credits,amount,currency,created_at&order=created_at.desc&limit=10000`) || [];
 
-  return Response.json({ users, profiles, generations, purchases, generated_at: new Date().toISOString() }, { status: 200, headers });
+  /* Supabase usage. One aggregate rather than pulling every row: on a busy
+     account this table is the largest one here, and the dashboard only needs
+     four numbers. Missing values (the migration not run yet) come back null,
+     and the dashboard renders that as "not measured" rather than as zero,
+     which would read as "plenty of room left". */
+  let storage = null;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/sgs_storage_usage`, {
+      method: "POST", headers: { ...svc, "Content-Type": "application/json" }, body: "{}",
+    });
+    if (r.ok) {
+      const rows = await r.json();
+      const row = Array.isArray(rows) ? rows[0] : rows;
+      if (row) storage = {
+        total_bytes: Number(row.total_bytes) || 0,
+        photos: Number(row.photos) || 0,
+        measured: Number(row.measured) || 0,
+        oldest: row.oldest || null,
+      };
+    }
+  } catch {}
+
+  return Response.json({ users, profiles, generations, purchases, storage, generated_at: new Date().toISOString() }, { status: 200, headers });
 }

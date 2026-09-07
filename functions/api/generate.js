@@ -458,15 +458,19 @@ export async function onRequest(context) {
       const outMime = d.mimeType || d.mime_type || "image/png";
       const ext = outMime.includes("jpeg") ? "jpg" : "png";
       const path = `${authUser.id}/${Date.now()}_v${vi}.${ext}`;
+      const bytes = b64ToBytes(d.data);
       const sbKey = env.SUPABASE_SECRET_KEY;
       const up = await fetch(`${SB_URL}/storage/v1/object/headshots/${path}`, {
         method: "POST",
         headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": outMime, "x-upsert": "true" },
-        body: b64ToBytes(d.data),
+        body: bytes,
       });
       if (up.ok) {
         await sbService(env, `/rest/v1/headshots`, { method: "POST", headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path }) });
+          // The size is recorded here because it is the only place we hold the
+          // file: without it there is no way to know how full the bucket is
+          // until Supabase stops accepting uploads.
+          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path, bytes: bytes.length }) });
       }
     } catch {}
     const payload = JSON.stringify({ image: `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`, variant: vi, remaining, mode: quality === "pro" ? "gemini-pro" : "gemini" });

@@ -185,9 +185,17 @@ input:focus,select:focus{box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px rgba
 
 /* ---------- chart ---------- */
 /* The chart is the reason most partners open this page, so it gets the room.
-   drawChart reads the rendered height, so these are the only numbers to change. */
-canvas{width:100%;height:400px;display:block}
-@media(max-width:760px){canvas{height:300px}}
+   One variable drives both the canvas and its empty state — drawChart reads the
+   rendered height, so this is the only number to change. */
+:root{--chart-h:clamp(360px,46vh,560px)}
+/* The canvas gets its own positioned box. Two reasons: the card no longer
+   collapses to a line of text when a partner has no activity yet, and the
+   tooltip is positioned against the plot area rather than the whole card —
+   against the card it sat one header-height too high. */
+.chartbox{position:relative;height:var(--chart-h);margin-top:6px}
+canvas{width:100%;height:100%;display:block}
+#chartEmpty{position:absolute;inset:0;display:grid;place-items:center;padding:0;pointer-events:none}
+@media(max-width:760px){:root{--chart-h:320px}}
 .ctip{
   position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-118%);
   background:rgba(8,42,62,.95);color:#fff;font-size:12px;font-weight:600;line-height:1.45;
@@ -333,8 +341,10 @@ tbody tr:last-child td{border-bottom:none}
           <button id="mSales" onclick="setMetric('sales')">Customers</button>
         </div>
       </div>
-      <canvas id="chart"></canvas>
-      <div class="empty" id="chartEmpty" style="display:none">No activity in this period yet.</div>
+      <div class="chartbox">
+        <canvas id="chart"></canvas>
+        <div class="empty" id="chartEmpty" style="display:none">No activity in this period yet.</div>
+      </div>
     </div>
 
     <div class="sec" id="secSales">Recent sales</div>
@@ -685,8 +695,9 @@ function drawChart(){
   const c=$('chart'); if(!c||!DATA) return;
   const s=DATA.series||[];
   const any=s.some(p=>(metric==='earned'?p.earned:p.sales)>0);
-  show('chartEmpty',!any); c.style.display=any?'block':'none';
-  if(!any) return;
+  /* The grid is painted even with no data, so an empty period reads as an
+     empty chart rather than a blank white panel. The message sits over it. */
+  show('chartEmpty',!any);
 
   const dpr=window.devicePixelRatio||1;
   const W=c.clientWidth, H=c.clientHeight||400;
@@ -712,6 +723,7 @@ function drawChart(){
   const px=i=>padL+(s.length<2?w/2:w*i/(s.length-1));
   const py=v=>padT+h-(h*(v/nice));
 
+  if(any){
   // Filled area under the line, for weight
   const g=x.createLinearGradient(0,padT,0,padT+h);
   g.addColorStop(0,'rgba(56,189,248,.28)'); g.addColorStop(1,'rgba(56,189,248,0)');
@@ -731,10 +743,11 @@ function drawChart(){
       x.fillStyle='#0284c7'; x.fill();
       x.strokeStyle='#fff'; x.lineWidth=2; x.stroke(); });
   }
+  }
 
   /* Hovered point: a guide line down to the axis and a ring on the marker, so
      the tooltip's number is unambiguous about which day it belongs to. */
-  if(HOVER>=0 && HOVER<s.length){
+  if(any && HOVER>=0 && HOVER<s.length){
     const hx=px(HOVER), hy=py(vals[HOVER]);
     x.save();
     x.strokeStyle='rgba(2,132,199,.35)'; x.lineWidth=1; x.setLineDash([4,4]);
@@ -744,7 +757,7 @@ function drawChart(){
     x.fillStyle='#0284c7'; x.fill(); x.strokeStyle='#fff'; x.lineWidth=2.5; x.stroke();
   }
 
-  CHART={s:s,vals:vals,px:px,py:py};
+  CHART = any ? {s:s,vals:vals,px:px,py:py} : null;
 
   // Date labels: about six, evenly spaced, never overlapping
   x.fillStyle='#8fa6b3'; x.textAlign='center';

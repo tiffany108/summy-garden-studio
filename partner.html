@@ -12,69 +12,217 @@
 <style>
 :root{
   --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
-  --accent:#0284c7;--bg-deep:#062c45;--ink:#0c1c26;--muted:#54707e;--body:#eef6fb;
-  --card:0 1px 2px rgba(7,44,69,.05),0 8px 20px rgba(7,44,69,.08),inset 0 0 0 1px rgba(7,44,69,.05);
-  --glow:0 8px 22px rgba(14,165,233,.38);
+  --accent:#0284c7;--accent-deep:#075985;
+  --bg-deep:#062c45;--ink:#0b1b25;--muted:#5c7684;--faint:#8aa3b1;
+  --body:#f2f8fc;--line:#e3ecf2;
+  /* One elevation scale, used everywhere. Borderless: depth comes from shadow
+     plus a hairline inset ring, never a 1px border. */
+  --ring:inset 0 0 0 1px rgba(9,45,68,.07);
+  --e1:0 1px 2px rgba(9,45,68,.04),0 4px 14px rgba(9,45,68,.06),var(--ring);
+  --e2:0 2px 6px rgba(9,45,68,.06),0 14px 34px rgba(9,45,68,.10),var(--ring);
+  --e3:0 8px 18px rgba(9,45,68,.08),0 30px 70px rgba(9,45,68,.16),var(--ring);
+  --glow:0 6px 18px rgba(14,165,233,.35);
+  --glow-lg:0 10px 28px rgba(14,165,233,.45);
+  --ease:cubic-bezier(.22,.8,.34,1);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--body);color:var(--ink);line-height:1.55}
-.wrap{max-width:1000px;margin:0 auto;padding:26px 22px}
-h1,h2,h3{letter-spacing:-.02em}
+body{
+  font-family:'Inter',system-ui,sans-serif;color:var(--ink);line-height:1.55;
+  background:
+    radial-gradient(1100px 520px at 12% -8%,rgba(56,189,248,.16),transparent 60%),
+    radial-gradient(900px 460px at 92% 4%,rgba(74,222,128,.13),transparent 62%),
+    var(--body);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:26px 22px}
+h1,h2,h3{letter-spacing:-.022em}
 button{font-family:inherit;border:none;cursor:pointer}
-.top{background:var(--bg-deep);color:#fff;padding:15px 0}
-.top .wrap{display:flex;align-items:center;gap:14px;padding-top:0;padding-bottom:0;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;color:#fff;text-decoration:none}
-.logo-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);box-shadow:var(--glow);display:grid;place-items:center}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+/* ---------- top bar ---------- */
+.top{
+  position:sticky;top:0;z-index:40;color:#fff;padding:13px 0;
+  background:linear-gradient(180deg,rgba(6,44,69,.94),rgba(6,44,69,.86));
+  backdrop-filter:saturate(150%) blur(14px);
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 10px 30px rgba(4,26,41,.22);
+}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-top:0;padding-bottom:0;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15.5px;color:#fff;text-decoration:none;letter-spacing:-.01em}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);box-shadow:var(--glow);display:grid;place-items:center;flex-shrink:0}
 .top .sp{flex:1}
-.lang-sel{width:auto;margin-bottom:0;background:rgba(255,255,255,.08);color:#fff;border:none;border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font-family:inherit;cursor:pointer;flex-shrink:0}
+#whoami{font-size:13px;opacity:.85;font-weight:600}
+.lang-sel{
+  width:auto;margin-bottom:0;background:rgba(255,255,255,.09);color:#fff;border:none;
+  border-radius:999px;padding:8px 30px 8px 13px;font-size:12.5px;font-weight:600;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);font-family:inherit;cursor:pointer;flex-shrink:0;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  transition:background-color .18s var(--ease),box-shadow .18s var(--ease);
+}
+.lang-sel:hover{background-color:rgba(255,255,255,.16)}
 .lang-sel option{color:#111827}
-.badge-p{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700}
-.btn{background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:10px;padding:9px 16px;box-shadow:var(--glow)}
-.btn.ghost{background:rgba(255,255,255,.09);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
-.btn.dark{background:#eef0f4;color:#334;box-shadow:none}
-#login,#mfa{max-width:420px;margin:64px auto;background:#fff;border-radius:18px;box-shadow:var(--card);padding:34px;text-align:center}
-#login .logo-mark,#mfa .logo-mark{margin:0 auto 16px;width:52px;height:52px;border-radius:15px;font-size:22px}
-#login h2,#mfa h2{font-size:22px;margin-bottom:6px}
-#login p,#mfa p{color:var(--muted);font-size:14px;margin-bottom:20px}
-input,select{width:100%;padding:12px 15px;border:none;border-radius:11px;background:#f0f6fa;box-shadow:inset 0 0 0 1px rgba(7,44,69,.1);font-family:inherit;font-size:14.5px;margin-bottom:11px;outline:none;color:var(--ink)}
-input:focus{box-shadow:inset 0 0 0 1.5px rgba(56,189,248,.65)}
-#login .btn,#mfa .btn{width:100%;justify-content:center;padding:13px}
+.badge-p{background:rgba(255,255,255,.11);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;white-space:nowrap}
+
+/* ---------- buttons ---------- */
+.btn{
+  background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:11px;
+  padding:10px 17px;box-shadow:var(--glow);position:relative;overflow:hidden;
+  transition:transform .16s var(--ease),box-shadow .16s var(--ease),filter .16s var(--ease);
+}
+.btn:hover{transform:translateY(-1.5px);box-shadow:var(--glow-lg);filter:saturate(1.08)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:var(--glow)}
+.btn.ghost{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.btn.ghost:hover{background:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+.btn.dark{background:#fff;color:#20404f;box-shadow:var(--e1)}
+.btn.dark:hover{background:#fbfdff;box-shadow:var(--e2);transform:translateY(-1.5px)}
+.btn.ok{background:linear-gradient(120deg,#22c55e,#4ade80)!important;color:#fff!important}
+
+/* ---------- sign-in / code cards ---------- */
+#login,#mfa{
+  max-width:430px;margin:56px auto;background:#fff;border-radius:22px;
+  box-shadow:var(--e3);padding:38px 34px;text-align:center;position:relative;overflow:hidden;
+  animation:rise .5s var(--ease) both;
+}
+#login::before,#mfa::before{
+  content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--grad-brand);
+}
+#login .logo-mark,#mfa .logo-mark{margin:0 auto 18px;width:56px;height:56px;border-radius:17px;font-size:24px;box-shadow:var(--glow-lg)}
+#login h2,#mfa h2{font-size:23px;margin-bottom:7px}
+#login p,#mfa p{color:var(--muted);font-size:14px;margin-bottom:22px;line-height:1.6}
+#login .btn,#mfa .btn{width:100%;justify-content:center;padding:14px}
+
+/* ---------- fields ---------- */
+input,select{
+  width:100%;padding:12.5px 15px;border:none;border-radius:12px;background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(9,45,68,.12);font-family:inherit;font-size:14.5px;
+  margin-bottom:11px;outline:none;color:var(--ink);
+  transition:box-shadow .18s var(--ease),background .18s var(--ease);
+}
+input::placeholder{color:#a5b9c4}
+input:hover,select:hover{box-shadow:inset 0 0 0 1px rgba(9,45,68,.2)}
+input:focus,select:focus{box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px rgba(56,189,248,.18)}
 .msg{font-size:13px;font-weight:600;color:#c0392b;margin-top:12px;min-height:18px}
-.sec{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:26px 0 13px}
-.card{background:#fff;border-radius:16px;box-shadow:var(--card);padding:22px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
-.stat{background:#fff;border-radius:15px;box-shadow:var(--card);padding:18px 20px}
-.stat b{display:block;font-size:26px;font-weight:800;letter-spacing:-.02em}
-.stat span{font-size:12px;color:var(--muted)}
-.stat i{display:block;font-style:normal;font-size:11px;color:#8fa6b3;margin-top:3px;line-height:1.4}
-.codebox{background:linear-gradient(120deg,#eaf6fd,#e8fbf1);border-radius:14px;padding:16px 18px;box-shadow:inset 0 0 0 1px rgba(7,44,69,.08);margin-bottom:16px}
-.codebox small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+
+/* ---------- section headings ---------- */
+.sec{
+  display:flex;align-items:center;gap:9px;
+  font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent-deep);margin:30px 0 14px;
+}
+.sec::before{content:'';width:16px;height:3px;border-radius:2px;background:var(--grad-brand);flex-shrink:0}
+
+/* ---------- cards ---------- */
+.card{background:#fff;border-radius:18px;box-shadow:var(--e1);padding:24px;position:relative}
+
+/* ---------- referral code panel ---------- */
+.codebox{
+  position:relative;overflow:hidden;border-radius:20px;padding:22px 24px;margin-bottom:18px;color:#fff;
+  background:
+    radial-gradient(600px 200px at 88% -30%,rgba(74,222,128,.35),transparent 65%),
+    linear-gradient(125deg,#07374f 0%,#0a4a63 52%,#0b5350 100%);
+  box-shadow:0 10px 24px rgba(6,44,69,.24),0 26px 60px rgba(6,44,69,.20);
+}
+.codebox small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(226,247,255,.72);margin-bottom:10px}
 .codebox .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.codebox code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;font-weight:800;letter-spacing:.14em;color:#0b3a52;user-select:all}
+.codebox code{
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:27px;font-weight:800;
+  letter-spacing:.16em;color:#eafcff;user-select:all;text-shadow:0 2px 14px rgba(56,189,248,.5);
+}
+.codebox .btn.dark{background:rgba(255,255,255,.13);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.codebox .btn.dark:hover{background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.34)}
+#rateLine{color:rgba(226,247,255,.8)!important}
+
+/* ---------- filters ---------- */
 .filters{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px}
-.filters label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px}
+.filters label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px}
 .filters input{width:auto;margin:0}
 .quick{display:flex;gap:7px;flex-wrap:wrap}
-.quick button{background:#eef0f4;color:#334;font-size:12px;font-weight:700;border-radius:8px;padding:8px 12px}
+.quick button{
+  background:#eef4f8;color:#3c5866;font-size:12px;font-weight:700;border-radius:999px;padding:8px 14px;
+  transition:background .16s var(--ease),color .16s var(--ease),transform .16s var(--ease),box-shadow .16s var(--ease);
+}
+.quick button:hover{background:#e2ecf3;transform:translateY(-1px)}
 .quick button.on{background:var(--grad-brand);color:#fff;box-shadow:var(--glow)}
+.quick button.on:hover{box-shadow:var(--glow-lg)}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px}
+.stat{
+  background:#fff;border-radius:17px;box-shadow:var(--e1);padding:20px 21px;position:relative;overflow:hidden;
+  transition:transform .2s var(--ease),box-shadow .2s var(--ease);
+}
+.stat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad-brand);
+  transform:scaleX(0);transform-origin:left;transition:transform .32s var(--ease);
+}
+.stat:hover{transform:translateY(-3px);box-shadow:var(--e2)}
+.stat:hover::before{transform:scaleX(1)}
+.stat b{display:block;font-size:29px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat span{font-size:12px;color:var(--muted);display:block;margin-top:3px}
+.stat i{display:block;font-style:normal;font-size:11px;color:var(--faint);margin-top:4px;line-height:1.45}
+
+/* ---------- chart ---------- */
 canvas{width:100%;height:280px;display:block}
+.ctip{
+  position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-118%);
+  background:rgba(8,42,62,.95);color:#fff;font-size:12px;font-weight:600;line-height:1.45;
+  padding:8px 11px;border-radius:10px;white-space:nowrap;z-index:5;
+  box-shadow:0 8px 22px rgba(6,44,69,.32);transition:opacity .14s var(--ease);
+}
+.ctip b{display:block;font-size:14px;font-weight:800;letter-spacing:-.01em}
+.ctip.on{opacity:1}
+
+/* ---------- table ---------- */
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{text-align:left;color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid #e6edf2}
-td{padding:10px;border-bottom:1px solid #f0f4f7}
-.pill{font-size:11px;font-weight:800;border-radius:999px;padding:3px 9px}
-.pill.pending{background:#fff3d6;color:#8a6d1a}
-.pill.confirmed{background:#e7f6ee;color:#178a52}
-.pill.paid{background:#e8eefc;color:#31489c}
-.hint{background:#fff8e1;color:#8a6d1a;border-radius:12px;padding:13px 16px;font-size:13px;line-height:1.6;margin-top:14px}
-.empty{font-size:13.5px;color:var(--muted);text-align:center;padding:26px}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding:9px 11px;border-bottom:1px solid var(--line)}
+td{padding:12px 11px;border-bottom:1px solid #eef4f8}
+tbody tr{transition:background .15s var(--ease)}
+tbody tr:hover{background:#f6fbfe}
+tbody tr:last-child td{border-bottom:none}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;border-radius:999px;padding:4px 11px 4px 9px}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.pill.pending{background:#fff4d9;color:#8a6d1a}
+.pill.confirmed{background:#e4f7ee;color:#0f7a46}
+.pill.paid{background:#e9eefc;color:#31489c}
+
+/* ---------- misc ---------- */
+.hint{
+  background:linear-gradient(120deg,#fffaeb,#fff7e0);color:#7d6317;border-radius:14px;
+  padding:15px 18px;font-size:13px;line-height:1.65;margin-top:16px;
+  box-shadow:inset 3px 0 0 #f5c33b,inset 0 0 0 1px rgba(180,140,20,.1);
+}
+.empty{font-size:13.5px;color:var(--muted);text-align:center;padding:30px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
-.card label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 5px}
-.paybox{background:#f4f9fc;border-radius:14px;padding:18px 20px;margin:8px 0 18px;
-  box-shadow:inset 0 0 0 1px rgba(7,44,69,.08)}
-.onfile{font-size:12.5px;color:#178a52;font-weight:700;background:#e7f6ee;border-radius:9px;
-  padding:9px 12px;margin-top:4px}
+.card label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 6px}
+.paybox{background:linear-gradient(150deg,#f5fafd,#eef7fb);border-radius:16px;padding:20px 22px;margin:10px 0 20px;box-shadow:var(--ring)}
+.onfile{font-size:12.5px;color:#0f7a46;font-weight:700;background:#e4f7ee;border-radius:10px;padding:10px 13px;margin-top:4px}
+
+/* ---------- motion ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#dash .codebox{animation:rise .5s var(--ease) both}
+#dash .sec{animation:rise .5s var(--ease) both;animation-delay:.04s}
+#dash .stat{animation:rise .5s var(--ease) both}
+#dash .stat:nth-child(1){animation-delay:.06s}
+#dash .stat:nth-child(2){animation-delay:.11s}
+#dash .stat:nth-child(3){animation-delay:.16s}
+#dash .stat:nth-child(4){animation-delay:.21s}
+#dash .stat:nth-child(5){animation-delay:.26s}
+#dash .card{animation:rise .5s var(--ease) both;animation-delay:.1s}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .btn:hover,.stat:hover,.quick button:hover{transform:none}
+}
+
 @media(max-width:620px){.grid2{grid-template-columns:1fr}}
-@media(max-width:640px){.wrap{padding:20px 16px}.codebox code{font-size:20px}}
+@media(max-width:640px){
+  .wrap{padding:20px 16px}
+  .codebox{padding:18px}.codebox code{font-size:21px}
+  .stat b{font-size:25px}
+  .top{position:static}
+}
 </style>
 </head>
 <body>
@@ -123,7 +271,7 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
 
   <div id="dash" style="display:none">
     <div class="codebox">
-      <small>Your code — customers get 20% off with it</small>
+      <small id="dCodeLead">Your code — customers get 20% off with it</small>
       <div class="row">
         <code id="pCode">––––––</code>
         <button class="btn dark" onclick="copyCode()" id="copyBtn">Copy code</button>
@@ -132,32 +280,32 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
       </div>
     </div>
 
-    <div class="sec">Your earnings</div>
+    <div class="sec" id="secEarn">Your earnings</div>
     <div class="card" style="margin-bottom:16px">
       <div class="filters">
-        <div><label for="from">From</label><input type="date" id="from"></div>
-        <div><label for="to">To</label><input type="date" id="to"></div>
-        <button class="btn" onclick="load()">Apply</button>
+        <div><label for="from" id="lblFrom">From</label><input type="date" id="from"></div>
+        <div><label for="to" id="lblTo">To</label><input type="date" id="to"></div>
+        <button class="btn" id="btnApply" onclick="load()">Apply</button>
         <div class="quick" id="quick">
-          <button data-d="7">7 days</button>
-          <button data-d="30" class="on">30 days</button>
-          <button data-d="90">90 days</button>
-          <button data-d="365">1 year</button>
+          <button data-d="7" id="q7">7 days</button>
+          <button data-d="30" id="q30" class="on">30 days</button>
+          <button data-d="90" id="q90">90 days</button>
+          <button data-d="365" id="q365">1 year</button>
         </div>
       </div>
     </div>
 
     <div class="stats" style="margin-bottom:18px">
-      <div class="stat"><b id="sSales">–</b><span>customers used your code</span></div>
-      <div class="stat"><b id="sEarned">–</b><span>earned in this period</span><i>≈US$, all statuses</i></div>
-      <div class="stat"><b id="sPending">–</b><span>pending</span><i>confirms 30 days after each sale</i></div>
-      <div class="stat"><b id="sConfirmed">–</b><span>ready to be paid</span></div>
-      <div class="stat"><b id="sPaid">–</b><span>already paid to you</span></div>
+      <div class="stat"><b id="sSales">–</b><span id="sSalesL">customers used your code</span></div>
+      <div class="stat"><b id="sEarned">–</b><span id="sEarnedL">earned in this period</span><i id="sEarnedI">≈US$, all statuses</i></div>
+      <div class="stat"><b id="sPending">–</b><span id="sPendingL">pending</span><i id="sPendingI">confirms 30 days after each sale</i></div>
+      <div class="stat"><b id="sConfirmed">–</b><span id="sConfirmedL">ready to be paid</span></div>
+      <div class="stat"><b id="sPaid">–</b><span id="sPaidL">already paid to you</span></div>
     </div>
 
     <div class="card" style="margin-bottom:18px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-        <b style="font-size:15px">Over time</b>
+        <b style="font-size:15px" id="lblOver">Over time</b>
         <div class="quick">
           <button id="mEarn" class="on" onclick="setMetric('earned')">Earnings</button>
           <button id="mSales" onclick="setMetric('sales')">Customers</button>
@@ -167,40 +315,40 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
       <div class="empty" id="chartEmpty" style="display:none">No activity in this period yet.</div>
     </div>
 
-    <div class="sec">Your details &amp; payment</div>
+    <div class="sec" id="secDetails">Your details &amp; payment</div>
     <div class="card" style="margin-bottom:18px">
       <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;line-height:1.6">
-        We need these to pay you and to put your name on the agreement. Only you and Summy Garden Studio can see them.
+        <span id="dDetailsP">We need these to pay you and to put your name on the agreement. Only you and Summy Garden Studio can see them.</span>
       </p>
       <div class="grid2">
-        <div><label>Full legal name</label><input id="dName" placeholder="As it appears on your bank account"></div>
-        <div><label>Contact phone</label><input id="dPhone" placeholder="+852 …"></div>
+        <div><label id="lblDName">Full legal name</label><input id="dName" placeholder="As it appears on your bank account"></div>
+        <div><label id="lblDPhone">Contact phone</label><input id="dPhone" placeholder="+852 …"></div>
       </div>
-      <label>Address</label>
+      <label id="lblDAddr">Address</label>
       <input id="dAddr" placeholder="Street, city, country">
-      <label>Your channel or profile</label>
+      <label id="lblDUrl">Your channel or profile</label>
       <input id="dUrl" placeholder="https://…">
 
       <div class="paybox">
-        <b style="display:block;font-size:14.5px;margin-bottom:4px">How should we pay you?</b>
-        <span style="font-size:12.5px;color:var(--muted);display:block;margin-bottom:14px">
+        <b style="display:block;font-size:14.5px;margin-bottom:4px" id="lblPayH">How should we pay you?</b>
+        <span style="font-size:12.5px;color:var(--muted);display:block;margin-bottom:14px" id="lblPayP">
           Stored securely and shown back to you masked. We will only ever ask for these here, inside your portal — never by email.
         </span>
         <div class="grid2">
-          <div><label>Method</label>
+          <div><label id="lblMethod">Method</label>
             <select id="dMethod">
-              <option value="">Choose…</option>
-              <option value="bank">Bank transfer</option>
-              <option value="fps">FPS (Hong Kong)</option>
+              <option value="" id="optChoose">Choose…</option>
+              <option value="bank" id="optBank">Bank transfer</option>
+              <option value="fps" id="optFps">FPS (Hong Kong)</option>
               <option value="paypal">PayPal</option>
-              <option value="other">Other</option>
+              <option value="other" id="optOther">Other</option>
             </select>
           </div>
-          <div><label>Name on the account</label><input id="dPayName" placeholder="Exactly as the bank has it"></div>
+          <div><label id="lblPayName">Name on the account</label><input id="dPayName" placeholder="Exactly as the bank has it"></div>
         </div>
         <div class="grid2">
-          <div><label>Bank or provider</label><input id="dBank" placeholder="e.g. HSBC"></div>
-          <div><label>Account number / FPS ID / PayPal email</label>
+          <div><label id="lblBank">Bank or provider</label><input id="dBank" placeholder="e.g. HSBC"></div>
+          <div><label id="lblDetail">Account number / FPS ID / PayPal email</label>
             <input id="dDetail" placeholder="Leave blank to keep the one on file" autocomplete="off"></div>
         </div>
         <div id="dOnFile" class="onfile" style="display:none"></div>
@@ -210,11 +358,11 @@ td{padding:10px;border-bottom:1px solid #f0f4f7}
       <span class="msg" id="dMsg" style="display:inline-block;margin-left:12px;min-height:0"></span>
     </div>
 
-    <div class="sec">Recent sales</div>
+    <div class="sec" id="secSales">Recent sales</div>
     <div class="card" style="overflow-x:auto">
-      <table><thead><tr><th>Date</th><th>Pack</th><th>Customer paid</th><th>You earned</th><th>Status</th></tr></thead>
+      <table><thead><tr><th id="thDate">Date</th><th id="thPack">Pack</th><th id="thPaid">Customer paid</th><th id="thEarned">You earned</th><th id="thStatus">Status</th></tr></thead>
       <tbody id="rows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table>
-      <div class="hint">
+      <div class="hint" id="dHint">
         <b>How this works.</b> You earn a share of what the customer actually pays, after their discount.
         Each sale shows as <b>pending</b> for 30 days while the customer's quality guarantee runs, then becomes
         <b>ready to be paid</b>. Payouts are made by transfer — we will be in touch to arrange them.
@@ -251,6 +399,25 @@ ru:{"p_out":"Выйти","p_badge":"Партнёр","p_h":"Вход для па�
 ja:{"p_out":"サインアウト","p_badge":"パートナー","p_h":"パートナーサインイン","p_p":"Summy Garden Studio の販売パートナーおよびクリエイター向けです。","p_ph_email":"メールアドレス","p_ph_pw":"パスワード","p_in":"サインイン","p_notyet":"まだパートナーではありませんか？","p_apply":"参加を申し込む","p_mfa_h":"メールをご確認ください","p_mfa_p":"{e}に6桁のコードを送信しました。有効期限は10分です。","p_mfa_go":"続ける","p_nocode":"コードが届きませんか？","p_resend":"再送する","p_switch":"別のアカウントを使う","p_warn":"このコードや銀行口座情報を、メールやメッセージでお尋ねすることは決してありません。","p_m_sending":"送信中…","p_m_sent":"コードを送信しました。","p_m_resent":"新しいコードを送信しています。","p_m_nosend":"コードを送信できませんでした。もう一度お試しください。","p_m_six":"6桁のコードを入力してください。","p_m_first":"先にコードを取得してください。","p_m_fail":"うまくいきませんでした。","p_m_nopartner":"このアカウントはパートナーアカウントではありません。","p_m_studio":"スタジオへ移動","p_m_bad":"メールアドレスまたはパスワードが違います。","p_addr":"あなたのアドレス"},
 de:{"p_out":"Abmelden","p_badge":"Partner","p_h":"Partner-Anmeldung","p_p":"Für Vertriebspartner und Creator von Summy Garden Studio.","p_ph_email":"Ihre E-Mail","p_ph_pw":"Passwort","p_in":"Anmelden","p_notyet":"Noch kein Partner?","p_apply":"Jetzt bewerben","p_mfa_h":"Prüfen Sie Ihre E-Mails","p_mfa_p":"Wir haben einen 6-stelligen Code an {e} gesendet. Er ist 10 Minuten gültig.","p_mfa_go":"Weiter","p_nocode":"Kein Code erhalten?","p_resend":"Neuen Code senden","p_switch":"Anderes Konto verwenden","p_warn":"Wir werden Sie niemals per E-Mail oder Nachricht nach diesem Code oder Ihren Bankdaten fragen.","p_m_sending":"Senden…","p_m_sent":"Code gesendet.","p_m_resent":"Ein neuer Code ist unterwegs.","p_m_nosend":"Code konnte nicht gesendet werden. Bitte erneut versuchen.","p_m_six":"Geben Sie den 6-stelligen Code ein.","p_m_first":"Fordern Sie zuerst einen Code an.","p_m_fail":"Das hat nicht funktioniert.","p_m_nopartner":"Dieses Konto ist kein Partnerkonto.","p_m_studio":"zum Studio","p_m_bad":"E-Mail oder Passwort falsch.","p_addr":"Ihre Adresse"}
 };
+/* Dashboard strings, same 11 languages. Kept in its own object and merged
+   into PT so the sign-in dictionary above stays readable. */
+const PTD={
+en:{"d_code_lead":"Your code — customers get 20% off with it","d_copy_code":"Copy code","d_copy_link":"Copy share link","d_copied":"Copied ✓","d_rate":"You earn {r}% of what each customer pays","d_earn_h":"Your earnings","d_from":"From","d_to":"To","d_apply":"Apply","d_7d":"7 days","d_30d":"30 days","d_90d":"90 days","d_1y":"1 year","d_s_sales":"customers used your code","d_s_earned":"earned in this period","d_s_earned_i":"≈US$, all statuses","d_s_pending":"pending","d_s_pending_i":"confirms 30 days after each sale","d_s_ready":"ready to be paid","d_s_paid":"already paid to you","d_over_time":"Over time","d_m_earn":"Earnings","d_m_sales":"Customers","d_no_activity":"No activity in this period yet.","d_details_h":"Your details & payment","d_details_p":"We need these to pay you and to put your name on the agreement. Only you and Summy Garden Studio can see them.","d_name":"Full legal name","d_ph_name":"As it appears on your bank account","d_phone":"Contact phone","d_addr":"Address","d_ph_addr":"Street, city, country","d_url":"Your channel or profile","d_pay_h":"How should we pay you?","d_pay_p":"Stored securely and shown back to you masked. We will only ever ask for these here, inside your portal — never by email.","d_method":"Method","d_choose":"Choose…","d_bank":"Bank transfer","d_fps":"FPS (Hong Kong)","d_other":"Other","d_payname":"Name on the account","d_ph_payname":"Exactly as the bank has it","d_bankprov":"Bank or provider","d_ph_bank":"e.g. HSBC","d_detail":"Account number / FPS ID / PayPal email","d_ph_detail":"Leave blank to keep the one on file","d_save":"Save details","d_saved":"Saved ✓","d_need_name":"Please give the name on your account","d_save_fail":"Could not save — please try again","d_onfile":"On file: ","d_sales_h":"Recent sales","d_th_date":"Date","d_th_pack":"Pack","d_th_paid":"Customer paid","d_th_earned":"You earned","d_th_status":"Status","d_loading":"Loading…","d_no_sales":"No sales in this period yet.","d_hint_b":"How this works.","d_hint":"You earn a share of what the customer actually pays, after their discount. Each sale shows as {p} for 30 days while the customer's quality guarantee runs, then becomes {r}. Payouts are made by transfer — we will be in touch to arrange them.","d_st_pending":"pending","d_st_ready":"ready to pay","d_st_paid":"paid"},
+zh:{"d_code_lead":"你的专属代码 — 顾客使用可享 8 折","d_copy_code":"复制代码","d_copy_link":"复制分享链接","d_copied":"已复制 ✓","d_rate":"每位顾客付款金额的 {r}% 归你","d_earn_h":"你的收益","d_from":"起始","d_to":"结束","d_apply":"套用","d_7d":"7 天","d_30d":"30 天","d_90d":"90 天","d_1y":"1 年","d_s_sales":"位顾客使用了你的代码","d_s_earned":"本期收益","d_s_earned_i":"约美元，含所有状态","d_s_pending":"待确认","d_s_pending_i":"每笔销售 30 天后确认","d_s_ready":"可提取","d_s_paid":"已支付给你","d_over_time":"趋势","d_m_earn":"收益","d_m_sales":"顾客数","d_no_activity":"本期暂无记录。","d_details_h":"你的资料与收款方式","d_details_p":"我们需要这些资料来向你付款，并在协议上填写你的名字。只有你和 Summy Garden Studio 能看到。","d_name":"法定全名","d_ph_name":"与银行账户上的姓名一致","d_phone":"联络电话","d_addr":"地址","d_ph_addr":"街道、城市、国家","d_url":"你的频道或个人主页","d_pay_h":"我们该如何向你付款？","d_pay_p":"安全存储，显示时会部分遮蔽。我们只会在此处（你的后台）询问这些资料 — 绝不会通过电邮索取。","d_method":"方式","d_choose":"请选择…","d_bank":"银行转账","d_fps":"转数快 FPS（香港）","d_other":"其他","d_payname":"账户名称","d_ph_payname":"须与银行记录完全一致","d_bankprov":"银行或服务商","d_ph_bank":"例如 汇丰","d_detail":"账号 / FPS ID / PayPal 邮箱","d_ph_detail":"留空则保留现有资料","d_save":"保存资料","d_saved":"已保存 ✓","d_need_name":"请填写你的账户名称","d_save_fail":"保存失败 — 请再试一次","d_onfile":"已存档：","d_sales_h":"近期销售","d_th_date":"日期","d_th_pack":"套餐","d_th_paid":"顾客支付","d_th_earned":"你的收益","d_th_status":"状态","d_loading":"载入中…","d_no_sales":"本期暂无销售记录。","d_hint_b":"运作方式。","d_hint":"你可获得顾客实付金额（扣除折扣后）的一部分。每笔销售会显示为{p}，为期 30 天，等待顾客的品质保证期结束，之后变为{r}。款项将以转账方式支付 — 我们会与你联络安排。","d_st_pending":"待确认","d_st_ready":"可提取","d_st_paid":"已支付"},
+"zh-TW":{"d_code_lead":"你的專屬代碼 — 顧客使用可享 8 折","d_copy_code":"複製代碼","d_copy_link":"複製分享連結","d_copied":"已複製 ✓","d_rate":"每位顧客付款金額的 {r}% 歸你","d_earn_h":"你的收益","d_from":"起始","d_to":"結束","d_apply":"套用","d_7d":"7 天","d_30d":"30 天","d_90d":"90 天","d_1y":"1 年","d_s_sales":"位顧客使用了你的代碼","d_s_earned":"本期收益","d_s_earned_i":"約美元，含所有狀態","d_s_pending":"待確認","d_s_pending_i":"每筆銷售 30 天後確認","d_s_ready":"可提取","d_s_paid":"已支付給你","d_over_time":"趨勢","d_m_earn":"收益","d_m_sales":"顧客數","d_no_activity":"本期暫無記錄。","d_details_h":"你的資料與收款方式","d_details_p":"我們需要這些資料來向你付款，並在協議上填寫你的名字。只有你和 Summy Garden Studio 能看到。","d_name":"法定全名","d_ph_name":"與銀行帳戶上的姓名一致","d_phone":"聯絡電話","d_addr":"地址","d_ph_addr":"街道、城市、國家","d_url":"你的頻道或個人主頁","d_pay_h":"我們該如何向你付款？","d_pay_p":"安全儲存，顯示時會部分遮蔽。我們只會在此處（你的後台）詢問這些資料 — 絕不會透過電郵索取。","d_method":"方式","d_choose":"請選擇…","d_bank":"銀行轉帳","d_fps":"轉數快 FPS（香港）","d_other":"其他","d_payname":"帳戶名稱","d_ph_payname":"須與銀行紀錄完全一致","d_bankprov":"銀行或服務商","d_ph_bank":"例如 滙豐","d_detail":"帳號 / FPS ID / PayPal 電郵","d_ph_detail":"留空則保留現有資料","d_save":"儲存資料","d_saved":"已儲存 ✓","d_need_name":"請填寫你的帳戶名稱","d_save_fail":"儲存失敗 — 請再試一次","d_onfile":"已存檔：","d_sales_h":"近期銷售","d_th_date":"日期","d_th_pack":"方案","d_th_paid":"顧客支付","d_th_earned":"你的收益","d_th_status":"狀態","d_loading":"載入中…","d_no_sales":"本期暫無銷售紀錄。","d_hint_b":"運作方式。","d_hint":"你可獲得顧客實付金額（扣除折扣後）的一部分。每筆銷售會顯示為{p}，為期 30 天，等待顧客的品質保證期結束，之後變為{r}。款項將以轉帳方式支付 — 我們會與你聯絡安排。","d_st_pending":"待確認","d_st_ready":"可提取","d_st_paid":"已支付"},
+es:{"d_code_lead":"Tu código — los clientes obtienen un 20% de descuento","d_copy_code":"Copiar código","d_copy_link":"Copiar enlace","d_copied":"Copiado ✓","d_rate":"Ganas el {r}% de lo que paga cada cliente","d_earn_h":"Tus ganancias","d_from":"Desde","d_to":"Hasta","d_apply":"Aplicar","d_7d":"7 días","d_30d":"30 días","d_90d":"90 días","d_1y":"1 año","d_s_sales":"clientes usaron tu código","d_s_earned":"ganado en este periodo","d_s_earned_i":"≈US$, todos los estados","d_s_pending":"pendiente","d_s_pending_i":"se confirma 30 días después de cada venta","d_s_ready":"listo para pagar","d_s_paid":"ya pagado a ti","d_over_time":"Evolución","d_m_earn":"Ganancias","d_m_sales":"Clientes","d_no_activity":"Aún no hay actividad en este periodo.","d_details_h":"Tus datos y pago","d_details_p":"Los necesitamos para pagarte y para poner tu nombre en el acuerdo. Solo tú y Summy Garden Studio podéis verlos.","d_name":"Nombre legal completo","d_ph_name":"Tal como aparece en tu cuenta bancaria","d_phone":"Teléfono de contacto","d_addr":"Dirección","d_ph_addr":"Calle, ciudad, país","d_url":"Tu canal o perfil","d_pay_h":"¿Cómo quieres que te paguemos?","d_pay_p":"Se guardan de forma segura y se muestran enmascarados. Solo te los pediremos aquí, dentro de tu portal, nunca por correo.","d_method":"Método","d_choose":"Elige…","d_bank":"Transferencia bancaria","d_fps":"FPS (Hong Kong)","d_other":"Otro","d_payname":"Nombre de la cuenta","d_ph_payname":"Exactamente como lo tiene el banco","d_bankprov":"Banco o proveedor","d_ph_bank":"p. ej. HSBC","d_detail":"Número de cuenta / FPS ID / correo de PayPal","d_ph_detail":"Déjalo vacío para conservar el actual","d_save":"Guardar datos","d_saved":"Guardado ✓","d_need_name":"Indica el nombre de tu cuenta","d_save_fail":"No se pudo guardar — inténtalo de nuevo","d_onfile":"Registrado: ","d_sales_h":"Ventas recientes","d_th_date":"Fecha","d_th_pack":"Paquete","d_th_paid":"El cliente pagó","d_th_earned":"Has ganado","d_th_status":"Estado","d_loading":"Cargando…","d_no_sales":"Aún no hay ventas en este periodo.","d_hint_b":"Cómo funciona.","d_hint":"Ganas una parte de lo que el cliente paga realmente, después de su descuento. Cada venta aparece como {p} durante 30 días mientras corre su garantía de calidad, y luego pasa a {r}. Los pagos se hacen por transferencia — nos pondremos en contacto para organizarlos.","d_st_pending":"pendiente","d_st_ready":"listo para pagar","d_st_paid":"pagado"},
+hi:{"d_code_lead":"आपका कोड — ग्राहकों को इससे 20% की छूट मिलती है","d_copy_code":"कोड कॉपी करें","d_copy_link":"शेयर लिंक कॉपी करें","d_copied":"कॉपी हो गया ✓","d_rate":"हर ग्राहक की भुगतान राशि का {r}% आपको मिलता है","d_earn_h":"आपकी कमाई","d_from":"से","d_to":"तक","d_apply":"लागू करें","d_7d":"7 दिन","d_30d":"30 दिन","d_90d":"90 दिन","d_1y":"1 साल","d_s_sales":"ग्राहकों ने आपका कोड इस्तेमाल किया","d_s_earned":"इस अवधि में कमाया","d_s_earned_i":"≈US$, सभी स्थितियाँ","d_s_pending":"लंबित","d_s_pending_i":"हर बिक्री के 30 दिन बाद पुष्ट होता है","d_s_ready":"भुगतान के लिए तैयार","d_s_paid":"आपको भुगतान किया जा चुका","d_over_time":"समय के साथ","d_m_earn":"कमाई","d_m_sales":"ग्राहक","d_no_activity":"इस अवधि में अभी कोई गतिविधि नहीं।","d_details_h":"आपका विवरण और भुगतान","d_details_p":"आपको भुगतान करने और समझौते पर आपका नाम लिखने के लिए यह ज़रूरी है। इन्हें केवल आप और Summy Garden Studio देख सकते हैं।","d_name":"पूरा कानूनी नाम","d_ph_name":"जैसा आपके बैंक खाते में है","d_phone":"संपर्क फ़ोन","d_addr":"पता","d_ph_addr":"सड़क, शहर, देश","d_url":"आपका चैनल या प्रोफ़ाइल","d_pay_h":"हम आपको भुगतान कैसे करें?","d_pay_p":"सुरक्षित रूप से संग्रहीत और मास्क करके दिखाया जाता है। हम ये जानकारी केवल यहीं, आपके पोर्टल के भीतर माँगेंगे — कभी ईमेल से नहीं।","d_method":"तरीका","d_choose":"चुनें…","d_bank":"बैंक ट्रांसफ़र","d_fps":"FPS (हांगकांग)","d_other":"अन्य","d_payname":"खाते का नाम","d_ph_payname":"ठीक वैसा जैसा बैंक में है","d_bankprov":"बैंक या प्रदाता","d_ph_bank":"जैसे HSBC","d_detail":"खाता संख्या / FPS ID / PayPal ईमेल","d_ph_detail":"मौजूदा जानकारी रखने के लिए खाली छोड़ें","d_save":"विवरण सहेजें","d_saved":"सहेजा गया ✓","d_need_name":"कृपया अपने खाते का नाम दें","d_save_fail":"सहेजा नहीं जा सका — कृपया फिर से प्रयास करें","d_onfile":"दर्ज है: ","d_sales_h":"हाल की बिक्री","d_th_date":"तारीख","d_th_pack":"पैक","d_th_paid":"ग्राहक ने भुगतान किया","d_th_earned":"आपने कमाया","d_th_status":"स्थिति","d_loading":"लोड हो रहा है…","d_no_sales":"इस अवधि में अभी कोई बिक्री नहीं।","d_hint_b":"यह कैसे काम करता है।","d_hint":"ग्राहक की छूट के बाद वह वास्तव में जो भुगतान करता है, उसका एक हिस्सा आपको मिलता है। हर बिक्री 30 दिनों तक {p} दिखती है, जब तक ग्राहक की गुणवत्ता गारंटी चलती है, फिर {r} हो जाती है। भुगतान ट्रांसफ़र से किए जाते हैं — व्यवस्था के लिए हम आपसे संपर्क करेंगे।","d_st_pending":"लंबित","d_st_ready":"भुगतान योग्य","d_st_paid":"भुगतान हो गया"},
+ar:{"d_code_lead":"رمزك — يحصل العملاء بموجبه على خصم 20%","d_copy_code":"نسخ الرمز","d_copy_link":"نسخ رابط المشاركة","d_copied":"تم النسخ ✓","d_rate":"تحصل على {r}% مما يدفعه كل عميل","d_earn_h":"أرباحك","d_from":"من","d_to":"إلى","d_apply":"تطبيق","d_7d":"7 أيام","d_30d":"30 يوماً","d_90d":"90 يوماً","d_1y":"سنة واحدة","d_s_sales":"عميلاً استخدموا رمزك","d_s_earned":"أرباح هذه الفترة","d_s_earned_i":"≈بالدولار، كل الحالات","d_s_pending":"قيد الانتظار","d_s_pending_i":"يتأكد بعد 30 يوماً من كل عملية بيع","d_s_ready":"جاهز للدفع","d_s_paid":"دُفع لك بالفعل","d_over_time":"عبر الزمن","d_m_earn":"الأرباح","d_m_sales":"العملاء","d_no_activity":"لا يوجد نشاط في هذه الفترة بعد.","d_details_h":"بياناتك والدفع","d_details_p":"نحتاج هذه البيانات لدفع مستحقاتك ولإدراج اسمك في الاتفاقية. لا يطّلع عليها سواك وSummy Garden Studio.","d_name":"الاسم القانوني الكامل","d_ph_name":"كما يظهر في حسابك المصرفي","d_phone":"هاتف التواصل","d_addr":"العنوان","d_ph_addr":"الشارع، المدينة، الدولة","d_url":"قناتك أو ملفك الشخصي","d_pay_h":"كيف تريد أن نرسل لك المدفوعات؟","d_pay_p":"تُحفظ بشكل آمن وتُعرض مموّهة. لن نطلبها إلا هنا داخل بوابتك — ولا نطلبها عبر البريد أبداً.","d_method":"الطريقة","d_choose":"اختر…","d_bank":"تحويل مصرفي","d_fps":"FPS (هونغ كونغ)","d_other":"أخرى","d_payname":"اسم صاحب الحساب","d_ph_payname":"تماماً كما هو لدى المصرف","d_bankprov":"المصرف أو مزوّد الخدمة","d_ph_bank":"مثال: HSBC","d_detail":"رقم الحساب / FPS ID / بريد PayPal","d_ph_detail":"اتركه فارغاً للإبقاء على المسجّل","d_save":"حفظ البيانات","d_saved":"تم الحفظ ✓","d_need_name":"يرجى إدخال اسم صاحب الحساب","d_save_fail":"تعذّر الحفظ — حاول مرة أخرى","d_onfile":"المسجّل: ","d_sales_h":"المبيعات الأخيرة","d_th_date":"التاريخ","d_th_pack":"الباقة","d_th_paid":"دفع العميل","d_th_earned":"ربحت","d_th_status":"الحالة","d_loading":"جارٍ التحميل…","d_no_sales":"لا مبيعات في هذه الفترة بعد.","d_hint_b":"كيف يعمل هذا.","d_hint":"تحصل على حصة مما يدفعه العميل فعلياً بعد خصمه. تظل كل عملية بيع {p} لمدة 30 يوماً طوال سريان ضمان الجودة للعميل، ثم تصبح {r}. تتم المدفوعات بالتحويل — وسنتواصل معك لترتيبها.","d_st_pending":"قيد الانتظار","d_st_ready":"جاهز للدفع","d_st_paid":"مدفوع"},
+fr:{"d_code_lead":"Votre code — vos clients obtiennent 20 % de réduction","d_copy_code":"Copier le code","d_copy_link":"Copier le lien","d_copied":"Copié ✓","d_rate":"Vous gagnez {r} % de ce que paie chaque client","d_earn_h":"Vos gains","d_from":"Du","d_to":"Au","d_apply":"Appliquer","d_7d":"7 jours","d_30d":"30 jours","d_90d":"90 jours","d_1y":"1 an","d_s_sales":"clients ont utilisé votre code","d_s_earned":"gagné sur cette période","d_s_earned_i":"≈US$, tous statuts","d_s_pending":"en attente","d_s_pending_i":"confirmé 30 jours après chaque vente","d_s_ready":"prêt à être versé","d_s_paid":"déjà versé","d_over_time":"Évolution","d_m_earn":"Gains","d_m_sales":"Clients","d_no_activity":"Aucune activité sur cette période.","d_details_h":"Vos coordonnées et paiement","d_details_p":"Nous en avons besoin pour vous payer et inscrire votre nom sur le contrat. Seuls vous et Summy Garden Studio pouvez les voir.","d_name":"Nom légal complet","d_ph_name":"Tel qu'il figure sur votre compte bancaire","d_phone":"Téléphone","d_addr":"Adresse","d_ph_addr":"Rue, ville, pays","d_url":"Votre chaîne ou profil","d_pay_h":"Comment souhaitez-vous être payé ?","d_pay_p":"Conservées de façon sécurisée et affichées masquées. Nous ne vous les demanderons qu'ici, dans votre espace — jamais par e-mail.","d_method":"Méthode","d_choose":"Choisir…","d_bank":"Virement bancaire","d_fps":"FPS (Hong Kong)","d_other":"Autre","d_payname":"Nom du titulaire","d_ph_payname":"Exactement comme à la banque","d_bankprov":"Banque ou prestataire","d_ph_bank":"ex. HSBC","d_detail":"Numéro de compte / FPS ID / e-mail PayPal","d_ph_detail":"Laissez vide pour conserver l'actuel","d_save":"Enregistrer","d_saved":"Enregistré ✓","d_need_name":"Indiquez le nom de votre compte","d_save_fail":"Enregistrement impossible — réessayez","d_onfile":"Enregistré : ","d_sales_h":"Ventes récentes","d_th_date":"Date","d_th_pack":"Formule","d_th_paid":"Payé par le client","d_th_earned":"Vous avez gagné","d_th_status":"Statut","d_loading":"Chargement…","d_no_sales":"Aucune vente sur cette période.","d_hint_b":"Comment ça marche.","d_hint":"Vous percevez une part de ce que le client paie réellement, après sa réduction. Chaque vente reste {p} pendant 30 jours, le temps de sa garantie qualité, puis devient {r}. Les versements se font par virement — nous vous contacterons pour les organiser.","d_st_pending":"en attente","d_st_ready":"prêt à verser","d_st_paid":"versé"},
+pt:{"d_code_lead":"O seu código — os clientes recebem 20% de desconto","d_copy_code":"Copiar código","d_copy_link":"Copiar ligação","d_copied":"Copiado ✓","d_rate":"Recebe {r}% do que cada cliente paga","d_earn_h":"Os seus ganhos","d_from":"De","d_to":"Até","d_apply":"Aplicar","d_7d":"7 dias","d_30d":"30 dias","d_90d":"90 dias","d_1y":"1 ano","d_s_sales":"clientes usaram o seu código","d_s_earned":"ganho neste período","d_s_earned_i":"≈US$, todos os estados","d_s_pending":"pendente","d_s_pending_i":"confirma 30 dias após cada venda","d_s_ready":"pronto a pagar","d_s_paid":"já pago a si","d_over_time":"Ao longo do tempo","d_m_earn":"Ganhos","d_m_sales":"Clientes","d_no_activity":"Ainda sem atividade neste período.","d_details_h":"Os seus dados e pagamento","d_details_p":"Precisamos destes dados para lhe pagar e para colocar o seu nome no acordo. Só você e a Summy Garden Studio os podem ver.","d_name":"Nome legal completo","d_ph_name":"Tal como aparece na sua conta bancária","d_phone":"Telefone de contacto","d_addr":"Morada","d_ph_addr":"Rua, cidade, país","d_url":"O seu canal ou perfil","d_pay_h":"Como devemos pagar-lhe?","d_pay_p":"Guardados em segurança e mostrados mascarados. Só lhos pediremos aqui, dentro do seu portal — nunca por e-mail.","d_method":"Método","d_choose":"Escolher…","d_bank":"Transferência bancária","d_fps":"FPS (Hong Kong)","d_other":"Outro","d_payname":"Nome da conta","d_ph_payname":"Exatamente como o banco o tem","d_bankprov":"Banco ou fornecedor","d_ph_bank":"ex. HSBC","d_detail":"Número de conta / FPS ID / e-mail PayPal","d_ph_detail":"Deixe em branco para manter o atual","d_save":"Guardar dados","d_saved":"Guardado ✓","d_need_name":"Indique o nome da sua conta","d_save_fail":"Não foi possível guardar — tente novamente","d_onfile":"Registado: ","d_sales_h":"Vendas recentes","d_th_date":"Data","d_th_pack":"Pacote","d_th_paid":"O cliente pagou","d_th_earned":"Você ganhou","d_th_status":"Estado","d_loading":"A carregar…","d_no_sales":"Ainda sem vendas neste período.","d_hint_b":"Como funciona.","d_hint":"Recebe uma parte do que o cliente realmente paga, após o desconto. Cada venda fica {p} durante 30 dias, enquanto decorre a garantia de qualidade do cliente, e depois passa a {r}. Os pagamentos são feitos por transferência — entraremos em contacto para os combinar.","d_st_pending":"pendente","d_st_ready":"pronto a pagar","d_st_paid":"pago"},
+ru:{"d_code_lead":"Ваш код — клиенты получают скидку 20%","d_copy_code":"Копировать код","d_copy_link":"Копировать ссылку","d_copied":"Скопировано ✓","d_rate":"Вы получаете {r}% от суммы, которую платит каждый клиент","d_earn_h":"Ваш доход","d_from":"С","d_to":"По","d_apply":"Применить","d_7d":"7 дней","d_30d":"30 дней","d_90d":"90 дней","d_1y":"1 год","d_s_sales":"клиентов воспользовались вашим кодом","d_s_earned":"заработано за период","d_s_earned_i":"≈US$, все статусы","d_s_pending":"в ожидании","d_s_pending_i":"подтверждается через 30 дней после продажи","d_s_ready":"готово к выплате","d_s_paid":"уже выплачено вам","d_over_time":"Динамика","d_m_earn":"Доход","d_m_sales":"Клиенты","d_no_activity":"За этот период пока нет активности.","d_details_h":"Ваши данные и выплаты","d_details_p":"Они нужны, чтобы выплатить вам вознаграждение и указать ваше имя в соглашении. Их видите только вы и Summy Garden Studio.","d_name":"Полное имя","d_ph_name":"Как указано в вашем банковском счёте","d_phone":"Телефон","d_addr":"Адрес","d_ph_addr":"Улица, город, страна","d_url":"Ваш канал или профиль","d_pay_h":"Как вам платить?","d_pay_p":"Хранится защищённо и показывается в замаскированном виде. Мы спросим эти данные только здесь, в вашем кабинете, и никогда по почте.","d_method":"Способ","d_choose":"Выберите…","d_bank":"Банковский перевод","d_fps":"FPS (Гонконг)","d_other":"Другое","d_payname":"Имя владельца счёта","d_ph_payname":"Точно как в банке","d_bankprov":"Банк или сервис","d_ph_bank":"напр. HSBC","d_detail":"Номер счёта / FPS ID / e-mail PayPal","d_ph_detail":"Оставьте пустым, чтобы сохранить текущие","d_save":"Сохранить","d_saved":"Сохранено ✓","d_need_name":"Укажите имя владельца счёта","d_save_fail":"Не удалось сохранить — попробуйте ещё раз","d_onfile":"В файле: ","d_sales_h":"Последние продажи","d_th_date":"Дата","d_th_pack":"Пакет","d_th_paid":"Клиент заплатил","d_th_earned":"Вы заработали","d_th_status":"Статус","d_loading":"Загрузка…","d_no_sales":"За этот период продаж пока нет.","d_hint_b":"Как это работает.","d_hint":"Вы получаете долю от суммы, которую клиент фактически заплатил, после его скидки. Каждая продажа 30 дней имеет статус {p}, пока действует гарантия качества клиента, а затем становится {r}. Выплаты производятся переводом — мы свяжемся с вами, чтобы их организовать.","d_st_pending":"в ожидании","d_st_ready":"к выплате","d_st_paid":"выплачено"},
+ja:{"d_code_lead":"あなたのコード — お客様は20%オフになります","d_copy_code":"コードをコピー","d_copy_link":"共有リンクをコピー","d_copied":"コピーしました ✓","d_rate":"お客様のお支払い額の{r}%があなたの報酬です","d_earn_h":"あなたの収益","d_from":"開始日","d_to":"終了日","d_apply":"適用","d_7d":"7日間","d_30d":"30日間","d_90d":"90日間","d_1y":"1年","d_s_sales":"人のお客様がコードを利用","d_s_earned":"この期間の収益","d_s_earned_i":"約US$・全ステータス","d_s_pending":"保留中","d_s_pending_i":"各販売の30日後に確定","d_s_ready":"支払い準備完了","d_s_paid":"支払い済み","d_over_time":"推移","d_m_earn":"収益","d_m_sales":"お客様数","d_no_activity":"この期間の記録はまだありません。","d_details_h":"あなたの情報とお支払い","d_details_p":"お支払いと契約書へのお名前記載のために必要です。あなたと Summy Garden Studio だけが閲覧できます。","d_name":"戸籍上の氏名","d_ph_name":"銀行口座に記載のとおり","d_phone":"連絡先電話番号","d_addr":"住所","d_ph_addr":"番地、市区町村、国","d_url":"チャンネルまたはプロフィール","d_pay_h":"お支払い方法をお選びください","d_pay_p":"安全に保管し、表示時はマスクされます。これらをお尋ねするのはこのポータル内だけで、メールで伺うことは決してありません。","d_method":"方法","d_choose":"選択してください…","d_bank":"銀行振込","d_fps":"FPS（香港）","d_other":"その他","d_payname":"口座名義","d_ph_payname":"銀行の登録どおり正確に","d_bankprov":"銀行または事業者","d_ph_bank":"例：HSBC","d_detail":"口座番号 / FPS ID / PayPalメール","d_ph_detail":"空欄のままで登録済みの情報を保持","d_save":"情報を保存","d_saved":"保存しました ✓","d_need_name":"口座名義をご入力ください","d_save_fail":"保存できませんでした — もう一度お試しください","d_onfile":"登録済み：","d_sales_h":"最近の販売","d_th_date":"日付","d_th_pack":"プラン","d_th_paid":"お客様の支払額","d_th_earned":"あなたの報酬","d_th_status":"ステータス","d_loading":"読み込み中…","d_no_sales":"この期間の販売はまだありません。","d_hint_b":"仕組みについて。","d_hint":"お客様が割引後に実際にお支払いになった金額の一部を受け取れます。各販売はお客様の品質保証期間中の30日間{p}と表示され、その後{r}になります。お支払いは振込で行い、手配のためこちらからご連絡します。","d_st_pending":"保留中","d_st_ready":"支払い可能","d_st_paid":"支払い済み"},
+de:{"d_code_lead":"Ihr Code — Kunden erhalten damit 20 % Rabatt","d_copy_code":"Code kopieren","d_copy_link":"Link kopieren","d_copied":"Kopiert ✓","d_rate":"Sie erhalten {r} % von dem, was jeder Kunde zahlt","d_earn_h":"Ihre Einnahmen","d_from":"Von","d_to":"Bis","d_apply":"Anwenden","d_7d":"7 Tage","d_30d":"30 Tage","d_90d":"90 Tage","d_1y":"1 Jahr","d_s_sales":"Kunden haben Ihren Code genutzt","d_s_earned":"in diesem Zeitraum verdient","d_s_earned_i":"≈US$, alle Status","d_s_pending":"ausstehend","d_s_pending_i":"wird 30 Tage nach jedem Verkauf bestätigt","d_s_ready":"auszahlungsbereit","d_s_paid":"bereits an Sie ausgezahlt","d_over_time":"Zeitverlauf","d_m_earn":"Einnahmen","d_m_sales":"Kunden","d_no_activity":"In diesem Zeitraum noch keine Aktivität.","d_details_h":"Ihre Daten & Auszahlung","d_details_p":"Wir brauchen diese Angaben, um Sie zu bezahlen und Ihren Namen in die Vereinbarung einzutragen. Nur Sie und Summy Garden Studio können sie sehen.","d_name":"Vollständiger Name","d_ph_name":"Wie auf Ihrem Bankkonto angegeben","d_phone":"Telefon","d_addr":"Adresse","d_ph_addr":"Straße, Stadt, Land","d_url":"Ihr Kanal oder Profil","d_pay_h":"Wie sollen wir Sie bezahlen?","d_pay_p":"Sicher gespeichert und maskiert angezeigt. Wir fragen danach nur hier in Ihrem Portal — niemals per E-Mail.","d_method":"Methode","d_choose":"Bitte wählen…","d_bank":"Banküberweisung","d_fps":"FPS (Hongkong)","d_other":"Andere","d_payname":"Kontoinhaber","d_ph_payname":"Genau wie bei der Bank hinterlegt","d_bankprov":"Bank oder Anbieter","d_ph_bank":"z. B. HSBC","d_detail":"Kontonummer / FPS-ID / PayPal-E-Mail","d_ph_detail":"Leer lassen, um die hinterlegte zu behalten","d_save":"Daten speichern","d_saved":"Gespeichert ✓","d_need_name":"Bitte geben Sie den Kontoinhaber an","d_save_fail":"Speichern fehlgeschlagen — bitte erneut versuchen","d_onfile":"Hinterlegt: ","d_sales_h":"Letzte Verkäufe","d_th_date":"Datum","d_th_pack":"Paket","d_th_paid":"Kunde zahlte","d_th_earned":"Ihr Anteil","d_th_status":"Status","d_loading":"Wird geladen…","d_no_sales":"In diesem Zeitraum noch keine Verkäufe.","d_hint_b":"So funktioniert es.","d_hint":"Sie erhalten einen Anteil an dem, was der Kunde tatsächlich zahlt, nach seinem Rabatt. Jeder Verkauf steht 30 Tage lang auf {p}, solange die Qualitätsgarantie des Kunden läuft, und wird dann {r}. Auszahlungen erfolgen per Überweisung — wir melden uns, um sie zu vereinbaren.","d_st_pending":"ausstehend","d_st_ready":"auszahlbar","d_st_paid":"ausgezahlt"}
+};
+Object.keys(PTD).forEach(c=>{ if(PT[c]) Object.assign(PT[c],PTD[c]); });
+
+let RATE=null;
+function renderRate(){ const el=$('rateLine'); if(el&&RATE!=null) el.textContent=PTX('d_rate').replace('{r}',RATE); }
 const P_LANGS=[["en","English"],["zh","中文 (简体)"],["zh-TW","中文 (繁體)"],["es","Español"],["hi","हिन्दी"],["ar","العربية"],["fr","Français"],["pt","Português"],["ru","Русский"],["ja","日本語"],["de","Deutsch"]];
 let PLANG='en';
 const PTX=k=>{const v=(PT[PLANG]||PT.en)[k];return v!==undefined?v:PT.en[k];};
@@ -262,6 +429,9 @@ function renderMfaP(){
   const parts=PTX('p_mfa_p').split('{e}');
   el.textContent=''; el.append(parts[0]||''); el.append(b); el.append(parts[1]||'');
 }
+/* CJK and Devanagari close a sentence with their own full stop, so a
+   hard-coded '.' after a translated link reads as a typo there. */
+const EOS=()=>({zh:'\u3002','zh-TW':'\u3002',ja:'\u3002',hi:'\u0964'}[PLANG]||'.');
 function applyPLang(code){
   PLANG=PT[code]?code:'en';
   try{ localStorage.setItem('sgsLang',PLANG); }catch(e){}
@@ -277,12 +447,45 @@ function applyPLang(code){
   const em=$('email'); if(em) em.placeholder=PTX('p_ph_email');
   const pw=$('pw');    if(pw) pw.placeholder=PTX('p_ph_pw');
   const ny=$('pNotYet');
-  if(ny) ny.innerHTML=pesc(PTX('p_notyet'))+' <a href="/?join=1" style="color:var(--accent);font-weight:600">'+pesc(PTX('p_apply'))+'</a>.';
+  if(ny) ny.innerHTML=pesc(PTX('p_notyet'))+' <a href="/?join=1" style="color:var(--accent);font-weight:600">'+pesc(PTX('p_apply'))+'</a>'+EOS();
   st('pMfaH',PTX('p_mfa_h')); renderMfaP();
   st('mfaGo',PTX('p_mfa_go')); st('pWarn',PTX('p_warn'));
   const nc=$('pNoCodeP');
   if(nc) nc.innerHTML=pesc(PTX('p_nocode'))+' <a onclick="mfaSend(true)" id="mfaResend" style="color:var(--accent);font-weight:600;cursor:pointer">'+pesc(PTX('p_resend'))+'</a>'
                      +' &middot; <a onclick="signOut()" style="color:var(--accent);cursor:pointer">'+pesc(PTX('p_switch'))+'</a>';
+
+  /* ---- dashboard ---- */
+  st('dCodeLead',PTX('d_code_lead')); st('copyBtn',PTX('d_copy_code')); st('copyLinkBtn',PTX('d_copy_link'));
+  st('secEarn',PTX('d_earn_h')); st('lblFrom',PTX('d_from')); st('lblTo',PTX('d_to')); st('btnApply',PTX('d_apply'));
+  st('q7',PTX('d_7d')); st('q30',PTX('d_30d')); st('q90',PTX('d_90d')); st('q365',PTX('d_1y'));
+  st('sSalesL',PTX('d_s_sales')); st('sEarnedL',PTX('d_s_earned')); st('sEarnedI',PTX('d_s_earned_i'));
+  st('sPendingL',PTX('d_s_pending')); st('sPendingI',PTX('d_s_pending_i'));
+  st('sConfirmedL',PTX('d_s_ready')); st('sPaidL',PTX('d_s_paid'));
+  st('lblOver',PTX('d_over_time')); st('mEarn',PTX('d_m_earn')); st('mSales',PTX('d_m_sales'));
+  st('chartEmpty',PTX('d_no_activity'));
+  st('secDetails',PTX('d_details_h')); st('dDetailsP',PTX('d_details_p'));
+  st('lblDName',PTX('d_name')); st('lblDPhone',PTX('d_phone')); st('lblDAddr',PTX('d_addr')); st('lblDUrl',PTX('d_url'));
+  st('lblPayH',PTX('d_pay_h')); st('lblPayP',PTX('d_pay_p'));
+  st('lblMethod',PTX('d_method')); st('optChoose',PTX('d_choose')); st('optBank',PTX('d_bank'));
+  st('optFps',PTX('d_fps')); st('optOther',PTX('d_other'));
+  st('lblPayName',PTX('d_payname')); st('lblBank',PTX('d_bankprov')); st('lblDetail',PTX('d_detail'));
+  st('dSave',PTX('d_save'));
+  st('secSales',PTX('d_sales_h'));
+  st('thDate',PTX('d_th_date')); st('thPack',PTX('d_th_pack')); st('thPaid',PTX('d_th_paid'));
+  st('thEarned',PTX('d_th_earned')); st('thStatus',PTX('d_th_status'));
+  const ph=(id,k)=>{const e=$(id); if(e) e.placeholder=PTX(k);};
+  ph('dName','d_ph_name'); ph('dAddr','d_ph_addr'); ph('dPayName','d_ph_payname');
+  ph('dBank','d_ph_bank'); ph('dDetail','d_ph_detail');
+  const hint=$('dHint');
+  if(hint) hint.innerHTML='<b>'+pesc(PTX('d_hint_b'))+'</b> '+
+    pesc(PTX('d_hint')).replace('{p}','<b>'+pesc(PTX('d_st_pending'))+'</b>')
+                       .replace('{r}','<b>'+pesc(PTX('d_st_ready'))+'</b>');
+  renderRate();
+  /* Rows and the empty-table placeholder are drawn from data, so they only
+     change language when redrawn. */
+  const tb=$('rows');
+  if(tb && !DATA) tb.innerHTML='<tr><td colspan="5" class="empty">'+pesc(PTX('d_loading'))+'</td></tr>';
+  if(DATA){ try{ drawRows(); }catch(e){} }
 }
 function pesc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 (function initLang(){
@@ -386,14 +589,14 @@ async function enter(passedMfa){
        send them somewhere useful rather than showing an empty dashboard. */
     $('msg').innerHTML=pesc(PTX('p_m_nopartner'))+' '+
       '<a href="/?join=1" style="color:var(--accent)">'+pesc(PTX('p_apply'))+'</a>, '+
-      '<a href="/" style="color:var(--accent)">'+pesc(PTX('p_m_studio'))+'</a>.';
+      '<a href="/" style="color:var(--accent)">'+pesc(PTX('p_m_studio'))+'</a>'+EOS();
     await sb.auth.signOut(); session=null; return;
   }
   me=who;
   show('login',false); show('mfa',false); show('dash',true); show('outBtn',true);
   $('whoami').textContent=who.name||'';
   $('pCode').textContent=who.code;
-  $('rateLine').textContent='You earn '+who.rate+'% of what each customer pays';
+  RATE=who.rate; renderRate();
   fillDetails(who.details||{});
   quickRange(30);
   await load();
@@ -407,16 +610,32 @@ function quickRange(days){
 }
 document.querySelectorAll('#quick button').forEach(b=>b.onclick=()=>{ quickRange(+b.dataset.d); load(); });
 
+/* Figures count up rather than snapping in — it draws the eye to the number
+   that changed. Anyone who has asked for less motion gets the final value
+   straight away. */
+const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+function countTo(id,to,fmt){
+  const el=$(id); if(!el) return;
+  if(REDUCED||!to){ el.textContent=fmt(to); return; }
+  const dur=700, t0=performance.now();
+  const step=now=>{
+    const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
+    el.textContent=fmt(to*e);
+    if(k<1) requestAnimationFrame(step); else el.textContent=fmt(to);
+  };
+  requestAnimationFrame(step);
+}
+
 async function load(){
   const d=await api({action:'stats', from:$('from').value, to:$('to').value});
   if(!d || d.partner===false) return;
   DATA=d;
   const t=d.totals||{};
-  $('sSales').textContent=t.sales||0;
-  $('sEarned').textContent=money(t.earnedUSD);
-  $('sPending').textContent=money(t.pendingUSD);
-  $('sConfirmed').textContent=money(t.confirmedUSD);
-  $('sPaid').textContent=money(t.paidUSD);
+  countTo('sSales',t.sales||0,v=>String(Math.round(v)));
+  countTo('sEarned',t.earnedUSD||0,money);
+  countTo('sPending',t.pendingUSD||0,money);
+  countTo('sConfirmed',t.confirmedUSD||0,money);
+  countTo('sPaid',t.paidUSD||0,money);
   drawChart();
   drawRows();
 }
@@ -431,6 +650,7 @@ function setMetric(m){
 /* Drawn by hand rather than pulling in a charting library: it is one series over
    time, and a 200KB dependency for that would slow the page more than it helps.
    Redraws on resize so it stays sharp on any width. */
+let HOVER=-1, CHART=null;
 function drawChart(){
   const c=$('chart'); if(!c||!DATA) return;
   const s=DATA.series||[];
@@ -482,6 +702,20 @@ function drawChart(){
       x.strokeStyle='#fff'; x.lineWidth=2; x.stroke(); });
   }
 
+  /* Hovered point: a guide line down to the axis and a ring on the marker, so
+     the tooltip's number is unambiguous about which day it belongs to. */
+  if(HOVER>=0 && HOVER<s.length){
+    const hx=px(HOVER), hy=py(vals[HOVER]);
+    x.save();
+    x.strokeStyle='rgba(2,132,199,.35)'; x.lineWidth=1; x.setLineDash([4,4]);
+    x.beginPath(); x.moveTo(hx,padT); x.lineTo(hx,padT+h); x.stroke();
+    x.restore();
+    x.beginPath(); x.arc(hx,hy,6,0,Math.PI*2);
+    x.fillStyle='#0284c7'; x.fill(); x.strokeStyle='#fff'; x.lineWidth=2.5; x.stroke();
+  }
+
+  CHART={s:s,vals:vals,px:px,py:py};
+
   // Date labels: about six, evenly spaced, never overlapping
   x.fillStyle='#8fa6b3'; x.textAlign='center';
   const step=Math.max(1,Math.ceil(s.length/6));
@@ -490,13 +724,35 @@ function drawChart(){
 }
 window.addEventListener('resize',()=>{ try{ drawChart(); }catch(e){} });
 
+/* Chart tooltip. The canvas is drawn by hand, so hit-testing is just "which
+   plotted x is nearest the pointer". */
+(function chartHover(){
+  const c=document.getElementById('chart'); if(!c) return;
+  const tip=document.createElement('div'); tip.className='ctip';
+  c.parentNode.style.position='relative'; c.parentNode.appendChild(tip);
+  const hide=()=>{ if(HOVER===-1) return; HOVER=-1; tip.classList.remove('on'); try{ drawChart(); }catch(e){} };
+  c.addEventListener('mousemove',ev=>{
+    if(!CHART||!CHART.s.length){ hide(); return; }
+    const r=c.getBoundingClientRect(), mx=ev.clientX-r.left;
+    let best=0, bd=Infinity;
+    CHART.s.forEach((p,i)=>{ const d=Math.abs(CHART.px(i)-mx); if(d<bd){ bd=d; best=i; } });
+    const v=CHART.vals[best], date=CHART.s[best].date;
+    tip.innerHTML='<b>'+esc(metric==='earned'?money(v):String(Math.round(v)))+'</b>'+esc(date);
+    tip.style.left=CHART.px(best)+'px';
+    tip.style.top=CHART.py(v)+'px';
+    tip.classList.add('on');
+    if(best!==HOVER){ HOVER=best; try{ drawChart(); }catch(e){} }
+  });
+  c.addEventListener('mouseleave',hide);
+})();
+
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const PACK={Starter:'Essential',Pro:'Professional','Career+':'Studio'};
-const LABEL={pending:'pending',confirmed:'ready to pay',paid:'paid'};
+const LABEL=()=>({pending:PTX('d_st_pending'),confirmed:PTX('d_st_ready'),paid:PTX('d_st_paid')});
 
 function drawRows(){
   const tb=$('rows'); const rows=(DATA&&DATA.rows)||[];
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="empty">No sales in this period yet.</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="empty">'+pesc(PTX('d_no_sales'))+'</td></tr>'; return; }
   /* Amounts are shown in the currency the customer actually paid in — converting
      everything to dollars in this table would misreport what happened. The
      headline figures above are the ≈US$ roll-up. */
@@ -505,7 +761,7 @@ function drawRows(){
     <td>${esc(PACK[r.pack]||r.pack||'—')}</td>
     <td style="color:var(--muted)">${esc(r.currency)} ${r.paid.toFixed(2)}</td>
     <td><b>${esc(r.currency)} ${r.earned.toFixed(2)}</b></td>
-    <td><span class="pill ${esc(r.status)}">${esc(LABEL[r.status]||r.status)}</span></td></tr>`).join('');
+    <td><span class="pill ${esc(r.status)}">${esc(LABEL()[r.status]||r.status)}</span></td></tr>`).join('');
 }
 
 function fillDetails(d){
@@ -518,7 +774,7 @@ function fillDetails(d){
      replacing what is on file. */
   const of=$('dOnFile');
   if(of){
-    if(d.has_payout){ of.style.display='block'; of.textContent='On file: '+(d.payout_detail_masked||'••••'); }
+    if(d.has_payout){ of.style.display='block'; of.textContent=PTX('d_onfile')+(d.payout_detail_masked||'••••'); }
     else { of.style.display='none'; }
   }
 }
@@ -527,7 +783,7 @@ async function saveDetails(){
   const g=id=>($(id)?$(id).value.trim():'');
   const msg=$('dMsg'), btn=$('dSave');
   msg.style.color='#c0392b';
-  if(!g('dName')){ msg.textContent='Please give the name on your account'; return; }
+  if(!g('dName')){ msg.textContent=PTX('d_need_name'); return; }
   if(btn) btn.disabled=true;
   const r=await api({action:'details',
     real_name:g('dName'), phone:g('dPhone'), address:g('dAddr'), channel_url:g('dUrl'),
@@ -535,22 +791,23 @@ async function saveDetails(){
     payout_detail:g('dDetail')});
   if(btn) btn.disabled=false;
   if(r&&r.saved){
-    msg.style.color='#178a52'; msg.textContent='Saved ✓';
+    msg.style.color='#178a52'; msg.textContent=PTX('d_saved');
     if(g('dDetail')){
       $('dDetail').value='';
-      const of=$('dOnFile'); if(of){ of.style.display='block'; of.textContent='On file: '+(r.masked||'••••'); }
+      const of=$('dOnFile'); if(of){ of.style.display='block'; of.textContent=PTX('d_onfile')+(r.masked||'••••'); }
     }
     setTimeout(()=>{ msg.textContent=''; }, 2600);
   } else {
-    msg.textContent=(r&&r.error)||'Could not save — please try again';
+    msg.textContent=(r&&r.error)||PTX('d_save_fail');
   }
 }
 
-function copyCode(){ copy(me.code, 'copyBtn', 'Copied ✓'); }
-function copyLink(){ copy(location.origin+'/?code='+encodeURIComponent(me.code)+'#pricing', 'copyLinkBtn', 'Copied ✓'); }
+function copyCode(){ copy(me.code, 'copyBtn', PTX('d_copied')); }
+function copyLink(){ copy(location.origin+'/?code='+encodeURIComponent(me.code)+'#pricing', 'copyLinkBtn', PTX('d_copied')); }
 function copy(text, btnId, label){
   const b=$(btnId); const restore=b.dataset.o||b.textContent; b.dataset.o=restore;
-  const done=()=>{ b.textContent=label; setTimeout(()=>b.textContent=restore,1800); };
+  const done=()=>{ b.textContent=label; b.classList.add('ok');
+    setTimeout(()=>{ b.textContent=restore; b.classList.remove('ok'); },1800); };
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done,done);
   else done();
 }

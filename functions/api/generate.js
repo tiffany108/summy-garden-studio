@@ -9,6 +9,58 @@ const MODEL_STD = "gemini-2.5-flash-image";
 const MODEL_PRO = "gemini-3-pro-image";
 const apiFor = (m) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
+
+/* ---------- Photo retention ----------
+   The site tells every customer, in three places, that "photos older than 6
+   months are removed automatically" and that "up to 400 photos are kept".
+   Nothing enforced either, so storage only ever grew and both statements were
+   untrue. This runs once per shoot against the customer who is shooting, which
+   needs no scheduler and no new secrets — the Worker already holds the service
+   key. It only ever touches the caller's own folder.
+   Set PHOTO_RETENTION_DAYS=0 to disable; anything else overrides the 180 days. */
+const RETENTION_DAYS = 180;
+const RETENTION_MAX_KEPT = 400;
+const inList = (arr) => "(" + arr.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",") + ")";
+
+async function purgeExpiredPhotos(env, uid) {
+  const days = env.PHOTO_RETENTION_DAYS === undefined || env.PHOTO_RETENTION_DAYS === ""
+    ? RETENTION_DAYS : Number(env.PHOTO_RETENTION_DAYS);
+  if (!Number.isFinite(days) || days <= 0) return;          // explicitly disabled
+
+  const q = await sbService(env,
+    `/rest/v1/headshots?user_id=eq.${encodeURIComponent(uid)}&select=path,created_at&order=created_at.desc&limit=2000`);
+  if (!q.ok) return;
+  const rows = await q.json().catch(() => []);
+  if (!Array.isArray(rows) || !rows.length) return;
+
+  // Two rules, both promised on the site: older than the window, or past the
+  // newest 400. Rows come back newest first, so the index is the rank.
+  const cutoff = Date.now() - days * 86400000;
+  const doomed = rows.filter((r, i) =>
+    i >= RETENTION_MAX_KEPT || (r.created_at && Date.parse(r.created_at) < cutoff));
+
+  // Every stored path is `<uid>/<file>`. Anything else would be a data bug, and
+  // deleting on a guess is not something to do with a customer's photos.
+  const mine = doomed
+    .map((r) => r.path)
+    .filter((p) => typeof p === "string" && p.startsWith(uid + "/"));
+  if (!mine.length) return;
+
+  // Files first, rows second — same order as delete-photos.js, so a half-failure
+  // leaves a dead thumbnail rather than a file nothing points at.
+  for (let i = 0; i < mine.length; i += 500) {
+    const chunk = mine.slice(i, i + 500);
+    await sbService(env, "/storage/v1/object/headshots", {
+      method: "DELETE", body: JSON.stringify({ prefixes: chunk }),
+    });
+  }
+  for (let i = 0; i < mine.length; i += 200) {
+    const chunk = mine.slice(i, i + 200);
+    await sbService(env,
+      `/rest/v1/headshots?user_id=eq.${encodeURIComponent(uid)}&path=in.${encodeURIComponent(inList(chunk))}`,
+      { method: "DELETE", headers: { Prefer: "return=minimal" } });
+  }
+}
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
 // 30 renders per credit. Variety comes from LIGHTING, CAMERA ANGLE and WHICH PART
@@ -274,6 +326,8 @@ export async function onRequest(context) {
 
   const vi = Math.min(Math.max(parseInt(body.variant ?? 0, 10) || 0, 0), VARIANTS.length - 1);
   let remaining = null;
+  let creditSpent = false;   // only variant 0 spends one
+  let genId = null;          // the generations row opened alongside it
 
   if (vi === 0) {
     // variant 0 spends exactly one credit for the whole 30-photo generation
@@ -281,8 +335,15 @@ export async function onRequest(context) {
     const val = r.ok ? await r.json() : -1;
     if (val === -1 || val === null) return Response.json({ error: "no credits" }, { status: 402, headers });
     remaining = val;
-    await sbService(env, `/rest/v1/generations`, { method: "POST", headers: { Prefer: "return=minimal" },
+    creditSpent = true;
+    // return=representation so we get the row id back; undoCredit() needs it to
+    // remove the generation if the shoot never starts.
+    const g = await sbService(env, `/rest/v1/generations`, { method: "POST", headers: { Prefer: "return=representation" },
       body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · ") }) });
+    if (g.ok) { try { const rows = await g.json(); genId = Array.isArray(rows) ? (rows[0]?.id ?? null) : (rows?.id ?? null); } catch {} }
+    // Once per shoot, tidy this customer's own expired photos. Best effort: a
+    // failed clean-up must never stop someone getting the shoot they paid for.
+    try { await purgeExpiredPhotos(env, authUser.id); } catch {}
   } else {
     // remaining variants ride on a generation started recently; 30 photos take
     // several minutes to come back, so the window is generous.
@@ -291,6 +352,29 @@ export async function onRequest(context) {
     const rows = q.ok ? await q.json() : [];
     if (!rows.length) return Response.json({ error: "no active generation" }, { status: 402, headers });
   }
+
+  /* Give the credit back when the shoot never happened.
+     consume_credit() spends before the first Gemini call, so an empty prepay
+     balance, a 429 from the daily cap, a safety block or a timeout would
+     otherwise leave the customer charged for nothing. Only variant 0 spends,
+     so only variant 0 can refund.
+     Best-effort by design: if the refund itself fails we still return the
+     original error to the customer rather than masking it with a second one. */
+  const undoCredit = async () => {
+    if (!creditSpent) return;
+    creditSpent = false;                       // never refund the same call twice
+    try {
+      await sbService(env, `/rest/v1/rpc/refund_credit`, { method: "POST",
+        body: JSON.stringify({ uid: authUser.id }) });
+    } catch {}
+    /* Drop the generation record too. Variants 1-29 are allowed through on the
+       strength of a generation started in the last 20 minutes, so leaving a
+       dead one behind would let 29 more renders run with no credit behind them. */
+    if (genId) {
+      try { await sbService(env, `/rest/v1/generations?id=eq.${genId}`,
+        { method: "DELETE", headers: { Prefer: "return=minimal" } }); } catch {}
+    }
+  };
 
   const outfitDesc = OUTFITS[outfit] || OUTFITS["Navy suit"];
   const styleDesc = STYLES[style] || STYLES["Formal"];
@@ -363,11 +447,11 @@ export async function onRequest(context) {
       ] }],
         generationConfig: { imageConfig: { aspectRatio: "3:4" } } }),
     });
-    if (!res.ok) { const t = await res.text(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }
+    if (!res.ok) { const t = await res.text(); await undoCredit(); return Response.json({ error: `Gemini ${res.status}: ${t.slice(0, 200)}` }, { status: 502, headers }); }
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts || [];
     const img = parts.find((p) => p.inlineData || p.inline_data);
-    if (!img) return Response.json({ error: "no image in response" }, { status: 502, headers });
+    if (!img) { await undoCredit(); return Response.json({ error: "no image in response" }, { status: 502, headers }); }
     const d = img.inlineData || img.inline_data;
     // Save this variant to the user's dashboard (best effort — never blocks the response)
     try {
@@ -390,6 +474,7 @@ export async function onRequest(context) {
       for (let i = 0; i < payload.length; i += CH) c.enqueue(enc.encode(payload.slice(i, i + CH))); c.close(); } });
     return new Response(stream, { status: 200, headers: { ...headers, "Content-Type": "application/json" } });
   } catch (e) {
+    await undoCredit();
     return Response.json({ error: String(e?.message || e) }, { status: 502, headers });
   }
 }

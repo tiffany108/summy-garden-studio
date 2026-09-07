@@ -113,6 +113,25 @@ input:focus,select:focus{box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px rgba
   color:var(--accent-deep);margin:30px 0 14px;
 }
 .sec::before{content:'';width:16px;height:3px;border-radius:2px;background:var(--grad-brand);flex-shrink:0}
+.sec-toggle{
+  background:none;padding:0;width:100%;text-align:left;font-family:inherit;
+  color:var(--accent-deep);transition:color .16s var(--ease);
+}
+.sec-toggle:hover{color:var(--accent)}
+.sec-toggle .chev{
+  display:inline-flex;margin-left:2px;color:var(--accent);
+  transition:transform .26s var(--ease);
+}
+.sec-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+/* A partner who never opens this panel never gets paid, so an unfinished one
+   says so on the closed header. */
+.sec-todo{
+  display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;
+  background:#f5a524;color:#fff;font-size:11px;font-weight:900;letter-spacing:0;
+  box-shadow:0 2px 8px rgba(245,165,36,.5);
+}
+#detailsPanel[hidden]{display:none}
+#detailsPanel{animation:rise .34s var(--ease) both}
 
 /* ---------- cards ---------- */
 .card{background:#fff;border-radius:18px;box-shadow:var(--e1);padding:24px;position:relative}
@@ -165,7 +184,10 @@ input:focus,select:focus{box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px rgba
 .stat i{display:block;font-style:normal;font-size:11px;color:var(--faint);margin-top:4px;line-height:1.45}
 
 /* ---------- chart ---------- */
-canvas{width:100%;height:280px;display:block}
+/* The chart is the reason most partners open this page, so it gets the room.
+   drawChart reads the rendered height, so these are the only numbers to change. */
+canvas{width:100%;height:400px;display:block}
+@media(max-width:760px){canvas{height:300px}}
 .ctip{
   position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-118%);
   background:rgba(8,42,62,.95);color:#fff;font-size:12px;font-weight:600;line-height:1.45;
@@ -315,7 +337,25 @@ tbody tr:last-child td{border-bottom:none}
       <div class="empty" id="chartEmpty" style="display:none">No activity in this period yet.</div>
     </div>
 
-    <div class="sec" id="secDetails">Your details &amp; payment</div>
+    <div class="sec" id="secSales">Recent sales</div>
+    <div class="card" style="overflow-x:auto">
+      <table><thead><tr><th id="thDate">Date</th><th id="thPack">Pack</th><th id="thPaid">Customer paid</th><th id="thEarned">You earned</th><th id="thStatus">Status</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table>
+      <div class="hint" id="dHint">
+        <b>How this works.</b> You earn a share of what the customer actually pays, after their discount.
+        Each sale shows as <b>pending</b> for 30 days while the customer's quality guarantee runs, then becomes
+        <b>ready to be paid</b>. Payouts are made by transfer — we will be in touch to arrange them.
+      </div>
+    </div>
+
+    <button type="button" class="sec sec-toggle" id="secDetails" aria-expanded="false" aria-controls="detailsPanel" onclick="toggleDetails()">
+      <span id="secDetailsTxt">Your details &amp; payment</span>
+      <span class="sec-todo" id="secDetailsTodo" hidden>!</span>
+      <span class="chev" aria-hidden="true">
+        <svg width="11" height="7" viewBox="0 0 11 7" fill="none"><path d="M1 1l4.5 4.5L10 1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <div id="detailsPanel" hidden>
     <div class="card" style="margin-bottom:18px">
       <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;line-height:1.6">
         <span id="dDetailsP">We need these to pay you and to put your name on the agreement. Only you and Summy Garden Studio can see them.</span>
@@ -357,16 +397,6 @@ tbody tr:last-child td{border-bottom:none}
       <button class="btn" onclick="saveDetails()" id="dSave">Save details</button>
       <span class="msg" id="dMsg" style="display:inline-block;margin-left:12px;min-height:0"></span>
     </div>
-
-    <div class="sec" id="secSales">Recent sales</div>
-    <div class="card" style="overflow-x:auto">
-      <table><thead><tr><th id="thDate">Date</th><th id="thPack">Pack</th><th id="thPaid">Customer paid</th><th id="thEarned">You earned</th><th id="thStatus">Status</th></tr></thead>
-      <tbody id="rows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table>
-      <div class="hint" id="dHint">
-        <b>How this works.</b> You earn a share of what the customer actually pays, after their discount.
-        Each sale shows as <b>pending</b> for 30 days while the customer's quality guarantee runs, then becomes
-        <b>ready to be paid</b>. Payouts are made by transfer — we will be in touch to arrange them.
-      </div>
     </div>
   </div>
 </div>
@@ -463,7 +493,7 @@ function applyPLang(code){
   st('sConfirmedL',PTX('d_s_ready')); st('sPaidL',PTX('d_s_paid'));
   st('lblOver',PTX('d_over_time')); st('mEarn',PTX('d_m_earn')); st('mSales',PTX('d_m_sales'));
   st('chartEmpty',PTX('d_no_activity'));
-  st('secDetails',PTX('d_details_h')); st('dDetailsP',PTX('d_details_p'));
+  st('secDetailsTxt',PTX('d_details_h')); st('dDetailsP',PTX('d_details_p'));
   st('lblDName',PTX('d_name')); st('lblDPhone',PTX('d_phone')); st('lblDAddr',PTX('d_addr')); st('lblDUrl',PTX('d_url'));
   st('lblPayH',PTX('d_pay_h')); st('lblPayP',PTX('d_pay_p'));
   st('lblMethod',PTX('d_method')); st('optChoose',PTX('d_choose')); st('optBank',PTX('d_bank'));
@@ -659,7 +689,7 @@ function drawChart(){
   if(!any) return;
 
   const dpr=window.devicePixelRatio||1;
-  const W=c.clientWidth, H=280;
+  const W=c.clientWidth, H=c.clientHeight||400;
   c.width=W*dpr; c.height=H*dpr;
   const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
   x.clearRect(0,0,W,H);
@@ -764,11 +794,29 @@ function drawRows(){
     <td><span class="pill ${esc(r.status)}">${esc(LABEL()[r.status]||r.status)}</span></td></tr>`).join('');
 }
 
+function toggleDetails(){
+  const b=$('secDetails'), p=$('detailsPanel');
+  if(!b||!p) return;
+  const open=b.getAttribute('aria-expanded')==='true';
+  b.setAttribute('aria-expanded', open?'false':'true');
+  p.hidden=open;
+}
+
+/* Collapsed on every load — the earnings are what people come back for. The
+   badge is the exception: if we have no way to pay them, the closed header
+   has to say so. */
+function markDetailsTodo(d){
+  const el=$('secDetailsTodo'); if(!el) return;
+  const missing = !(d && (d.real_name||'').trim()) || !(d && d.has_payout);
+  el.hidden = !missing;
+}
+
 function fillDetails(d){
   const set=(id,v)=>{const e=$(id); if(e) e.value=v||'';};
   set('dName',d.real_name); set('dPhone',d.phone); set('dAddr',d.address); set('dUrl',d.channel_url);
   set('dPayName',d.payout_name); set('dBank',d.payout_bank);
   const m=$('dMethod'); if(m) m.value=d.payout_method||'';
+  markDetailsTodo(d);
   /* The account is never filled back into the input — it is shown masked below
      it instead, so the field stays empty unless the partner is deliberately
      replacing what is on file. */
@@ -796,6 +844,9 @@ async function saveDetails(){
       $('dDetail').value='';
       const of=$('dOnFile'); if(of){ of.style.display='block'; of.textContent=PTX('d_onfile')+(r.masked||'••••'); }
     }
+    /* Clear the badge as soon as the gap it flagged is filled. */
+    const of2=$('dOnFile');
+    markDetailsTodo({real_name:g('dName'), has_payout:!!(r.masked||(of2&&of2.style.display==='block'))});
     setTimeout(()=>{ msg.textContent=''; }, 2600);
   } else {
     msg.textContent=(r&&r.error)||PTX('d_save_fail');

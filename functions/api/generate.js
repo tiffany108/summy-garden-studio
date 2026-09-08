@@ -22,6 +22,50 @@ const RETENTION_DAYS = 180;
 const RETENTION_MAX_KEPT = 400;
 const inList = (arr) => "(" + arr.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",") + ")";
 
+/* ---------- Enterprise org context ----------
+   A staff shoot spends no credit, so this decides whether someone gets free
+   generation. The org is therefore resolved from the caller's own membership
+   row — never from an id the browser sent, which would let anyone shoot free by
+   guessing a slug. The client only asks for org mode; the server decides if it
+   is entitled to it. Returns null for an ordinary consumer shoot. */
+async function resolveOrg(env, uid, sceneId) {
+  const r = await sbService(env,
+    `/rest/v1/org_members?user_id=eq.${encodeURIComponent(uid)}` +
+    `&select=id,org_id,consent_at,status&limit=1`);
+  if (!r.ok) return { error: "membership lookup failed", status: 502 };
+  const rows = await r.json().catch(() => []);
+  const member = Array.isArray(rows) ? rows[0] : null;
+  if (!member) return { error: "not a member of any organisation", status: 403 };
+  // Consent is the legal basis for the shoot. No consent, no generation — and
+  // this is checked here rather than in the browser because the browser is not
+  // where a compliance control belongs.
+  if (!member.consent_at) return { error: "consent required", status: 403 };
+
+  const o = await sbService(env,
+    `/rest/v1/organisations?id=eq.${encodeURIComponent(member.org_id)}` +
+    `&select=id,status,daily_shoot_cap&limit=1`);
+  if (!o.ok) return { error: "organisation lookup failed", status: 502 };
+  const orgRows = await o.json().catch(() => []);
+  const org = Array.isArray(orgRows) ? orgRows[0] : null;
+  if (!org) return { error: "organisation not found", status: 403 };
+  if (org.status !== "active" && org.status !== "trial") {
+    return { error: "organisation is not active", status: 403 };
+  }
+
+  /* The approved list is enforced here too. The staff studio only offers these
+     scenes, but "only offers" is a UI fact, not a guarantee. */
+  if (sceneId) {
+    const b = await sbService(env,
+      `/rest/v1/org_backgrounds?org_id=eq.${encodeURIComponent(org.id)}` +
+      `&scene_id=eq.${encodeURIComponent(sceneId)}&select=scene_id&limit=1`);
+    const bg = b.ok ? await b.json().catch(() => []) : [];
+    if (!Array.isArray(bg) || !bg.length) {
+      return { error: "scene not approved by your organisation", status: 400 };
+    }
+  }
+  return { org, member };
+}
+
 async function purgeExpiredPhotos(env, uid) {
   const days = env.PHOTO_RETENTION_DAYS === undefined || env.PHOTO_RETENTION_DAYS === ""
     ? RETENTION_DAYS : Number(env.PHOTO_RETENTION_DAYS);
@@ -318,6 +362,7 @@ export async function onRequest(context) {
 
   let body = {}; try { body = await req.json(); } catch {}
   const { selfie, refs, scene, category, outfit, style, pose, expr, frame, token, scene_id, quality } = body;
+  const wantOrg = body.mode === "org";
   if (!token) return Response.json({ error: "sign in required" }, { status: 401, headers });
   const authUser = await sbAuthUser(token);
   if (!authUser?.id) return Response.json({ error: "invalid session" }, { status: 401, headers });
@@ -329,7 +374,42 @@ export async function onRequest(context) {
   let creditSpent = false;   // only variant 0 spends one
   let genId = null;          // the generations row opened alongside it
 
-  if (vi === 0) {
+  let orgId = null;
+  if (wantOrg) {
+    const res = await resolveOrg(env, authUser.id, scene_id);
+    if (res.error) return Response.json({ error: res.error }, { status: res.status, headers });
+    orgId = res.org.id;
+
+    /* No credit is spent, so the only thing standing between one employee and
+       an unbounded API bill is this cap. Counted per member per day. */
+    if (vi === 0) {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const q = await sbService(env,
+        `/rest/v1/generations?user_id=eq.${encodeURIComponent(authUser.id)}` +
+        `&created_at=gte.${encodeURIComponent(since)}&select=id`);
+      const todays = q.ok ? await q.json().catch(() => []) : [];
+      if (Array.isArray(todays) && todays.length >= (res.org.daily_shoot_cap || 3)) {
+        return Response.json({ error: "daily shoot limit reached" }, { status: 429, headers });
+      }
+      const g = await sbService(env, `/rest/v1/generations`, { method: "POST", headers: { Prefer: "return=representation" },
+        body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · ") }) });
+      if (g.ok) { try { const rows = await g.json(); genId = Array.isArray(rows) ? (rows[0]?.id ?? null) : (rows?.id ?? null); } catch {} }
+    } else {
+      /* Later variants must belong to a shoot that actually started, exactly as
+         on the consumer side. Without this the daily cap would only guard
+         variant 0 and someone could call variant 5 all afternoon for free. */
+      const since = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+      const q = await sbService(env,
+        `/rest/v1/generations?user_id=eq.${encodeURIComponent(authUser.id)}` +
+        `&created_at=gte.${encodeURIComponent(since)}&select=id&limit=1`);
+      const rows = q.ok ? await q.json().catch(() => []) : [];
+      if (!Array.isArray(rows) || !rows.length) {
+        return Response.json({ error: "no active generation" }, { status: 402, headers });
+      }
+    }
+    /* Deliberately no purgeExpiredPhotos here: enterprise photos are on the
+       organisation's purge window, not the consumer 180 days. */
+  } else if (vi === 0) {
     // variant 0 spends exactly one credit for the whole 30-photo generation
     const r = await sbService(env, `/rest/v1/rpc/consume_credit`, { method: "POST", body: JSON.stringify({ uid: authUser.id }) });
     const val = r.ok ? await r.json() : -1;
@@ -470,7 +550,7 @@ export async function onRequest(context) {
           // The size is recorded here because it is the only place we hold the
           // file: without it there is no way to know how full the bucket is
           // until Supabase stops accepting uploads.
-          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path, bytes: bytes.length }) });
+          body: JSON.stringify({ user_id: authUser.id, scene: scene_id || scene || "", look: [outfit, style].filter(Boolean).join(" · "), variant: vi, path, bytes: bytes.length, org_id: orgId }) });
       }
     } catch {}
     const payload = JSON.stringify({ image: `data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`, variant: vi, remaining, mode: quality === "pro" ? "gemini-pro" : "gemini" });

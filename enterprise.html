@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Portal · Summy Garden Studio</title>
+<!-- A client-facing admin area, never a search result. -->
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
+  --accent:#0284c7;--accent-deep:#075985;
+  --bg-deep:#062c45;--ink:#0b1b25;--muted:#5c7684;--faint:#8aa3b1;
+  --body:#f2f8fc;--line:#e3ecf2;
+  --ring:inset 0 0 0 1px rgba(9,45,68,.07);
+  --e1:0 1px 2px rgba(9,45,68,.04),0 4px 14px rgba(9,45,68,.06),var(--ring);
+  --e2:0 2px 6px rgba(9,45,68,.06),0 14px 34px rgba(9,45,68,.10),var(--ring);
+  --e3:0 8px 18px rgba(9,45,68,.08),0 30px 70px rgba(9,45,68,.16),var(--ring);
+  --glow:0 6px 18px rgba(14,165,233,.35);
+  --glow-lg:0 10px 28px rgba(14,165,233,.45);
+  --ease:cubic-bezier(.22,.8,.34,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);line-height:1.55;
+  background:radial-gradient(1100px 520px at 12% -8%,rgba(56,189,248,.16),transparent 60%),
+             radial-gradient(900px 460px at 92% 4%,rgba(74,222,128,.13),transparent 62%),var(--body);
+  background-attachment:fixed;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:26px 22px}
+h1,h2,h3{letter-spacing:-.022em}
+button{font-family:inherit;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+.top{position:sticky;top:0;z-index:40;color:#fff;padding:13px 0;
+  background:linear-gradient(180deg,rgba(6,44,69,.94),rgba(6,44,69,.86));
+  backdrop-filter:saturate(150%) blur(14px);
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 10px 30px rgba(4,26,41,.22)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-top:0;padding-bottom:0;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15.5px;color:#fff;text-decoration:none}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);box-shadow:var(--glow);display:grid;place-items:center;flex-shrink:0}
+.top .sp{flex:1}
+#whoami{font-size:13px;opacity:.85;font-weight:600}
+.badge-e{background:rgba(255,255,255,.11);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+  border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.lang-sel{width:auto;margin-bottom:0;background:rgba(255,255,255,.09);color:#fff;border:none;
+  border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:600;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);font-family:inherit;cursor:pointer;flex-shrink:0}
+.lang-sel option{color:#111827}
+
+.btn{background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:11px;
+  padding:10px 17px;box-shadow:var(--glow);
+  transition:transform .16s var(--ease),box-shadow .16s var(--ease)}
+.btn:hover{transform:translateY(-1.5px);box-shadow:var(--glow-lg)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.btn.ghost{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.btn.dark{background:#fff;color:#20404f;box-shadow:var(--e1)}
+.btn.dark:hover{background:#fbfdff;box-shadow:var(--e2)}
+.btn.sm{font-size:12px;padding:7px 12px;border-radius:9px}
+
+#login{max-width:430px;margin:56px auto;background:#fff;border-radius:22px;box-shadow:var(--e3);
+  padding:38px 34px;text-align:center;position:relative;overflow:hidden}
+#login::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--grad-brand)}
+#login .logo-mark{margin:0 auto 18px;width:56px;height:56px;border-radius:17px;font-size:24px;box-shadow:var(--glow-lg)}
+#login h2{font-size:23px;margin-bottom:7px}
+#login p{color:var(--muted);font-size:14px;margin-bottom:22px;line-height:1.6}
+#login .btn{width:100%;justify-content:center;padding:14px}
+
+input,select,textarea{width:100%;padding:12.5px 15px;border:none;border-radius:12px;background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(9,45,68,.12);font-family:inherit;font-size:14.5px;
+  margin-bottom:11px;outline:none;color:var(--ink);transition:box-shadow .18s var(--ease)}
+textarea{min-height:110px;resize:vertical;line-height:1.55}
+input::placeholder,textarea::placeholder{color:#a5b9c4}
+input:focus,select:focus,textarea:focus{box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px rgba(56,189,248,.18)}
+.msg{font-size:13px;font-weight:600;color:#c0392b;margin-top:12px;min-height:18px}
+.msg.ok{color:#0f7a46}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 6px}
+
+.sec{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent-deep);margin:30px 0 14px}
+.sec::before{content:'';width:16px;height:3px;border-radius:2px;background:var(--grad-brand);flex-shrink:0}
+.card{background:#fff;border-radius:18px;box-shadow:var(--e1);padding:24px;margin-bottom:16px}
+
+.orgbar{position:relative;overflow:hidden;border-radius:20px;padding:22px 24px;margin-bottom:18px;color:#fff;
+  background:radial-gradient(600px 200px at 88% -30%,rgba(74,222,128,.35),transparent 65%),
+             linear-gradient(125deg,#07374f 0%,#0a4a63 52%,#0b5350 100%);
+  box-shadow:0 10px 24px rgba(6,44,69,.24),0 26px 60px rgba(6,44,69,.20)}
+.orgbar small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(226,247,255,.72);margin-bottom:8px}
+.orgbar b{font-size:26px;font-weight:800;letter-spacing:-.02em;display:block}
+.orgbar .seats{font-size:12.5px;color:rgba(226,247,255,.8);margin-top:4px}
+.meter{height:10px;border-radius:999px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:16px}
+.meter i{display:block;height:100%;border-radius:999px;background:var(--grad-brand);width:0;
+  transition:width .5s var(--ease)}
+.mlabel{font-size:12.5px;color:rgba(226,247,255,.86);margin-top:8px;font-weight:600}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px}
+.stat{background:#fff;border-radius:17px;box-shadow:var(--e1);padding:18px 20px}
+.stat b{display:block;font-size:27px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.row>div{flex:1;min-width:150px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.06em;padding:9px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 11px;border-bottom:1px solid #eef4f8;vertical-align:middle}
+tbody tr:hover{background:#f6fbfe}
+tbody tr:last-child td{border-bottom:none}
+td.chk,th.chk{width:34px;padding-right:0}
+input[type=checkbox]{width:auto;margin:0;box-shadow:none;accent-color:var(--accent)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;border-radius:999px;
+  padding:4px 11px 4px 9px;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.pill.invited{background:#eef2f7;color:#53687d}
+.pill.consented{background:#e7eefc;color:#31489c}
+.pill.shooting{background:#e0f2fb;color:#0369a1}
+.pill.ready{background:#fff4d9;color:#8a6d1a}
+.pill.submitted{background:#f0e9fb;color:#6b3fa0}
+.pill.delivered,.pill.complete{background:#e4f7ee;color:#0f7a46}
+.pill.purged{background:#f3f4f6;color:#6b7280}
+
+.hint{background:linear-gradient(120deg,#fffaeb,#fff7e0);color:#7d6317;border-radius:14px;
+  padding:15px 18px;font-size:13px;line-height:1.65;margin-top:16px;
+  box-shadow:inset 3px 0 0 #f5c33b,inset 0 0 0 1px rgba(180,140,20,.1)}
+.empty{font-size:13.5px;color:var(--muted);text-align:center;padding:30px}
+.scene-row{display:flex;gap:10px;align-items:center;margin-bottom:9px}
+.scene-row input[type=text]{margin-bottom:0}
+.scene-row label{margin:0;display:flex;gap:6px;align-items:center;white-space:nowrap;font-size:12px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}.wrap{padding:20px 16px}.top{position:static}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="wrap">
+  <a class="logo" href="/"><span class="logo-mark">◆</span> Summy Garden Studio</a>
+  <span class="badge-e">🏢 <span data-i18n="badge">Team portal</span></span>
+  <select id="langSel" class="lang-sel" title="Language" onchange="setLang(this.value)">
+    <option value="en">English</option><option value="zh">中文 (简体)</option><option value="zh-TW">中文 (繁體)</option>
+  </select>
+  <span class="sp"></span>
+  <span id="whoami"></span>
+  <button class="btn ghost" id="outBtn" onclick="signOut()" style="display:none" data-i18n="signout">Sign out</button>
+</div></div>
+
+<div class="wrap">
+
+  <div id="login">
+    <div class="logo-mark">🏢</div>
+    <h2 data-i18n="login_h">Team portal sign in</h2>
+    <p data-i18n="login_p">For the person managing headshots at your company.</p>
+    <input type="email" id="email" data-i18n-ph="ph_email" placeholder="Your work email" autocomplete="username">
+    <input type="password" id="pw" data-i18n-ph="ph_pw" placeholder="Password" autocomplete="current-password">
+    <button class="btn" onclick="doLogin()" data-i18n="btn_signin">Sign in</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div id="dash" style="display:none">
+
+    <div class="orgbar">
+      <small data-i18n="org_lead">Your organisation</small>
+      <b id="orgName">–</b>
+      <div class="seats"><span id="seatLine"></span></div>
+      <div class="meter"><i id="bar"></i></div>
+      <div class="mlabel" id="barLabel"></div>
+    </div>
+
+    <div class="stats" id="statRow"></div>
+
+    <div class="sec"><span data-i18n="t_invite">Invite staff</span></div>
+    <div class="card">
+      <div class="row">
+        <div><label data-i18n="lbl_name">Name</label><input id="iName" placeholder="Sam Chan"></div>
+        <div><label data-i18n="lbl_email">Work email</label><input id="iEmail" type="email" placeholder="sam@company.com"></div>
+        <div style="max-width:160px"><label data-i18n="lbl_ref">Employee ref</label><input id="iRef" placeholder="E1042"></div>
+        <button class="btn" onclick="inviteOne()" data-i18n="btn_invite">Send invitation</button>
+      </div>
+      <label style="margin-top:16px" data-i18n="lbl_bulk">Or paste a list — one per line: name, email, employee ref</label>
+      <textarea id="bulk" placeholder="Sam Chan, sam@company.com, E1042&#10;Nia Osei, nia@company.com, E1043"></textarea>
+      <button class="btn dark" onclick="inviteBulk()" data-i18n="btn_import">Import the list</button>
+      <span class="msg" id="invMsg" style="display:inline-block;margin-left:12px"></span>
+      <div class="hint" data-i18n="hint_invite">💡 Each person gets an email with a sign-in link — there is no password for them to create. They upload their own photo and agree to it themselves, which is what keeps you out of the business of handling staff photographs.</div>
+    </div>
+
+    <div class="sec">
+      <span data-i18n="t_roster">Staff</span>
+      <span style="text-transform:none;font-weight:600;color:#8fa6b3" id="rosterCount"></span>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn dark sm" onclick="selectStalled()" data-i18n="btn_selstalled">Select everyone not finished</button>
+        <button class="btn dark sm" onclick="selectNone()" data-i18n="btn_selnone">Clear selection</button>
+        <button class="btn sm" onclick="remindSelected()" data-i18n="btn_remind">Send a reminder</button>
+        <span class="msg" id="remMsg" style="display:inline-block"></span>
+      </div>
+      <table>
+        <thead><tr>
+          <th class="chk"></th>
+          <th data-i18n="th_name">Name</th><th data-i18n="th_email">Email</th>
+          <th data-i18n="th_ref">Ref</th><th data-i18n="th_status">Status</th>
+          <th data-i18n="th_invited">Invited</th><th data-i18n="th_act">Actions</th>
+        </tr></thead>
+        <tbody id="rows"><tr><td colspan="7" class="empty" data-i18n="loading">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="sec"><span data-i18n="t_settings">Settings</span></div>
+    <div class="card">
+      <div class="grid2">
+        <div>
+          <label data-i18n="lbl_policy">Which background do staff use?</label>
+          <select id="sPolicy">
+            <option value="choice" data-i18n="opt_choice">They choose from the approved list</option>
+            <option value="primary_locked" data-i18n="opt_locked">Directory photo always uses the primary</option>
+          </select>
+        </div>
+        <div>
+          <label data-i18n="lbl_purge">Delete photos this many days after delivery</label>
+          <input type="number" id="sPurge" min="1" max="365" value="14">
+        </div>
+      </div>
+      <label style="margin-top:6px" data-i18n="lbl_scenes">Approved backgrounds</label>
+      <div id="sceneList"></div>
+      <button class="btn dark sm" onclick="addScene()" data-i18n="btn_addscene">＋ Add a background</button>
+      <div style="margin-top:16px">
+        <button class="btn" onclick="saveSettings()" data-i18n="btn_save">Save settings</button>
+        <span class="msg" id="setMsg" style="display:inline-block;margin-left:12px"></span>
+      </div>
+      <div class="hint" data-i18n="hint_purge">💡 Nothing is kept beyond this window. The photos nobody chose are deleted as soon as each person picks a favourite, and the chosen one goes when the window closes — staff are emailed before that happens, so nobody is caught out.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ---------- i18n (three languages, matching the admin portal) ---------- */
+const AL={
+en:{badge:"Team portal",signout:"Sign out",login_h:"Team portal sign in",login_p:"For the person managing headshots at your company.",ph_email:"Your work email",ph_pw:"Password",btn_signin:"Sign in",org_lead:"Your organisation",t_invite:"Invite staff",lbl_name:"Name",lbl_email:"Work email",lbl_ref:"Employee ref",btn_invite:"Send invitation",lbl_bulk:"Or paste a list — one per line: name, email, employee ref",btn_import:"Import the list",hint_invite:"💡 Each person gets an email with a sign-in link — there is no password for them to create. They upload their own photo and agree to it themselves, which is what keeps you out of the business of handling staff photographs.",t_roster:"Staff",btn_selstalled:"Select everyone not finished",btn_selnone:"Clear selection",btn_remind:"Send a reminder",th_name:"Name",th_email:"Email",th_ref:"Ref",th_status:"Status",th_invited:"Invited",th_act:"Actions",loading:"Loading…",t_settings:"Settings",lbl_policy:"Which background do staff use?",opt_choice:"They choose from the approved list",opt_locked:"Directory photo always uses the primary",lbl_purge:"Delete photos this many days after delivery",lbl_scenes:"Approved backgrounds",btn_addscene:"＋ Add a background",btn_save:"Save settings",hint_purge:"💡 Nothing is kept beyond this window. The photos nobody chose are deleted as soon as each person picks a favourite, and the chosen one goes when the window closes — staff are emailed before that happens, so nobody is caught out.",seats:"{u} of {s} seats used",done:"{d} of {t} finished",remind_one:"Remind",st_invited:"invited",st_consented:"agreed",st_shooting:"shooting",st_ready:"ready to pick",st_submitted:"submitted",st_delivered:"finished",st_complete:"finished",st_purged:"deleted",none_yet:"Nobody invited yet — add someone above.",bad_email:"That email address does not look right",need_email:"Enter a work email address",sent_one:"Invitation sent ✓",sent_n:"{n} invitations sent ✓",part_n:"{n} sent, {f} failed",reminded:"{n} reminders sent ✓",pick_first:"Tick the people you want to remind",saved:"Saved ✓",save_fail:"Could not save — please try again",not_admin:"This account is not set up to manage a team.",bad_login:"Wrong email or password.",primary:"Primary",remove:"Remove",ph_scene:"Scene id from the library"},
+zh:{badge:"团队后台",signout:"退出登录",login_h:"团队后台登录",login_p:"供贵公司负责头像事宜的同事使用。",ph_email:"你的公司邮箱",ph_pw:"密码",btn_signin:"登录",org_lead:"你的机构",t_invite:"邀请员工",lbl_name:"姓名",lbl_email:"公司邮箱",lbl_ref:"员工编号",btn_invite:"发送邀请",lbl_bulk:"或粘贴名单 — 每行一位：姓名、邮箱、员工编号",btn_import:"导入名单",hint_invite:"💡 每位员工都会收到含登录链接的邮件，无需自行设置密码。照片由本人上传并本人同意，因此你无需经手员工的照片。",t_roster:"员工",btn_selstalled:"选择所有未完成的人",btn_selnone:"清除选择",btn_remind:"发送提醒",th_name:"姓名",th_email:"邮箱",th_ref:"编号",th_status:"状态",th_invited:"邀请日期",th_act:"操作",loading:"载入中…",t_settings:"设置",lbl_policy:"员工使用哪个背景？",opt_choice:"由员工在已批准的清单中自选",opt_locked:"名录照片一律使用主背景",lbl_purge:"交付后多少天删除照片",lbl_scenes:"已批准的背景",btn_addscene:"＋ 新增背景",btn_save:"保存设置",hint_purge:"💡 超过此期限不会保留任何照片。员工选定心仪照片后，未被选中的会立即删除；选定的那张会在期限届满时删除 — 我们会事先发邮件提醒，不会让人措手不及。",seats:"已使用 {u} / {s} 个名额",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀请",st_consented:"已同意",st_shooting:"拍摄中",st_ready:"待选择",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已删除",none_yet:"尚未邀请任何人 — 请在上方新增。",bad_email:"该邮箱地址似乎有误",need_email:"请输入公司邮箱",sent_one:"邀请已发送 ✓",sent_n:"已发送 {n} 封邀请 ✓",part_n:"已发送 {n} 封，{f} 封失败",reminded:"已发送 {n} 条提醒 ✓",pick_first:"请先勾选要提醒的人",saved:"已保存 ✓",save_fail:"保存失败 — 请再试一次",not_admin:"此账户未获授权管理团队。",bad_login:"邮箱或密码有误。",primary:"主背景",remove:"移除",ph_scene:"场景库中的场景 id"},
+"zh-TW":{badge:"團隊後台",signout:"登出",login_h:"團隊後台登入",login_p:"供貴公司負責頭像事宜的同事使用。",ph_email:"你的公司電郵",ph_pw:"密碼",btn_signin:"登入",org_lead:"你的機構",t_invite:"邀請員工",lbl_name:"姓名",lbl_email:"公司電郵",lbl_ref:"員工編號",btn_invite:"發送邀請",lbl_bulk:"或貼上名單 — 每行一位：姓名、電郵、員工編號",btn_import:"匯入名單",hint_invite:"💡 每位員工都會收到含登入連結的電郵，無需自行設定密碼。照片由本人上傳並本人同意，因此你無需經手員工的照片。",t_roster:"員工",btn_selstalled:"選擇所有未完成的人",btn_selnone:"清除選擇",btn_remind:"發送提醒",th_name:"姓名",th_email:"電郵",th_ref:"編號",th_status:"狀態",th_invited:"邀請日期",th_act:"操作",loading:"載入中…",t_settings:"設定",lbl_policy:"員工使用哪個背景？",opt_choice:"由員工在已核准的清單中自選",opt_locked:"名錄照片一律使用主背景",lbl_purge:"交付後多少天刪除照片",lbl_scenes:"已核准的背景",btn_addscene:"＋ 新增背景",btn_save:"儲存設定",hint_purge:"💡 超過此期限不會保留任何照片。員工選定心儀照片後，未被選中的會立即刪除；選定的那張會在期限屆滿時刪除 — 我們會事先發電郵提醒，不會讓人措手不及。",seats:"已使用 {u} / {s} 個名額",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀請",st_consented:"已同意",st_shooting:"拍攝中",st_ready:"待選擇",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已刪除",none_yet:"尚未邀請任何人 — 請在上方新增。",bad_email:"該電郵地址似乎有誤",need_email:"請輸入公司電郵",sent_one:"邀請已發送 ✓",sent_n:"已發送 {n} 封邀請 ✓",part_n:"已發送 {n} 封，{f} 封失敗",reminded:"已發送 {n} 則提醒 ✓",pick_first:"請先勾選要提醒的人",saved:"已儲存 ✓",save_fail:"儲存失敗 — 請再試一次",not_admin:"此帳戶未獲授權管理團隊。",bad_login:"電郵或密碼有誤。",primary:"主背景",remove:"移除",ph_scene:"場景庫中的場景 id"}};
+let LANG=localStorage.getItem('sgsTeamLang')||(function(){const l=(navigator.language||'').toLowerCase();
+  if(l.startsWith('zh')) return (l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh'; return 'en';})();
+const T=k=>(AL[LANG]&&AL[LANG][k])||AL.en[k]||k;
+function applyLang(){
+  document.querySelectorAll('[data-i18n]').forEach(e=>{const v=T(e.dataset.i18n); if(v!=null) e.textContent=v;});
+  document.querySelectorAll('[data-i18n-ph]').forEach(e=>{const v=T(e.dataset.i18nPh); if(v!=null) e.placeholder=v;});
+  const s=document.getElementById('langSel'); if(s) s.value=LANG;
+  document.documentElement.lang=LANG;
+  if(DATA) render();
+}
+function setLang(v){ LANG=AL[v]?v:'en'; localStorage.setItem('sgsTeamLang',LANG); applyLang(); }
+
+/* ---------- Supabase ---------- */
+const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
+const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+let session=null, DATA=null, scenes=[];
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const show=(id,on)=>{const e=$(id); if(e) e.style.display=on?'':'none';};
+
+async function api(payload){
+  const r=await fetch('/api/org',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:session?session.access_token:null,...payload})});
+  const j=await r.json().catch(()=>({}));
+  return {ok:r.ok,status:r.status,...j};
+}
+
+async function doLogin(){
+  const email=($('email').value||'').trim().toLowerCase(), pw=$('pw').value;
+  $('msg').textContent=''; $('msg').classList.remove('ok');
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error){ $('msg').textContent=/invalid login credentials/i.test(error.message||'')?T('bad_login'):error.message; return; }
+  session=data.session; $('pw').value='';
+  await enter();
+}
+async function signOut(){ await sb.auth.signOut(); session=null; location.reload(); }
+
+async function enter(){
+  const d=await api({action:'admin'});
+  if(!d.ok){
+    // A normal customer account signing in here is the common case, so say
+    // what is wrong rather than showing an empty dashboard.
+    $('msg').textContent=d.status===403?T('not_admin'):(d.error||('HTTP '+d.status));
+    await sb.auth.signOut(); session=null; return;
+  }
+  DATA=d;
+  show('login',false); show('dash',true); show('outBtn',true);
+  $('whoami').textContent=(session&&session.user&&session.user.email)||'';
+  scenes=(d.backgrounds||[]).map(b=>({scene_id:b.scene_id,is_primary:!!b.is_primary}));
+  $('sPolicy').value=d.org.bg_policy||'choice';
+  $('sPurge').value=d.org.purge_days||14;
+  render();
+}
+
+/* Finished means the person has a photo. Everything before that is somebody
+   HR may still have to chase, which is what the bar is really measuring. */
+const DONE=new Set(['delivered','complete','purged']);
+
+function render(){
+  const org=DATA.org, ms=DATA.members||[];
+  $('orgName').textContent=org.name;
+  const used=ms.length;
+  $('seatLine').textContent=T('seats').replace('{u}',used).replace('{s}',org.seats||'—');
+  const done=ms.filter(m=>DONE.has(m.status)).length;
+  const pct=ms.length?Math.round(done/ms.length*100):0;
+  $('bar').style.width=pct+'%';
+  $('barLabel').textContent=T('done').replace('{d}',done).replace('{t}',ms.length);
+  $('rosterCount').textContent=ms.length?('· '+T('done').replace('{d}',done).replace('{t}',ms.length)):'';
+
+  const order=['invited','consented','shooting','ready','submitted','delivered'];
+  const counts={}; ms.forEach(m=>counts[m.status]=(counts[m.status]||0)+1);
+  $('statRow').innerHTML=order.map(k=>
+    `<div class="stat"><b>${counts[k]||0}</b><span>${esc(T('st_'+k))}</span></div>`).join('');
+
+  const tb=$('rows');
+  if(!ms.length){ tb.innerHTML=`<tr><td colspan="7" class="empty">${esc(T('none_yet'))}</td></tr>`; return; }
+  tb.innerHTML=ms.map(m=>`<tr>
+    <td class="chk"><input type="checkbox" class="msel" value="${esc(m.id)}"></td>
+    <td>${esc(m.name)||'—'}</td>
+    <td style="color:var(--muted)">${esc(m.email)}</td>
+    <td style="font-family:ui-monospace,monospace">${esc(m.staff_ref)||'—'}</td>
+    <td><span class="pill ${esc(m.status)}">${esc(T('st_'+m.status)||m.status)}</span></td>
+    <td style="color:var(--muted)">${esc((m.invited_at||'').slice(0,10))}</td>
+    <td>${DONE.has(m.status)?'':`<button class="btn dark sm" onclick="remindOne('${esc(m.id)}')">${esc(T('remind_one'))}</button>`}</td>
+  </tr>`).join('');
+  renderScenes();
+}
+
+function renderScenes(){
+  $('sceneList').innerHTML=scenes.map((s,i)=>`
+    <div class="scene-row">
+      <input type="text" value="${esc(s.scene_id)}" placeholder="${esc(T('ph_scene'))}" oninput="scenes[${i}].scene_id=this.value">
+      <label><input type="radio" name="prim" ${s.is_primary?'checked':''} onchange="setPrimary(${i})"> ${esc(T('primary'))}</label>
+      <button class="btn dark sm" onclick="scenes.splice(${i},1);renderScenes()">${esc(T('remove'))}</button>
+    </div>`).join('');
+}
+function addScene(){ scenes.push({scene_id:'',is_primary:scenes.length===0}); renderScenes(); }
+function setPrimary(i){ scenes.forEach((s,j)=>s.is_primary=(i===j)); }
+
+const EMAIL_RE=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+async function inviteOne(){
+  const m=$('invMsg'); m.classList.remove('ok');
+  const email=($('iEmail').value||'').trim().toLowerCase();
+  if(!email){ m.textContent=T('need_email'); return; }
+  if(!EMAIL_RE.test(email)){ m.textContent=T('bad_email'); return; }
+  const r=await api({action:'invite',invites:[{email,name:$('iName').value.trim(),staff_ref:$('iRef').value.trim()}]});
+  if(!r.ok){ m.textContent=r.error||'…'; return; }
+  m.classList.add('ok'); m.textContent=T('sent_one');
+  $('iName').value=$('iEmail').value=$('iRef').value='';
+  await refresh();
+}
+async function inviteBulk(){
+  const m=$('invMsg'); m.classList.remove('ok');
+  const lines=($('bulk').value||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  const invites=[];
+  for(const line of lines){
+    const p=line.split(',').map(x=>x.trim());
+    // Accept "name, email, ref" in any sane order by finding the email itself,
+    // because a pasted export rarely has the columns you asked for.
+    const email=(p.find(x=>EMAIL_RE.test(x))||'').toLowerCase();
+    if(!email) continue;
+    const rest=p.filter(x=>x!==email && x.toLowerCase()!==email);
+    invites.push({email,name:rest[0]||'',staff_ref:rest[1]||''});
+  }
+  if(!invites.length){ m.textContent=T('need_email'); return; }
+  const r=await api({action:'invite',invites});
+  if(!r.ok){ m.textContent=r.error||'…'; return; }
+  const failed=(r.results||[]).filter(x=>!x.ok).length;
+  m.classList.toggle('ok',!failed);
+  m.textContent=failed?T('part_n').replace('{n}',r.invited).replace('{f}',failed)
+                      :T('sent_n').replace('{n}',r.invited);
+  if(!failed) $('bulk').value='';
+  await refresh();
+}
+
+const picked=()=>[...document.querySelectorAll('.msel:checked')].map(x=>x.value);
+function selectStalled(){
+  document.querySelectorAll('.msel').forEach((c,i)=>{
+    const m=(DATA.members||[])[i]; c.checked=!!m&&!DONE.has(m.status);
+  });
+}
+function selectNone(){ document.querySelectorAll('.msel').forEach(c=>c.checked=false); }
+async function remindSelected(){ await doRemind(picked()); }
+async function remindOne(id){ await doRemind([id]); }
+async function doRemind(ids){
+  const m=$('remMsg'); m.classList.remove('ok');
+  if(!ids.length){ m.textContent=T('pick_first'); return; }
+  const r=await api({action:'remind',member_ids:ids});
+  if(!r.ok){ m.textContent=r.error||'…'; return; }
+  m.classList.add('ok'); m.textContent=T('reminded').replace('{n}',r.reminded);
+  await refresh();
+}
+
+async function saveSettings(){
+  const m=$('setMsg'); m.classList.remove('ok');
+  const r=await api({action:'settings',bg_policy:$('sPolicy').value,purge_days:$('sPurge').value,
+    scenes:scenes.filter(s=>s.scene_id.trim()).map((s,i)=>({scene_id:s.scene_id.trim(),is_primary:s.is_primary,sort:i}))});
+  if(!r.ok){ m.textContent=r.error||T('save_fail'); return; }
+  m.classList.add('ok'); m.textContent=T('saved');
+  await refresh();
+}
+
+async function refresh(){
+  const d=await api({action:'admin'});
+  if(d.ok){ DATA=d; scenes=(d.backgrounds||[]).map(b=>({scene_id:b.scene_id,is_primary:!!b.is_primary})); render(); }
+}
+
+/* Resume an existing session so a refresh does not throw HR back to sign-in. */
+(async()=>{
+  applyLang();
+  const {data}=await sb.auth.getSession();
+  if(data&&data.session){ session=data.session; await enter(); }
+})();
+</script>
+</body>
+</html>

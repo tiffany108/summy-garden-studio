@@ -178,13 +178,19 @@ input[type=checkbox]{width:auto;margin:0;box-shadow:none;accent-color:var(--acce
       <div class="row">
         <div><label data-i18n="lbl_name">Name</label><input id="iName" placeholder="Sam Chan"></div>
         <div><label data-i18n="lbl_email">Work email</label><input id="iEmail" type="email" placeholder="sam@company.com"></div>
-        <div style="max-width:160px"><label data-i18n="lbl_ref">Employee ref</label><input id="iRef" placeholder="E1042"></div>
+        <div style="max-width:180px"><label data-i18n="lbl_dept">Department</label><input id="iDept" placeholder="Finance"></div>
+        <div style="max-width:150px"><label data-i18n="lbl_ref">Employee ref</label><input id="iRef" placeholder="E1042"></div>
         <button class="btn" onclick="inviteOne()" data-i18n="btn_invite">Send invitation</button>
       </div>
-      <label style="margin-top:16px" data-i18n="lbl_bulk">Or paste a list — one per line: name, email, employee ref</label>
-      <textarea id="bulk" placeholder="Sam Chan, sam@company.com, E1042&#10;Nia Osei, nia@company.com, E1043"></textarea>
-      <button class="btn dark" onclick="inviteBulk()" data-i18n="btn_import">Import the list</button>
-      <span class="msg" id="invMsg" style="display:inline-block;margin-left:12px"></span>
+      <label style="margin-top:16px" data-i18n="lbl_bulk">Or import a list — name, email, department, employee ref</label>
+      <textarea id="bulk" placeholder="Sam Chan, sam@company.com, Finance, E1042&#10;Nia Osei, nia@company.com, Marketing, E1043"></textarea>
+      <div class="row">
+        <button class="btn dark" onclick="downloadTemplate()" data-i18n="btn_tpl">⭳ Download the template</button>
+        <button class="btn dark" onclick="$('csvFile').click()" data-i18n="btn_pick">Choose a file</button>
+        <input type="file" id="csvFile" accept=".csv,text/csv,text/plain" hidden onchange="loadCsv(this)">
+        <button class="btn" onclick="inviteBulk()" data-i18n="btn_import">Import the list</button>
+        <span class="msg" id="invMsg" style="display:inline-block"></span>
+      </div>
       <div class="hint" data-i18n="hint_invite">💡 Each person gets an email with a sign-in link — there is no password for them to create. They upload their own photo and agree to it themselves, which is what keeps you out of the business of handling staff photographs.</div>
     </div>
 
@@ -197,16 +203,18 @@ input[type=checkbox]{width:auto;margin:0;box-shadow:none;accent-color:var(--acce
         <button class="btn dark sm" onclick="selectStalled()" data-i18n="btn_selstalled">Select everyone not finished</button>
         <button class="btn dark sm" onclick="selectNone()" data-i18n="btn_selnone">Clear selection</button>
         <button class="btn sm" onclick="remindSelected()" data-i18n="btn_remind">Send a reminder</button>
+        <select id="deptFilter" onchange="onDept(this)" style="max-width:230px;margin:0"></select>
         <span class="msg" id="remMsg" style="display:inline-block"></span>
       </div>
       <table>
         <thead><tr>
           <th class="chk"></th>
           <th data-i18n="th_name">Name</th><th data-i18n="th_email">Email</th>
+          <th data-i18n="th_dept">Department</th>
           <th data-i18n="th_ref">Ref</th><th data-i18n="th_status">Status</th>
           <th data-i18n="th_invited">Invited</th><th data-i18n="th_act">Actions</th>
         </tr></thead>
-        <tbody id="rows"><tr><td colspan="7" class="empty" data-i18n="loading">Loading…</td></tr></tbody>
+        <tbody id="rows"><tr><td colspan="8" class="empty" data-i18n="loading">Loading…</td></tr></tbody>
       </table>
     </div>
 
@@ -222,7 +230,8 @@ input[type=checkbox]{width:auto;margin:0;box-shadow:none;accent-color:var(--acce
         </div>
         <div>
           <label data-i18n="lbl_purge">Delete photos this many days after delivery</label>
-          <input type="number" id="sPurge" min="1" max="365" value="14">
+          <input type="number" id="sPurge" min="1" max="14" value="14" oninput="clampPurge()">
+          <div class="hint" id="purgeCap" style="margin-top:6px"></div>
         </div>
       </div>
       <label style="margin-top:6px" data-i18n="lbl_scenes">Approved backgrounds</label>
@@ -241,9 +250,9 @@ input[type=checkbox]{width:auto;margin:0;box-shadow:none;accent-color:var(--acce
 <script>
 /* ---------- i18n (three languages, matching the admin portal) ---------- */
 const AL={
-en:{badge:"Team portal",signout:"Sign out",login_h:"Team portal sign in",login_p:"For the person managing headshots at your company.",ph_email:"Your work email",ph_pw:"Password",btn_signin:"Sign in",org_lead:"Your organisation",t_invite:"Invite staff",lbl_name:"Name",lbl_email:"Work email",lbl_ref:"Employee ref",btn_invite:"Send invitation",lbl_bulk:"Or paste a list — one per line: name, email, employee ref",btn_import:"Import the list",hint_invite:"💡 Each person gets an email with a sign-in link — there is no password for them to create. They upload their own photo and agree to it themselves, which is what keeps you out of the business of handling staff photographs.",t_roster:"Staff",btn_selstalled:"Select everyone not finished",btn_selnone:"Clear selection",btn_remind:"Send a reminder",th_name:"Name",th_email:"Email",th_ref:"Ref",th_status:"Status",th_invited:"Invited",th_act:"Actions",loading:"Loading…",t_settings:"Settings",lbl_policy:"Which background do staff use?",opt_choice:"They choose from the approved list",opt_locked:"Directory photo always uses the primary",lbl_purge:"Delete photos this many days after delivery",lbl_scenes:"Approved backgrounds",btn_addscene:"＋ Add a background",btn_save:"Save settings",hint_purge:"💡 Nothing is kept beyond this window. The photos nobody chose are deleted as soon as each person picks a favourite, and the chosen one goes when the window closes — staff are emailed before that happens, so nobody is caught out.",seats:"{u} of {s} seats used",done:"{d} of {t} finished",remind_one:"Remind",st_invited:"invited",st_consented:"agreed",st_shooting:"shooting",st_ready:"ready to pick",st_submitted:"submitted",st_delivered:"finished",st_complete:"finished",st_purged:"deleted",none_yet:"Nobody invited yet — add someone above.",bad_email:"That email address does not look right",need_email:"Enter a work email address",sent_one:"Invitation sent ✓",sent_n:"{n} invitations sent ✓",part_n:"{n} sent, {f} failed",reminded:"{n} reminders sent ✓",pick_first:"Tick the people you want to remind",saved:"Saved ✓",save_fail:"Could not save — please try again",not_admin:"This account is not set up to manage a team.",bad_login:"Wrong email or password.",primary:"Primary",remove:"Remove",ph_scene:"Scene id from the library"},
-zh:{badge:"团队后台",signout:"退出登录",login_h:"团队后台登录",login_p:"供贵公司负责头像事宜的同事使用。",ph_email:"你的公司邮箱",ph_pw:"密码",btn_signin:"登录",org_lead:"你的机构",t_invite:"邀请员工",lbl_name:"姓名",lbl_email:"公司邮箱",lbl_ref:"员工编号",btn_invite:"发送邀请",lbl_bulk:"或粘贴名单 — 每行一位：姓名、邮箱、员工编号",btn_import:"导入名单",hint_invite:"💡 每位员工都会收到含登录链接的邮件，无需自行设置密码。照片由本人上传并本人同意，因此你无需经手员工的照片。",t_roster:"员工",btn_selstalled:"选择所有未完成的人",btn_selnone:"清除选择",btn_remind:"发送提醒",th_name:"姓名",th_email:"邮箱",th_ref:"编号",th_status:"状态",th_invited:"邀请日期",th_act:"操作",loading:"载入中…",t_settings:"设置",lbl_policy:"员工使用哪个背景？",opt_choice:"由员工在已批准的清单中自选",opt_locked:"名录照片一律使用主背景",lbl_purge:"交付后多少天删除照片",lbl_scenes:"已批准的背景",btn_addscene:"＋ 新增背景",btn_save:"保存设置",hint_purge:"💡 超过此期限不会保留任何照片。员工选定心仪照片后，未被选中的会立即删除；选定的那张会在期限届满时删除 — 我们会事先发邮件提醒，不会让人措手不及。",seats:"已使用 {u} / {s} 个名额",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀请",st_consented:"已同意",st_shooting:"拍摄中",st_ready:"待选择",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已删除",none_yet:"尚未邀请任何人 — 请在上方新增。",bad_email:"该邮箱地址似乎有误",need_email:"请输入公司邮箱",sent_one:"邀请已发送 ✓",sent_n:"已发送 {n} 封邀请 ✓",part_n:"已发送 {n} 封，{f} 封失败",reminded:"已发送 {n} 条提醒 ✓",pick_first:"请先勾选要提醒的人",saved:"已保存 ✓",save_fail:"保存失败 — 请再试一次",not_admin:"此账户未获授权管理团队。",bad_login:"邮箱或密码有误。",primary:"主背景",remove:"移除",ph_scene:"场景库中的场景 id"},
-"zh-TW":{badge:"團隊後台",signout:"登出",login_h:"團隊後台登入",login_p:"供貴公司負責頭像事宜的同事使用。",ph_email:"你的公司電郵",ph_pw:"密碼",btn_signin:"登入",org_lead:"你的機構",t_invite:"邀請員工",lbl_name:"姓名",lbl_email:"公司電郵",lbl_ref:"員工編號",btn_invite:"發送邀請",lbl_bulk:"或貼上名單 — 每行一位：姓名、電郵、員工編號",btn_import:"匯入名單",hint_invite:"💡 每位員工都會收到含登入連結的電郵，無需自行設定密碼。照片由本人上傳並本人同意，因此你無需經手員工的照片。",t_roster:"員工",btn_selstalled:"選擇所有未完成的人",btn_selnone:"清除選擇",btn_remind:"發送提醒",th_name:"姓名",th_email:"電郵",th_ref:"編號",th_status:"狀態",th_invited:"邀請日期",th_act:"操作",loading:"載入中…",t_settings:"設定",lbl_policy:"員工使用哪個背景？",opt_choice:"由員工在已核准的清單中自選",opt_locked:"名錄照片一律使用主背景",lbl_purge:"交付後多少天刪除照片",lbl_scenes:"已核准的背景",btn_addscene:"＋ 新增背景",btn_save:"儲存設定",hint_purge:"💡 超過此期限不會保留任何照片。員工選定心儀照片後，未被選中的會立即刪除；選定的那張會在期限屆滿時刪除 — 我們會事先發電郵提醒，不會讓人措手不及。",seats:"已使用 {u} / {s} 個名額",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀請",st_consented:"已同意",st_shooting:"拍攝中",st_ready:"待選擇",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已刪除",none_yet:"尚未邀請任何人 — 請在上方新增。",bad_email:"該電郵地址似乎有誤",need_email:"請輸入公司電郵",sent_one:"邀請已發送 ✓",sent_n:"已發送 {n} 封邀請 ✓",part_n:"已發送 {n} 封，{f} 封失敗",reminded:"已發送 {n} 則提醒 ✓",pick_first:"請先勾選要提醒的人",saved:"已儲存 ✓",save_fail:"儲存失敗 — 請再試一次",not_admin:"此帳戶未獲授權管理團隊。",bad_login:"電郵或密碼有誤。",primary:"主背景",remove:"移除",ph_scene:"場景庫中的場景 id"}};
+en:{badge:"Team portal",signout:"Sign out",login_h:"Team portal sign in",login_p:"For the person managing headshots at your company.",ph_email:"Your work email",ph_pw:"Password",btn_signin:"Sign in",org_lead:"Your organisation",t_invite:"Invite staff",lbl_name:"Name",lbl_email:"Work email",lbl_ref:"Employee ref",lbl_dept:"Department",btn_invite:"Send invitation",lbl_bulk:"Or import a list — one person per line: name, email, department, employee ref",btn_tpl:"⭳ Download the template",btn_pick:"Choose a file",all_depts:"All departments",none_dept:"Nobody in this department yet.",loaded_n:"{n} people read from the file — check them, then import.",need_csv:"Save the file as CSV first (in Excel: File → Save As → CSV UTF-8), then choose it again.",btn_import:"Import the list",hint_invite:"💡 Each person gets an email with a sign-in link — there is no password for them to create. They upload their own photo and agree to it themselves, which is what keeps you out of the business of handling staff photographs.",t_roster:"Staff",btn_selstalled:"Select everyone not finished",btn_selnone:"Clear selection",btn_remind:"Send a reminder",th_name:"Name",th_email:"Email",th_ref:"Ref",th_dept:"Department",th_status:"Status",th_invited:"Invited",th_act:"Actions",loading:"Loading…",t_settings:"Settings",lbl_policy:"Which background do staff use?",opt_choice:"They choose from the approved list",opt_locked:"Directory photo always uses the primary",lbl_purge:"Delete photos this many days after delivery",cap_purge:"Between 1 and {n} days. The short window is part of the agreement, so it cannot be extended from here.",lbl_scenes:"Approved backgrounds",btn_addscene:"＋ Add a background",btn_save:"Save settings",hint_purge:"💡 Nothing is kept beyond this window. The photos nobody chose are deleted as soon as each person picks a favourite, and the chosen one goes when the window closes — staff are emailed before that happens, so nobody is caught out.",seats:"{u} of {s} seats used",done:"{d} of {t} finished",remind_one:"Remind",st_invited:"invited",st_consented:"agreed",st_shooting:"shooting",st_ready:"ready to pick",st_submitted:"submitted",st_delivered:"finished",st_complete:"finished",st_purged:"deleted",none_yet:"Nobody invited yet — add someone above.",bad_email:"That email address does not look right",need_email:"Enter a work email address",sent_one:"Invitation sent ✓",sent_n:"{n} invitations sent ✓",part_n:"{n} sent, {f} failed",reminded:"{n} reminders sent ✓",pick_first:"Tick the people you want to remind",saved:"Saved ✓",save_fail:"Could not save — please try again",not_admin:"This account is not set up to manage a team.",bad_login:"Wrong email or password.",primary:"Primary",remove:"Remove",ph_scene:"Scene id from the library"},
+zh:{badge:"团队后台",signout:"退出登录",login_h:"团队后台登录",login_p:"供贵公司负责头像事宜的同事使用。",ph_email:"你的公司邮箱",ph_pw:"密码",btn_signin:"登录",org_lead:"你的机构",t_invite:"邀请员工",lbl_name:"姓名",lbl_email:"公司邮箱",lbl_ref:"员工编号",lbl_dept:"部门",btn_invite:"发送邀请",lbl_bulk:"或导入名单 — 每行一位：姓名、邮箱、部门、员工编号",btn_tpl:"⭳ 下载模板",btn_pick:"选择文件",all_depts:"全部部门",none_dept:"该部门暂无成员。",loaded_n:"已从文件读取 {n} 位 — 核对后再导入。",need_csv:"请先将文件另存为 CSV（Excel：文件 → 另存为 → CSV UTF-8），再重新选择。",btn_import:"导入名单",hint_invite:"💡 每位员工都会收到含登录链接的邮件，无需自行设置密码。照片由本人上传并本人同意，因此你无需经手员工的照片。",t_roster:"员工",btn_selstalled:"选择所有未完成的人",btn_selnone:"清除选择",btn_remind:"发送提醒",th_name:"姓名",th_email:"邮箱",th_ref:"编号",th_dept:"部门",th_status:"状态",th_invited:"邀请日期",th_act:"操作",loading:"载入中…",t_settings:"设置",lbl_policy:"员工使用哪个背景？",opt_choice:"由员工在已批准的清单中自选",opt_locked:"名录照片一律使用主背景",lbl_purge:"交付后多少天删除照片",cap_purge:"介于 1 至 {n} 天之间。这一短期保留期限属于合约的一部分，无法在此处延长。",lbl_scenes:"已批准的背景",btn_addscene:"＋ 新增背景",btn_save:"保存设置",hint_purge:"💡 超过此期限不会保留任何照片。员工选定心仪照片后，未被选中的会立即删除；选定的那张会在期限届满时删除 — 我们会事先发邮件提醒，不会让人措手不及。",seats:"已使用 {u} / {s} 个名额",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀请",st_consented:"已同意",st_shooting:"拍摄中",st_ready:"待选择",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已删除",none_yet:"尚未邀请任何人 — 请在上方新增。",bad_email:"该邮箱地址似乎有误",need_email:"请输入公司邮箱",sent_one:"邀请已发送 ✓",sent_n:"已发送 {n} 封邀请 ✓",part_n:"已发送 {n} 封，{f} 封失败",reminded:"已发送 {n} 条提醒 ✓",pick_first:"请先勾选要提醒的人",saved:"已保存 ✓",save_fail:"保存失败 — 请再试一次",not_admin:"此账户未获授权管理团队。",bad_login:"邮箱或密码有误。",primary:"主背景",remove:"移除",ph_scene:"场景库中的场景 id"},
+"zh-TW":{badge:"團隊後台",signout:"登出",login_h:"團隊後台登入",login_p:"供貴公司負責頭像事宜的同事使用。",ph_email:"你的公司電郵",ph_pw:"密碼",btn_signin:"登入",org_lead:"你的機構",t_invite:"邀請員工",lbl_name:"姓名",lbl_email:"公司電郵",lbl_ref:"員工編號",lbl_dept:"部門",btn_invite:"發送邀請",lbl_bulk:"或匯入名單 — 每行一位：姓名、電郵、部門、員工編號",btn_tpl:"⭳ 下載範本",btn_pick:"選擇檔案",all_depts:"全部部門",none_dept:"此部門暫無成員。",loaded_n:"已從檔案讀取 {n} 位 — 核對後再匯入。",need_csv:"請先將檔案另存為 CSV（Excel：檔案 → 另存新檔 → CSV UTF-8），再重新選擇。",btn_import:"匯入名單",hint_invite:"💡 每位員工都會收到含登入連結的電郵，無需自行設定密碼。照片由本人上傳並本人同意，因此你無需經手員工的照片。",t_roster:"員工",btn_selstalled:"選擇所有未完成的人",btn_selnone:"清除選擇",btn_remind:"發送提醒",th_name:"姓名",th_email:"電郵",th_ref:"編號",th_dept:"部門",th_status:"狀態",th_invited:"邀請日期",th_act:"操作",loading:"載入中…",t_settings:"設定",lbl_policy:"員工使用哪個背景？",opt_choice:"由員工在已核准的清單中自選",opt_locked:"名錄照片一律使用主背景",lbl_purge:"交付後多少天刪除照片",cap_purge:"介乎 1 至 {n} 天。這段短期保留期限屬於合約的一部分，無法在此處延長。",lbl_scenes:"已核准的背景",btn_addscene:"＋ 新增背景",btn_save:"儲存設定",hint_purge:"💡 超過此期限不會保留任何照片。員工選定心儀照片後，未被選中的會立即刪除；選定的那張會在期限屆滿時刪除 — 我們會事先發電郵提醒，不會讓人措手不及。",seats:"已使用 {u} / {s} 個名額",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀請",st_consented:"已同意",st_shooting:"拍攝中",st_ready:"待選擇",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已刪除",none_yet:"尚未邀請任何人 — 請在上方新增。",bad_email:"該電郵地址似乎有誤",need_email:"請輸入公司電郵",sent_one:"邀請已發送 ✓",sent_n:"已發送 {n} 封邀請 ✓",part_n:"已發送 {n} 封，{f} 封失敗",reminded:"已發送 {n} 則提醒 ✓",pick_first:"請先勾選要提醒的人",saved:"已儲存 ✓",save_fail:"儲存失敗 — 請再試一次",not_admin:"此帳戶未獲授權管理團隊。",bad_login:"電郵或密碼有誤。",primary:"主背景",remove:"移除",ph_scene:"場景庫中的場景 id"}};
 let LANG=localStorage.getItem('sgsTeamLang')||(function(){const l=(navigator.language||'').toLowerCase();
   if(l.startsWith('zh')) return (l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh'; return 'en';})();
 const T=k=>(AL[LANG]&&AL[LANG][k])||AL.en[k]||k;
@@ -260,7 +269,8 @@ function setLang(v){ LANG=AL[v]?v:'en'; localStorage.setItem('sgsTeamLang',LANG)
 const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
 const SB_KEY='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-let session=null, DATA=null, scenes=[];
+let session=null, DATA=null, scenes=[], DEPT='';
+function onDept(el){ DEPT=el.value; render(); }
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const show=(id,on)=>{const e=$(id); if(e) e.style.display=on?'':'none';};
@@ -304,31 +314,46 @@ async function enter(){
 const DONE=new Set(['delivered','complete','purged']);
 
 function render(){
-  const org=DATA.org, ms=DATA.members||[];
+  const org=DATA.org, all=DATA.members||[];
+
+  /* The department filter narrows the roster only. Seats and the completion
+     meter stay organisation-wide, because those are what the company bought
+     and what HR is judged on — a filtered meter would quietly flatter them. */
+  const depts=[...new Set(all.map(m=>(m.department||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,LANG));
+  if(DEPT && !depts.includes(DEPT)) DEPT='';
+  const df=$('deptFilter');
+  df.innerHTML=`<option value="">${esc(T('all_depts'))}</option>`+
+    depts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  df.value=DEPT;
+  const ms=DEPT?all.filter(m=>(m.department||'').trim()===DEPT):all;
   $('orgName').textContent=org.name;
-  const used=ms.length;
+  const used=all.length;
   $('seatLine').textContent=T('seats').replace('{u}',used).replace('{s}',org.seats||'—');
-  const done=ms.filter(m=>DONE.has(m.status)).length;
-  const pct=ms.length?Math.round(done/ms.length*100):0;
+  const done=all.filter(m=>DONE.has(m.status)).length;
+  const pct=all.length?Math.round(done/all.length*100):0;
   $('bar').style.width=pct+'%';
-  $('barLabel').textContent=T('done').replace('{d}',done).replace('{t}',ms.length);
-  $('rosterCount').textContent=ms.length?('· '+T('done').replace('{d}',done).replace('{t}',ms.length)):'';
+  $('barLabel').textContent=T('done').replace('{d}',done).replace('{t}',all.length);
+  const rdone=ms.filter(m=>DONE.has(m.status)).length;
+  $('rosterCount').textContent=ms.length?('· '+T('done').replace('{d}',rdone).replace('{t}',ms.length)):'';
 
   const order=['invited','consented','shooting','ready','submitted','delivered'];
-  const counts={}; ms.forEach(m=>counts[m.status]=(counts[m.status]||0)+1);
+  const counts={}; all.forEach(m=>counts[m.status]=(counts[m.status]||0)+1);
   $('statRow').innerHTML=order.map(k=>
     `<div class="stat"><b>${counts[k]||0}</b><span>${esc(T('st_'+k))}</span></div>`).join('');
 
   /* Backgrounds are drawn before the roster short-circuit below, otherwise a
      brand-new org with nobody invited yet shows an empty Settings card. */
   renderScenes();
+  $('purgeCap').textContent=T('cap_purge').replace('{n}',MAX_PURGE_DAYS);
 
   const tb=$('rows');
-  if(!ms.length){ tb.innerHTML=`<tr><td colspan="7" class="empty">${esc(T('none_yet'))}</td></tr>`; return; }
+  if(!ms.length){ tb.innerHTML=`<tr><td colspan="8" class="empty">${esc(T(DEPT?'none_dept':'none_yet'))}</td></tr>`; return; }
   tb.innerHTML=ms.map(m=>`<tr>
     <td class="chk"><input type="checkbox" class="msel" value="${esc(m.id)}"></td>
     <td>${esc(m.name)||'—'}</td>
     <td style="color:var(--muted)">${esc(m.email)}</td>
+    <td>${esc(m.department)||'—'}</td>
     <td style="font-family:ui-monospace,monospace">${esc(m.staff_ref)||'—'}</td>
     <td><span class="pill ${esc(m.status)}">${esc(T('st_'+m.status)||m.status)}</span></td>
     <td style="color:var(--muted)">${esc((m.invited_at||'').slice(0,10))}</td>
@@ -353,25 +378,125 @@ async function inviteOne(){
   const email=($('iEmail').value||'').trim().toLowerCase();
   if(!email){ m.textContent=T('need_email'); return; }
   if(!EMAIL_RE.test(email)){ m.textContent=T('bad_email'); return; }
-  const r=await api({action:'invite',invites:[{email,name:$('iName').value.trim(),staff_ref:$('iRef').value.trim()}]});
+  const r=await api({action:'invite',invites:[{email,name:$('iName').value.trim(),
+    department:$('iDept').value.trim(),staff_ref:$('iRef').value.trim()}]});
   if(!r.ok){ m.textContent=r.error||'…'; return; }
   m.classList.add('ok'); m.textContent=T('sent_one');
-  $('iName').value=$('iEmail').value=$('iRef').value='';
+  $('iName').value=$('iEmail').value=$('iDept').value=$('iRef').value='';
   await refresh();
 }
+/* A real CSV split rather than line.split(','): an HR export quotes any field
+   containing a comma, and a department like "Sales, EMEA" would otherwise
+   arrive as two columns and push the employee ref out of place. Tabs are
+   accepted too, because pasting straight out of Excel gives tab-separated
+   text rather than commas. */
+function csvRows(text){
+  const s=String(text).replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+  const rows=[]; let row=[], f='', q=false;
+  for(let i=0;i<s.length;i++){
+    const c=s[i];
+    if(q){
+      if(c==='"'){ if(s[i+1]==='"'){ f+='"'; i++; } else q=false; }
+      else f+=c;
+    }
+    else if(c==='"') q=true;
+    else if(c===','||c==='\t'){ row.push(f); f=''; }
+    else if(c==='\n'){ row.push(f); f=''; rows.push(row); row=[]; }
+    else f+=c;
+  }
+  row.push(f); rows.push(row);
+  return rows.map(r=>r.map(x=>x.trim())).filter(r=>r.some(Boolean));
+}
+
+/* Headings we recognise, in the languages the console is offered in. Anything
+   not on this list falls through to the positional reading below. */
+const HDR={
+  name:['name','full name','staff name','employee name','staff','employee','姓名','名字','員工姓名','员工姓名'],
+  email:['email','e mail','work email','email address','mail','邮箱','電郵','電子郵件','电子邮件','公司邮箱','公司電郵','電郵地址','邮箱地址'],
+  department:['department','dept','team','division','function','business unit','部门','部門','團隊','团队','科室','事業部','事业部'],
+  staff_ref:['employee ref','employee id','employee number','staff id','staff ref','staff number','ref','id','number','工号','工號','員工編號','员工编号','員工號碼']
+};
+/* A heading row is one that names an email column and contains no actual email
+   address — a data row always has the address itself, so the two never blur. */
+function headerMap(row){
+  const map={};
+  row.forEach((cell,i)=>{
+    const c=cell.toLowerCase().replace(/[\s_\-]+/g,' ').trim();
+    for(const k in HDR){ if(map[k]===undefined && HDR[k].includes(c)){ map[k]=i; break; } }
+  });
+  return (map.email!==undefined && !row.some(x=>EMAIL_RE.test(x))) ? map : null;
+}
+
+/* The sample rows we ship in the template and the .xlsx. Someone will always
+   forget to delete them, and inviting a fictional person at a fictional domain
+   just produces a bounce and a puzzled email to support. */
+const SAMPLES=new Set(['sam@company.com','nia@company.com','wei@company.com']);
+
+function parseList(text){
+  const rows=csvRows(text);
+  if(!rows.length) return [];
+  /* The heading row is searched for rather than assumed to be first: saving the
+     .xlsx template as CSV carries its title and instruction lines along at the
+     top, and an HR export often has a report header above the data. */
+  let map=null, start=0;
+  for(let i=0;i<Math.min(rows.length,12);i++){
+    const m=headerMap(rows[i]);
+    if(m){ map=m; start=i+1; break; }
+  }
+  const at=(r,k)=>(map[k]!==undefined?(r[map[k]]||''):'');
+  const out=[]; const seen=new Set();
+  for(const r of rows.slice(map?start:0)){
+    let rec;
+    if(map){
+      rec={email:at(r,'email').toLowerCase(),name:at(r,'name'),
+           department:at(r,'department'),staff_ref:at(r,'staff_ref')};
+    } else {
+      // No headings: find the email itself and read the rest in documented
+      // order, because a pasted export rarely has the columns you asked for.
+      const email=(r.find(x=>EMAIL_RE.test(x))||'').toLowerCase();
+      const rest=r.filter(x=>x.toLowerCase()!==email);
+      rec={email,name:rest[0]||'',department:rest[1]||'',staff_ref:rest[2]||''};
+    }
+    if(!EMAIL_RE.test(rec.email)||seen.has(rec.email)||SAMPLES.has(rec.email)) continue;
+    seen.add(rec.email); out.push(rec);
+  }
+  return out;
+}
+
+/* The BOM matters: without it Excel on Windows opens the file as ANSI and the
+   Chinese headings come out as mojibake, which HR then "fixes" by retyping. */
+function downloadTemplate(){
+  const rows=[[T('lbl_name'),T('lbl_email'),T('lbl_dept'),T('lbl_ref')],
+              ['Sam Chan','sam@company.com','Finance','E1042'],
+              ['Nia Osei','nia@company.com','Marketing','E1043'],
+              ['Wei Zhang','wei@company.com','Sales, EMEA','E1044']];
+  const csv=rows.map(r=>r.map(c=>/[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='summy-garden-staff-list.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
+}
+
+function loadCsv(el){
+  const f=el.files&&el.files[0]; const m=$('invMsg'); m.classList.remove('ok');
+  el.value='';
+  if(!f) return;
+  if(/\.xlsx?$/i.test(f.name)){ m.textContent=T('need_csv'); return; }
+  const rd=new FileReader();
+  rd.onerror=()=>{ m.textContent=T('need_csv'); };
+  rd.onload=()=>{
+    $('bulk').value=String(rd.result||'').replace(/^\uFEFF/,'');
+    const n=parseList($('bulk').value).length;
+    m.classList.toggle('ok',n>0);
+    m.textContent=n?T('loaded_n').replace('{n}',n):T('need_email');
+  };
+  rd.readAsText(f,'utf-8');
+}
+
 async function inviteBulk(){
   const m=$('invMsg'); m.classList.remove('ok');
-  const lines=($('bulk').value||'').split('\n').map(x=>x.trim()).filter(Boolean);
-  const invites=[];
-  for(const line of lines){
-    const p=line.split(',').map(x=>x.trim());
-    // Accept "name, email, ref" in any sane order by finding the email itself,
-    // because a pasted export rarely has the columns you asked for.
-    const email=(p.find(x=>EMAIL_RE.test(x))||'').toLowerCase();
-    if(!email) continue;
-    const rest=p.filter(x=>x!==email && x.toLowerCase()!==email);
-    invites.push({email,name:rest[0]||'',staff_ref:rest[1]||''});
-  }
+  const invites=parseList($('bulk').value||'');
   if(!invites.length){ m.textContent=T('need_email'); return; }
   const r=await api({action:'invite',invites});
   if(!r.ok){ m.textContent=r.error||'…'; return; }
@@ -385,8 +510,11 @@ async function inviteBulk(){
 
 const picked=()=>[...document.querySelectorAll('.msel:checked')].map(x=>x.value);
 function selectStalled(){
-  document.querySelectorAll('.msel').forEach((c,i)=>{
-    const m=(DATA.members||[])[i]; c.checked=!!m&&!DONE.has(m.status);
+  /* Matched by member id rather than row position: with a department filter on,
+     the visible rows are no longer index-aligned with DATA.members. */
+  const by={}; (DATA.members||[]).forEach(m=>by[m.id]=m);
+  document.querySelectorAll('.msel').forEach(c=>{
+    const m=by[c.value]; c.checked=!!m && !DONE.has(m.status);
   });
 }
 function selectNone(){ document.querySelectorAll('.msel').forEach(c=>c.checked=false); }
@@ -401,8 +529,17 @@ async function doRemind(ids){
   await refresh();
 }
 
+/* Mirrors MAX_PURGE_DAYS in functions/api/org.js. The server refuses anything
+   larger; this only spares HR the round trip. Keep the two in step. */
+const MAX_PURGE_DAYS=14;
+function clampPurge(){
+  const el=$('sPurge'); const n=Math.round(Number(el.value));
+  if(Number.isFinite(n)&&n>MAX_PURGE_DAYS) el.value=MAX_PURGE_DAYS;
+}
+
 async function saveSettings(){
   const m=$('setMsg'); m.classList.remove('ok');
+  clampPurge();
   const r=await api({action:'settings',bg_policy:$('sPolicy').value,purge_days:$('sPurge').value,
     scenes:scenes.filter(s=>s.scene_id.trim()).map((s,i)=>({scene_id:s.scene_id.trim(),is_primary:s.is_primary,sort:i}))});
   if(!r.ok){ m.textContent=r.error||T('save_fail'); return; }

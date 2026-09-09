@@ -7,6 +7,12 @@
 //   invite  — an org admin adds staff and sends each a magic link
 // Env: SUPABASE_SECRET_KEY, RESEND_API_KEY, EMAIL_FROM
 
+/* The short retention window is the enterprise promise, not a preference. HR
+   must not be able to quietly turn a fortnight into a year — that is the whole
+   reason a company signs this rather than emailing photographs around. Anything
+   shorter than the ceiling is fine; longer is refused. */
+const MAX_PURGE_DAYS = 14;
+
 const SB_URL = "https://qyixfqqkbgajqmclpnqr.supabase.co";
 const SB_PUB = "sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs";
 
@@ -227,6 +233,7 @@ export async function onRequest(context) {
           org_id: orgId, email,
           name: String(raw?.name || "").slice(0, 120),
           staff_ref: String(raw?.staff_ref || "").slice(0, 60),
+          department: String(raw?.department || "").slice(0, 120),
         }),
       });
       if (!up.ok) { out.push({ email, ok: false, error: "could not create the seat" }); continue; }
@@ -255,7 +262,7 @@ export async function onRequest(context) {
     if (!org) return Response.json({ error: "organisation not found" }, { status: 404, headers });
 
     const members = await getJson(await svc(env, `/rest/v1/org_members?org_id=eq.${orgId}` +
-      `&select=id,email,name,staff_ref,status,consent_at,invited_at,reminded_at,delivered_at` +
+      `&select=id,email,name,staff_ref,department,status,consent_at,invited_at,reminded_at,delivered_at` +
       `&order=invited_at.desc&limit=1000`)) || [];
     const bg = await getJson(await svc(env, `/rest/v1/org_backgrounds?org_id=eq.${orgId}` +
       `&select=scene_id,is_primary,sort&order=sort.asc`)) || [];
@@ -317,8 +324,16 @@ export async function onRequest(context) {
     if (body.bg_policy === "choice" || body.bg_policy === "primary_locked") patch.bg_policy = body.bg_policy;
     if (Number.isFinite(Number(body.purge_days))) {
       // Zero would mean "delete immediately", which no warning email could ever
-      // reach in time. One day is the floor.
-      patch.purge_days = Math.min(365, Math.max(1, Math.round(Number(body.purge_days))));
+      // reach in time. One day is the floor, MAX_PURGE_DAYS the ceiling. Both
+      // are enforced here and not only in the browser, because the number field
+      // in the console can be edited by anyone who opens dev tools.
+      const want = Math.round(Number(body.purge_days));
+      if (want > MAX_PURGE_DAYS) {
+        return Response.json(
+          { error: `photos cannot be kept longer than ${MAX_PURGE_DAYS} days`, max_purge_days: MAX_PURGE_DAYS },
+          { status: 400, headers });
+      }
+      patch.purge_days = Math.max(1, want);
     }
     if (Object.keys(patch).length) {
       const r = await svc(env, `/rest/v1/organisations?id=eq.${orgId}`, {

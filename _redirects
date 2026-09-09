@@ -1,0 +1,34 @@
+# Summy Garden Studio — friendly URLs
+#
+# Cloudflare Pages already serves /enterprise from enterprise.html. These rules
+# exist so a mistyped or half-remembered address still lands in the right place
+# instead of showing a 404 to someone who is trying to sign in.
+#
+# Format: <from>  <to>  <status>
+
+# --- Team / enterprise portal ---
+/enterprise.html    /enterprise   301
+/enterprise.htm     /enterprise   301
+/enterprise/        /enterprise   301
+/enterprises        /enterprise   301
+/enterprice         /enterprise   301
+/team               /enterprise   301
+/company            /enterprise   301
+/hr                 /enterprise   301
+/business           /enterprise   301
+
+# --- Partner portal ---
+/partner.html       /partner      301
+/partner.htm        /partner      301
+/partner/           /partner      301
+/partners           /partner      301
+
+# --- Admin portal ---
+/admin.html         /admin        301
+/admin.htm          /admin        301
+/admin/             /admin        301
+
+# --- Home ---
+/index.html         /             301
+/index.htm          /             301
+/home               /             301

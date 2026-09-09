@@ -319,6 +319,10 @@ function render(){
   $('statRow').innerHTML=order.map(k=>
     `<div class="stat"><b>${counts[k]||0}</b><span>${esc(T('st_'+k))}</span></div>`).join('');
 
+  /* Backgrounds are drawn before the roster short-circuit below, otherwise a
+     brand-new org with nobody invited yet shows an empty Settings card. */
+  renderScenes();
+
   const tb=$('rows');
   if(!ms.length){ tb.innerHTML=`<tr><td colspan="7" class="empty">${esc(T('none_yet'))}</td></tr>`; return; }
   tb.innerHTML=ms.map(m=>`<tr>
@@ -330,7 +334,6 @@ function render(){
     <td style="color:var(--muted)">${esc((m.invited_at||'').slice(0,10))}</td>
     <td>${DONE.has(m.status)?'':`<button class="btn dark sm" onclick="remindOne('${esc(m.id)}')">${esc(T('remind_one'))}</button>`}</td>
   </tr>`).join('');
-  renderScenes();
 }
 
 function renderScenes(){

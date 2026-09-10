@@ -129,9 +129,19 @@ input[type=checkbox]{width:auto;margin:0;box-shadow:none;accent-color:var(--acce
   padding:15px 18px;font-size:13px;line-height:1.65;margin-top:16px;
   box-shadow:inset 3px 0 0 #f5c33b,inset 0 0 0 1px rgba(180,140,20,.1)}
 .empty{font-size:13.5px;color:var(--muted);text-align:center;padding:30px}
-.scene-row{display:flex;gap:10px;align-items:center;margin-bottom:9px}
-.scene-row input[type=text]{margin-bottom:0}
+.scene-row{background:#f7fbfd;box-shadow:var(--ring);border-radius:14px;padding:12px 13px;margin-bottom:10px}
+.scene-row .sr-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.scene-row input[type=text],.scene-row select{margin-bottom:0}
+.scene-row .sr-head>select{flex:0 0 240px;max-width:240px}
+.scene-row .sr-head>input[type=text]{flex:1 1 200px;min-width:160px}
 .scene-row label{margin:0;display:flex;gap:6px;align-items:center;white-space:nowrap;font-size:12px}
+.scene-row .custom{margin-top:10px;display:grid;gap:9px;grid-template-columns:1fr}
+.scene-row .custom textarea{min-height:64px;margin-bottom:0}
+.scene-row .cols{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.scene-row .cols input[type=color]{width:42px;height:32px;padding:2px;margin:0;cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(9,45,68,.12);border-radius:9px;background:#fff}
+.scene-row .cols span{font-size:11.5px;color:var(--muted);font-weight:600}
+.scene-row .cnt{font-size:11.5px;color:var(--faint);text-align:right}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}.wrap{padding:20px 16px}.top{position:static}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -250,9 +260,9 @@ input[type=checkbox]{width:auto;margin:0;box-shadow:none;accent-color:var(--acce
 <script>
 /* ---------- i18n (three languages, matching the admin portal) ---------- */
 const AL={
-en:{badge:"Team portal",signout:"Sign out",login_h:"Team portal sign in",login_p:"For the person managing headshots at your company.",ph_email:"Your work email",ph_pw:"Password",btn_signin:"Sign in",org_lead:"Your organisation",t_invite:"Invite staff",lbl_name:"Name",lbl_email:"Work email",lbl_ref:"Employee ref",lbl_dept:"Department",btn_invite:"Send invitation",lbl_bulk:"Or import a list — one person per line: name, email, department, employee ref",btn_tpl:"⭳ Download the template",btn_pick:"Choose a file",all_depts:"All departments",none_dept:"Nobody in this department yet.",loaded_n:"{n} people read from the file — check them, then import.",need_csv:"Save the file as CSV first (in Excel: File → Save As → CSV UTF-8), then choose it again.",btn_import:"Import the list",hint_invite:"💡 Each person gets an email with a sign-in link — there is no password for them to create. They upload their own photo and agree to it themselves, which is what keeps you out of the business of handling staff photographs.",t_roster:"Staff",btn_selstalled:"Select everyone not finished",btn_selnone:"Clear selection",btn_remind:"Send a reminder",th_name:"Name",th_email:"Email",th_ref:"Ref",th_dept:"Department",th_status:"Status",th_invited:"Invited",th_act:"Actions",loading:"Loading…",t_settings:"Settings",lbl_policy:"Which background do staff use?",opt_choice:"They choose from the approved list",opt_locked:"Directory photo always uses the primary",lbl_purge:"Delete photos this many days after delivery",cap_purge:"Between 1 and {n} days. The short window is part of the agreement, so it cannot be extended from here.",lbl_scenes:"Approved backgrounds",btn_addscene:"＋ Add a background",btn_save:"Save settings",hint_purge:"💡 Nothing is kept beyond this window. The photos nobody chose are deleted as soon as each person picks a favourite, and the chosen one goes when the window closes — staff are emailed before that happens, so nobody is caught out.",seats:"{u} of {s} seats used",done:"{d} of {t} finished",remind_one:"Remind",st_invited:"invited",st_consented:"agreed",st_shooting:"shooting",st_ready:"ready to pick",st_submitted:"submitted",st_delivered:"finished",st_complete:"finished",st_purged:"deleted",none_yet:"Nobody invited yet — add someone above.",bad_email:"That email address does not look right",need_email:"Enter a work email address",sent_one:"Invitation sent ✓",sent_n:"{n} invitations sent ✓",part_n:"{n} sent, {f} failed",reminded:"{n} reminders sent ✓",pick_first:"Tick the people you want to remind",saved:"Saved ✓",save_fail:"Could not save — please try again",not_admin:"This account is not set up to manage a team.",bad_login:"Wrong email or password.",primary:"Primary",remove:"Remove",ph_scene:"Scene id from the library"},
-zh:{badge:"团队后台",signout:"退出登录",login_h:"团队后台登录",login_p:"供贵公司负责头像事宜的同事使用。",ph_email:"你的公司邮箱",ph_pw:"密码",btn_signin:"登录",org_lead:"你的机构",t_invite:"邀请员工",lbl_name:"姓名",lbl_email:"公司邮箱",lbl_ref:"员工编号",lbl_dept:"部门",btn_invite:"发送邀请",lbl_bulk:"或导入名单 — 每行一位：姓名、邮箱、部门、员工编号",btn_tpl:"⭳ 下载模板",btn_pick:"选择文件",all_depts:"全部部门",none_dept:"该部门暂无成员。",loaded_n:"已从文件读取 {n} 位 — 核对后再导入。",need_csv:"请先将文件另存为 CSV（Excel：文件 → 另存为 → CSV UTF-8），再重新选择。",btn_import:"导入名单",hint_invite:"💡 每位员工都会收到含登录链接的邮件，无需自行设置密码。照片由本人上传并本人同意，因此你无需经手员工的照片。",t_roster:"员工",btn_selstalled:"选择所有未完成的人",btn_selnone:"清除选择",btn_remind:"发送提醒",th_name:"姓名",th_email:"邮箱",th_ref:"编号",th_dept:"部门",th_status:"状态",th_invited:"邀请日期",th_act:"操作",loading:"载入中…",t_settings:"设置",lbl_policy:"员工使用哪个背景？",opt_choice:"由员工在已批准的清单中自选",opt_locked:"名录照片一律使用主背景",lbl_purge:"交付后多少天删除照片",cap_purge:"介于 1 至 {n} 天之间。这一短期保留期限属于合约的一部分，无法在此处延长。",lbl_scenes:"已批准的背景",btn_addscene:"＋ 新增背景",btn_save:"保存设置",hint_purge:"💡 超过此期限不会保留任何照片。员工选定心仪照片后，未被选中的会立即删除；选定的那张会在期限届满时删除 — 我们会事先发邮件提醒，不会让人措手不及。",seats:"已使用 {u} / {s} 个名额",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀请",st_consented:"已同意",st_shooting:"拍摄中",st_ready:"待选择",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已删除",none_yet:"尚未邀请任何人 — 请在上方新增。",bad_email:"该邮箱地址似乎有误",need_email:"请输入公司邮箱",sent_one:"邀请已发送 ✓",sent_n:"已发送 {n} 封邀请 ✓",part_n:"已发送 {n} 封，{f} 封失败",reminded:"已发送 {n} 条提醒 ✓",pick_first:"请先勾选要提醒的人",saved:"已保存 ✓",save_fail:"保存失败 — 请再试一次",not_admin:"此账户未获授权管理团队。",bad_login:"邮箱或密码有误。",primary:"主背景",remove:"移除",ph_scene:"场景库中的场景 id"},
-"zh-TW":{badge:"團隊後台",signout:"登出",login_h:"團隊後台登入",login_p:"供貴公司負責頭像事宜的同事使用。",ph_email:"你的公司電郵",ph_pw:"密碼",btn_signin:"登入",org_lead:"你的機構",t_invite:"邀請員工",lbl_name:"姓名",lbl_email:"公司電郵",lbl_ref:"員工編號",lbl_dept:"部門",btn_invite:"發送邀請",lbl_bulk:"或匯入名單 — 每行一位：姓名、電郵、部門、員工編號",btn_tpl:"⭳ 下載範本",btn_pick:"選擇檔案",all_depts:"全部部門",none_dept:"此部門暫無成員。",loaded_n:"已從檔案讀取 {n} 位 — 核對後再匯入。",need_csv:"請先將檔案另存為 CSV（Excel：檔案 → 另存新檔 → CSV UTF-8），再重新選擇。",btn_import:"匯入名單",hint_invite:"💡 每位員工都會收到含登入連結的電郵，無需自行設定密碼。照片由本人上傳並本人同意，因此你無需經手員工的照片。",t_roster:"員工",btn_selstalled:"選擇所有未完成的人",btn_selnone:"清除選擇",btn_remind:"發送提醒",th_name:"姓名",th_email:"電郵",th_ref:"編號",th_dept:"部門",th_status:"狀態",th_invited:"邀請日期",th_act:"操作",loading:"載入中…",t_settings:"設定",lbl_policy:"員工使用哪個背景？",opt_choice:"由員工在已核准的清單中自選",opt_locked:"名錄照片一律使用主背景",lbl_purge:"交付後多少天刪除照片",cap_purge:"介乎 1 至 {n} 天。這段短期保留期限屬於合約的一部分，無法在此處延長。",lbl_scenes:"已核准的背景",btn_addscene:"＋ 新增背景",btn_save:"儲存設定",hint_purge:"💡 超過此期限不會保留任何照片。員工選定心儀照片後，未被選中的會立即刪除；選定的那張會在期限屆滿時刪除 — 我們會事先發電郵提醒，不會讓人措手不及。",seats:"已使用 {u} / {s} 個名額",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀請",st_consented:"已同意",st_shooting:"拍攝中",st_ready:"待選擇",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已刪除",none_yet:"尚未邀請任何人 — 請在上方新增。",bad_email:"該電郵地址似乎有誤",need_email:"請輸入公司電郵",sent_one:"邀請已發送 ✓",sent_n:"已發送 {n} 封邀請 ✓",part_n:"已發送 {n} 封，{f} 封失敗",reminded:"已發送 {n} 則提醒 ✓",pick_first:"請先勾選要提醒的人",saved:"已儲存 ✓",save_fail:"儲存失敗 — 請再試一次",not_admin:"此帳戶未獲授權管理團隊。",bad_login:"電郵或密碼有誤。",primary:"主背景",remove:"移除",ph_scene:"場景庫中的場景 id"}};
+en:{badge:"Team portal",signout:"Sign out",login_h:"Team portal sign in",login_p:"For the person managing headshots at your company.",ph_email:"Your work email",ph_pw:"Password",btn_signin:"Sign in",org_lead:"Your organisation",t_invite:"Invite staff",lbl_name:"Name",lbl_email:"Work email",lbl_ref:"Employee ref",lbl_dept:"Department",btn_invite:"Send invitation",lbl_bulk:"Or import a list — one person per line: name, email, department, employee ref",btn_tpl:"⭳ Download the template",btn_pick:"Choose a file",all_depts:"All departments",none_dept:"Nobody in this department yet.",loaded_n:"{n} people read from the file — check them, then import.",need_csv:"Save the file as CSV first (in Excel: File → Save As → CSV UTF-8), then choose it again.",btn_import:"Import the list",hint_invite:"💡 Each person gets an email with a sign-in link — there is no password for them to create. They upload their own photo and agree to it themselves, which is what keeps you out of the business of handling staff photographs.",t_roster:"Staff",btn_selstalled:"Select everyone not finished",btn_selnone:"Clear selection",btn_remind:"Send a reminder",th_name:"Name",th_email:"Email",th_ref:"Ref",th_dept:"Department",th_status:"Status",th_invited:"Invited",th_act:"Actions",loading:"Loading…",t_settings:"Settings",lbl_policy:"Which background do staff use?",opt_choice:"They choose from the approved list",opt_locked:"Directory photo always uses the primary",lbl_purge:"Delete photos this many days after delivery",cap_purge:"Between 1 and {n} days. The short window is part of the agreement, so it cannot be extended from here.",lbl_scenes:"Approved backgrounds",btn_addscene:"＋ Add a background",btn_save:"Save settings",hint_purge:"💡 Nothing is kept beyond this window. The photos nobody chose are deleted as soon as each person picks a favourite, and the chosen one goes when the window closes — staff are emailed before that happens, so nobody is caught out.",seats:"{u} of {s} seats used",done:"{d} of {t} finished",remind_one:"Remind",st_invited:"invited",st_consented:"agreed",st_shooting:"shooting",st_ready:"ready to pick",st_submitted:"submitted",st_delivered:"finished",st_complete:"finished",st_purged:"deleted",none_yet:"Nobody invited yet — add someone above.",bad_email:"That email address does not look right",need_email:"Enter a work email address",sent_one:"Invitation sent ✓",sent_n:"{n} invitations sent ✓",part_n:"{n} sent, {f} failed",reminded:"{n} reminders sent ✓",pick_first:"Tick the people you want to remind",saved:"Saved ✓",save_fail:"Could not save — please try again",not_admin:"This account is not set up to manage a team.",bad_login:"Wrong email or password.",primary:"Primary",remove:"Remove",ph_scene:"Scene id from the library",k_lib:"From the library",k_own:"Written for this company",ph_name:"Name staff will see",lbl_desc:"Describe the setting",ph_desc:"Warm oak panelling and a sage-green wall, soft daylight from a window on the left",lbl_cols:"Brand colours",hint_desc:"Describe the place only — the room, the light, the colours. Leave the person out of it; the studio handles them. Avoid asking for a logo or any lettering: the background is deliberately blurred and text comes out garbled."},
+zh:{badge:"团队后台",signout:"退出登录",login_h:"团队后台登录",login_p:"供贵公司负责头像事宜的同事使用。",ph_email:"你的公司邮箱",ph_pw:"密码",btn_signin:"登录",org_lead:"你的机构",t_invite:"邀请员工",lbl_name:"姓名",lbl_email:"公司邮箱",lbl_ref:"员工编号",lbl_dept:"部门",btn_invite:"发送邀请",lbl_bulk:"或导入名单 — 每行一位：姓名、邮箱、部门、员工编号",btn_tpl:"⭳ 下载模板",btn_pick:"选择文件",all_depts:"全部部门",none_dept:"该部门暂无成员。",loaded_n:"已从文件读取 {n} 位 — 核对后再导入。",need_csv:"请先将文件另存为 CSV（Excel：文件 → 另存为 → CSV UTF-8），再重新选择。",btn_import:"导入名单",hint_invite:"💡 每位员工都会收到含登录链接的邮件，无需自行设置密码。照片由本人上传并本人同意，因此你无需经手员工的照片。",t_roster:"员工",btn_selstalled:"选择所有未完成的人",btn_selnone:"清除选择",btn_remind:"发送提醒",th_name:"姓名",th_email:"邮箱",th_ref:"编号",th_dept:"部门",th_status:"状态",th_invited:"邀请日期",th_act:"操作",loading:"载入中…",t_settings:"设置",lbl_policy:"员工使用哪个背景？",opt_choice:"由员工在已批准的清单中自选",opt_locked:"名录照片一律使用主背景",lbl_purge:"交付后多少天删除照片",cap_purge:"介于 1 至 {n} 天之间。这一短期保留期限属于合约的一部分，无法在此处延长。",lbl_scenes:"已批准的背景",btn_addscene:"＋ 新增背景",btn_save:"保存设置",hint_purge:"💡 超过此期限不会保留任何照片。员工选定心仪照片后，未被选中的会立即删除；选定的那张会在期限届满时删除 — 我们会事先发邮件提醒，不会让人措手不及。",seats:"已使用 {u} / {s} 个名额",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀请",st_consented:"已同意",st_shooting:"拍摄中",st_ready:"待选择",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已删除",none_yet:"尚未邀请任何人 — 请在上方新增。",bad_email:"该邮箱地址似乎有误",need_email:"请输入公司邮箱",sent_one:"邀请已发送 ✓",sent_n:"已发送 {n} 封邀请 ✓",part_n:"已发送 {n} 封，{f} 封失败",reminded:"已发送 {n} 条提醒 ✓",pick_first:"请先勾选要提醒的人",saved:"已保存 ✓",save_fail:"保存失败 — 请再试一次",not_admin:"此账户未获授权管理团队。",bad_login:"邮箱或密码有误。",primary:"主背景",remove:"移除",ph_scene:"场景库中的场景 id",k_lib:"选自场景库",k_own:"为本公司定制",ph_name:"员工看到的名称",lbl_desc:"描述场景",ph_desc:"温润橡木护墙板与鼠尾草绿墙面，左侧窗户洒入柔和日光",lbl_cols:"品牌色",hint_desc:"只描述场景本身 — 房间、光线、颜色。人物交由影棚处理，无需提及。请勿要求加入标志或任何文字：背景会刻意虚化，文字会变形。"},
+"zh-TW":{badge:"團隊後台",signout:"登出",login_h:"團隊後台登入",login_p:"供貴公司負責頭像事宜的同事使用。",ph_email:"你的公司電郵",ph_pw:"密碼",btn_signin:"登入",org_lead:"你的機構",t_invite:"邀請員工",lbl_name:"姓名",lbl_email:"公司電郵",lbl_ref:"員工編號",lbl_dept:"部門",btn_invite:"發送邀請",lbl_bulk:"或匯入名單 — 每行一位：姓名、電郵、部門、員工編號",btn_tpl:"⭳ 下載範本",btn_pick:"選擇檔案",all_depts:"全部部門",none_dept:"此部門暫無成員。",loaded_n:"已從檔案讀取 {n} 位 — 核對後再匯入。",need_csv:"請先將檔案另存為 CSV（Excel：檔案 → 另存新檔 → CSV UTF-8），再重新選擇。",btn_import:"匯入名單",hint_invite:"💡 每位員工都會收到含登入連結的電郵，無需自行設定密碼。照片由本人上傳並本人同意，因此你無需經手員工的照片。",t_roster:"員工",btn_selstalled:"選擇所有未完成的人",btn_selnone:"清除選擇",btn_remind:"發送提醒",th_name:"姓名",th_email:"電郵",th_ref:"編號",th_dept:"部門",th_status:"狀態",th_invited:"邀請日期",th_act:"操作",loading:"載入中…",t_settings:"設定",lbl_policy:"員工使用哪個背景？",opt_choice:"由員工在已核准的清單中自選",opt_locked:"名錄照片一律使用主背景",lbl_purge:"交付後多少天刪除照片",cap_purge:"介乎 1 至 {n} 天。這段短期保留期限屬於合約的一部分，無法在此處延長。",lbl_scenes:"已核准的背景",btn_addscene:"＋ 新增背景",btn_save:"儲存設定",hint_purge:"💡 超過此期限不會保留任何照片。員工選定心儀照片後，未被選中的會立即刪除；選定的那張會在期限屆滿時刪除 — 我們會事先發電郵提醒，不會讓人措手不及。",seats:"已使用 {u} / {s} 個名額",done:"{t} 人中已完成 {d} 人",remind_one:"提醒",st_invited:"已邀請",st_consented:"已同意",st_shooting:"拍攝中",st_ready:"待選擇",st_submitted:"已提交",st_delivered:"已完成",st_complete:"已完成",st_purged:"已刪除",none_yet:"尚未邀請任何人 — 請在上方新增。",bad_email:"該電郵地址似乎有誤",need_email:"請輸入公司電郵",sent_one:"邀請已發送 ✓",sent_n:"已發送 {n} 封邀請 ✓",part_n:"已發送 {n} 封，{f} 封失敗",reminded:"已發送 {n} 則提醒 ✓",pick_first:"請先勾選要提醒的人",saved:"已儲存 ✓",save_fail:"儲存失敗 — 請再試一次",not_admin:"此帳戶未獲授權管理團隊。",bad_login:"電郵或密碼有誤。",primary:"主背景",remove:"移除",ph_scene:"場景庫中的場景 id",k_lib:"選自場景庫",k_own:"為本公司訂製",ph_name:"員工看到的名稱",lbl_desc:"描述場景",ph_desc:"溫潤橡木護牆板與鼠尾草綠牆面，左側窗戶灑入柔和日光",lbl_cols:"品牌色",hint_desc:"只描述場景本身 — 房間、光線、顏色。人物交由影棚處理，無需提及。請勿要求加入標誌或任何文字：背景會刻意虛化，文字會變形。"}};
 let LANG=localStorage.getItem('sgsTeamLang')||(function(){const l=(navigator.language||'').toLowerCase();
   if(l.startsWith('zh')) return (l==='zh-tw'||l==='zh-hk'||l==='zh-mo'||l.includes('hant'))?'zh-TW':'zh'; return 'en';})();
 const T=k=>(AL[LANG]&&AL[LANG][k])||AL.en[k]||k;
@@ -303,7 +313,9 @@ async function enter(){
   DATA=d;
   show('login',false); show('dash',true); show('outBtn',true);
   $('whoami').textContent=(session&&session.user&&session.user.email)||'';
-  scenes=(d.backgrounds||[]).map(b=>({scene_id:b.scene_id,is_primary:!!b.is_primary}));
+  scenes=(d.backgrounds||[]).map(b=>({scene_id:b.scene_id,is_primary:!!b.is_primary,
+    name:b.name||'',prompt:b.prompt||'',art:b.art||'office',
+    colors:Array.isArray(b.colors)?b.colors:[],custom:!!(b.prompt&&b.prompt.trim())}));
   $('sPolicy').value=d.org.bg_policy||'choice';
   $('sPurge').value=d.org.purge_days||14;
   render();
@@ -361,13 +373,72 @@ function render(){
   </tr>`).join('');
 }
 
+/* The swatch drawings the studio can preview a company background with. The
+   ids match SCENES in index.html and the ART set in org.js — all three have to
+   agree or the preview silently falls back to 'office'. */
+const ART=['office','bizpark','street','park','lake','tennis','cafe','campus','studio'];
+const DEFAULT_COLORS=['#dbe9f4','#b8cfe2','#7e93a8','#5c7185'];
+const PROMPT_MAX=300;
+
 function renderScenes(){
-  $('sceneList').innerHTML=scenes.map((s,i)=>`
+  $('sceneList').innerHTML=scenes.map((s,i)=>{
+    const custom=!!s.custom;
+    const cols=(s.colors&&s.colors.length?s.colors:DEFAULT_COLORS);
+    const used=(s.prompt||'').length;
+    return `
     <div class="scene-row">
-      <input type="text" value="${esc(s.scene_id)}" placeholder="${esc(T('ph_scene'))}" oninput="scenes[${i}].scene_id=this.value">
-      <label><input type="radio" name="prim" ${s.is_primary?'checked':''} onchange="setPrimary(${i})"> ${esc(T('primary'))}</label>
-      <button class="btn dark sm" onclick="scenes.splice(${i},1);renderScenes()">${esc(T('remove'))}</button>
-    </div>`).join('');
+      <div class="sr-head">
+        <select onchange="setKind(${i},this.value)">
+          <option value="lib" ${custom?'':'selected'}>${esc(T('k_lib'))}</option>
+          <option value="own" ${custom?'selected':''}>${esc(T('k_own'))}</option>
+        </select>
+        <input type="text" value="${esc(custom?(s.name||''):s.scene_id)}"
+          placeholder="${esc(custom?T('ph_name'):T('ph_scene'))}"
+          oninput="${custom?`scenes[${i}].name=this.value`:`scenes[${i}].scene_id=this.value`}">
+        <label><input type="radio" name="prim" ${s.is_primary?'checked':''} onchange="setPrimary(${i})"> ${esc(T('primary'))}</label>
+        <button class="btn dark sm" onclick="scenes.splice(${i},1);renderScenes()">${esc(T('remove'))}</button>
+      </div>
+      ${custom?`
+      <div class="custom">
+        <div>
+          <label>${esc(T('lbl_desc'))}</label>
+          <textarea maxlength="${PROMPT_MAX}" placeholder="${esc(T('ph_desc'))}"
+            oninput="scenes[${i}].prompt=this.value;this.nextElementSibling.textContent=this.value.length+' / ${PROMPT_MAX}'">${esc(s.prompt||'')}</textarea>
+          <div class="cnt">${used} / ${PROMPT_MAX}</div>
+        </div>
+        <div class="cols">
+          <span>${esc(T('lbl_cols'))}</span>
+          ${[0,1,2,3].map(c=>`<input type="color" value="${esc(cols[c]||DEFAULT_COLORS[c])}"
+             oninput="setColor(${i},${c},this.value)">`).join('')}
+          <select onchange="scenes[${i}].art=this.value" style="max-width:150px">
+            ${ART.map(a=>`<option value="${a}" ${(s.art||'office')===a?'selected':''}>${a}</option>`).join('')}
+          </select>
+        </div>
+        <div class="cnt" style="text-align:left;color:var(--muted)">${esc(T('hint_desc'))}</div>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+/* Switching a row between library and company-specific keeps whatever was typed
+   on the other side, so a mis-click does not throw away a description someone
+   just wrote. */
+function setKind(i,v){
+  const s=scenes[i];
+  s.custom=(v==='own');
+  if(s.custom){
+    if(!s.art) s.art='office';
+    if(!s.colors||!s.colors.length) s.colors=DEFAULT_COLORS.slice();
+    /* A company background still needs an id — it is what generate.js checks a
+       staff shoot against. Generated here so HR never has to invent one. */
+    if(!s.scene_id||!/^own-/.test(s.scene_id)) s.scene_id='own-'+Date.now().toString(36)+'-'+i;
+  }
+  renderScenes();
+}
+function setColor(i,c,v){
+  const s=scenes[i];
+  s.colors=(s.colors&&s.colors.length?s.colors.slice():DEFAULT_COLORS.slice());
+  s.colors[c]=v;
 }
 function addScene(){ scenes.push({scene_id:'',is_primary:scenes.length===0}); renderScenes(); }
 function setPrimary(i){ scenes.forEach((s,j)=>s.is_primary=(i===j)); }
@@ -541,7 +612,11 @@ async function saveSettings(){
   const m=$('setMsg'); m.classList.remove('ok');
   clampPurge();
   const r=await api({action:'settings',bg_policy:$('sPolicy').value,purge_days:$('sPurge').value,
-    scenes:scenes.filter(s=>s.scene_id.trim()).map((s,i)=>({scene_id:s.scene_id.trim(),is_primary:s.is_primary,sort:i}))});
+    scenes:scenes.filter(s=>(s.scene_id||'').trim()).map((s,i)=>({
+      scene_id:s.scene_id.trim(), is_primary:s.is_primary, sort:i,
+      // A library row sends no description; that is what marks it as a library row.
+      name:s.custom?(s.name||''):'', prompt:s.custom?(s.prompt||''):'',
+      art:s.custom?(s.art||'office'):'office', colors:s.custom?(s.colors||[]):[]}))});
   if(!r.ok){ m.textContent=r.error||T('save_fail'); return; }
   m.classList.add('ok'); m.textContent=T('saved');
   await refresh();
@@ -549,7 +624,9 @@ async function saveSettings(){
 
 async function refresh(){
   const d=await api({action:'admin'});
-  if(d.ok){ DATA=d; scenes=(d.backgrounds||[]).map(b=>({scene_id:b.scene_id,is_primary:!!b.is_primary})); render(); }
+  if(d.ok){ DATA=d; scenes=(d.backgrounds||[]).map(b=>({scene_id:b.scene_id,is_primary:!!b.is_primary,
+    name:b.name||'',prompt:b.prompt||'',art:b.art||'office',
+    colors:Array.isArray(b.colors)?b.colors:[],custom:!!(b.prompt&&b.prompt.trim())})); render(); }
 }
 
 /* Resume an existing session so a refresh does not throw HR back to sign-in. */

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outreach Desk · Summy Garden Studio</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --grad-brand:linear-gradient(120deg,#38bdf8 0%,#22d3ee 48%,#4ade80 100%);
+  --accent:#0284c7;--accent-deep:#075985;
+  --ink:#0b1b25;--muted:#5c7684;--faint:#8aa3b1;
+  --body:#f2f8fc;--line:#e3ecf2;
+  --ring:inset 0 0 0 1px rgba(9,45,68,.07);
+  --e1:0 1px 2px rgba(9,45,68,.04),0 4px 14px rgba(9,45,68,.06),var(--ring);
+  --e2:0 2px 6px rgba(9,45,68,.06),0 14px 34px rgba(9,45,68,.10),var(--ring);
+  --e3:0 8px 18px rgba(9,45,68,.08),0 30px 70px rgba(9,45,68,.16),var(--ring);
+  --glow:0 6px 18px rgba(14,165,233,.35);
+  --ok:#0f7a46;--ok-bg:#e6f4ec;--warn:#8a6d1a;--warn-bg:#fdf4dd;--bad:#b23b2b;--bad-bg:#fdecea;
+  --ease:cubic-bezier(.22,.8,.34,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);line-height:1.55;
+  background:radial-gradient(1100px 520px at 12% -8%,rgba(56,189,248,.14),transparent 60%),
+             radial-gradient(900px 460px at 92% 4%,rgba(74,222,128,.11),transparent 62%),var(--body);
+  background-attachment:fixed;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 80px}
+h1,h2,h3{letter-spacing:-.02em}
+button{font-family:inherit;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+.top{position:sticky;top:0;z-index:40;color:#fff;padding:13px 0;
+  background:linear-gradient(180deg,rgba(6,44,69,.95),rgba(6,44,69,.88));
+  backdrop-filter:saturate(150%) blur(14px);box-shadow:0 10px 30px rgba(4,26,41,.22)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding:0 20px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;color:#fff;text-decoration:none}
+.logo-mark{width:28px;height:28px;border-radius:9px;background:var(--grad-brand);box-shadow:var(--glow);flex-shrink:0}
+.sp{flex:1}
+#who{font-size:13px;opacity:.85;font-weight:600}
+.badge{background:rgba(255,255,255,.11);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+  border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700}
+
+.btn{background:var(--grad-brand);color:#fff;font-weight:700;font-size:13px;border-radius:11px;
+  padding:10px 17px;box-shadow:var(--glow);transition:transform .16s var(--ease),box-shadow .16s var(--ease)}
+.btn:hover{transform:translateY(-1.5px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn.ghost{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.btn.dark{background:#fff;color:#20404f;box-shadow:var(--e1)}
+.btn.sm{font-size:12px;padding:7px 12px;border-radius:9px}
+.btn.danger{background:#fff;color:var(--bad);box-shadow:var(--e1)}
+
+input,select,textarea{width:100%;padding:11px 14px;border:none;border-radius:11px;background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(9,45,68,.12);font-family:inherit;font-size:14.5px;
+  outline:none;color:var(--ink);transition:box-shadow .18s var(--ease)}
+textarea{resize:vertical;line-height:1.6;min-height:88px;font-size:14px}
+input:focus,select:focus,textarea:focus{box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px rgba(56,189,248,.18)}
+label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin:0 0 6px;
+  text-transform:uppercase;letter-spacing:.06em}
+.field{margin-bottom:14px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:1;min-width:170px}
+.row>.tight{flex:0 0 auto;min-width:0}
+
+#login{max-width:420px;margin:60px auto;background:#fff;border-radius:22px;box-shadow:var(--e3);
+  padding:38px 34px;text-align:center}
+#login .logo-mark{margin:0 auto 18px;width:54px;height:54px;border-radius:16px}
+#login h2{font-size:22px;margin-bottom:6px}
+#login p{color:var(--muted);font-size:14px;margin-bottom:22px}
+#login .btn{width:100%;padding:13px}
+.msg{font-size:13px;font-weight:600;color:var(--bad);margin-top:12px;min-height:18px}
+.msg.ok{color:var(--ok)}
+
+.tabs{display:flex;gap:6px;margin:22px 0 18px;flex-wrap:wrap}
+.tab{background:#fff;box-shadow:var(--e1);border-radius:11px;padding:9px 16px;font-size:13.5px;
+  font-weight:700;color:var(--muted)}
+.tab.on{background:var(--grad-brand);color:#fff;box-shadow:var(--glow)}
+.tab .n{opacity:.7;font-weight:600;margin-left:5px}
+
+.card{background:#fff;border-radius:18px;box-shadow:var(--e1);padding:22px;margin-bottom:16px}
+.card h3{font-size:16px;margin-bottom:5px}
+.card .sub{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+.sec{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent-deep);margin:26px 0 12px}
+.sec::before{content:'';width:16px;height:3px;border-radius:2px;background:var(--grad-brand)}
+
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.st{background:#fff;border-radius:13px;box-shadow:var(--e1);padding:13px 15px;position:relative;overflow:hidden}
+.st::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line)}
+.st.done::before{background:var(--grad-brand)}
+.st b{display:block;font-size:22px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.st span{font-size:12px;color:var(--muted)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;
+  letter-spacing:.06em;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 10px;border-bottom:1px solid #eef4f8;vertical-align:top}
+tbody tr:hover{background:#f7fbfe}
+td.chk,th.chk{width:32px;padding-right:0}
+input[type=checkbox]{width:auto;box-shadow:none;accent-color:var(--accent);margin:3px 0 0}
+.empty{text-align:center;color:var(--faint);padding:30px;font-size:14px}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;border-radius:999px;
+  padding:3px 10px 3px 8px;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.sourced{background:#eef2f7;color:#53687d}
+.pill.enriched{background:#e0f2fb;color:#0369a1}
+.pill.drafted{background:#fff4d9;color:#8a6d1a}
+.pill.ready{background:var(--ok-bg);color:var(--ok)}
+.pill.sent{background:#e7eefc;color:#31489c}
+.pill.followed_up{background:#f0e9fb;color:#6b3fa0}
+.pill.replied{background:var(--ok-bg);color:var(--ok)}
+.pill.parked{background:#f4f4f5;color:#71717a}
+.pill.none{background:var(--bad-bg);color:var(--bad)}
+
+.note{border-radius:12px;padding:13px 16px;font-size:13.5px;line-height:1.6;margin-bottom:14px}
+.note.warn{background:var(--warn-bg);color:var(--warn)}
+.note.ok{background:var(--ok-bg);color:var(--ok)}
+.note.bad{background:var(--bad-bg);color:var(--bad)}
+.note b{font-weight:700}
+
+.bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;margin:12px 0 6px}
+.bar i{display:block;height:100%;background:var(--grad-brand);width:0;transition:width .4s var(--ease)}
+
+.ev{font-size:12.5px;color:var(--muted);line-height:1.5}
+.ev b{color:var(--ink);font-weight:600}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+a{color:var(--accent-deep)}
+.gapmark{background:var(--warn-bg);color:var(--warn);border-radius:5px;padding:1px 5px;font-weight:600}
+
+.det{background:#f7fbfe;border-radius:12px;padding:14px;margin-top:10px;box-shadow:var(--ring)}
+.det .field{margin-bottom:10px}
+.hide{display:none!important}
+@media (max-width:640px){ .wrap{padding:16px 14px 60px} .card{padding:16px} th,td{padding:8px 6px} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="wrap">
+  <a class="logo" href="/"><span class="logo-mark"></span><span>Summy Garden Studio</span></a>
+  <span class="badge">Outreach desk</span>
+  <span class="sp"></span>
+  <span id="who"></span>
+  <button class="btn ghost sm hide" id="outBtn" onclick="signOut()">Sign out</button>
+</div></div>
+
+<div class="wrap">
+
+  <!-- ------------------------------------------------------------ sign in -->
+  <div id="login">
+    <div class="logo-mark"></div>
+    <h2>Outreach desk</h2>
+    <p>Owner account only.</p>
+    <div class="field"><input id="email" type="email" placeholder="Email" autocomplete="username"></div>
+    <div class="field"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="field hide" id="mfaWrap">
+      <input id="mfa" inputmode="numeric" placeholder="6-digit code" autocomplete="one-time-code"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn" onclick="doLogin()">Sign in</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- --------------------------------------------------------------- desk -->
+  <div id="desk" class="hide">
+
+    <div class="row" style="margin-bottom:4px">
+      <div><label>Campaign</label>
+        <select id="campSel" onchange="switchCampaign(this.value)"></select></div>
+      <div class="tight"><button class="btn dark" onclick="newCampaign()">＋ New campaign</button></div>
+    </div>
+
+    <div class="steps" id="steps"></div>
+
+    <div class="tabs">
+      <button class="tab on" data-tab="find"    onclick="tab('find')">1 · Find companies</button>
+      <button class="tab"    data-tab="review"  onclick="tab('review')">2 · Review &amp; write <span class="n" id="nReview"></span></button>
+      <button class="tab"    data-tab="send"    onclick="tab('send')">3 · Send <span class="n" id="nSend"></span></button>
+      <button class="tab"    data-tab="setup"   onclick="tab('setup')">Message</button>
+      <button class="tab"    data-tab="nolist"  onclick="tab('nolist')">Do not contact <span class="n" id="nSup"></span></button>
+    </div>
+
+    <!-- ------------------------------------------------------- 1. find -->
+    <div id="pane-find">
+      <div class="card">
+        <h3>Pull companies out of a page</h3>
+        <p class="sub">Paste the address of any page that lists companies — a trade directory, a chamber of commerce member list, a conference exhibitor list, a "our clients" page. It reads the links and shows you the companies it found.</p>
+        <div class="row">
+          <div><input id="discUrl" placeholder="https://example.com/members" onkeydown="if(event.key==='Enter')discover()"></div>
+          <div class="tight"><button class="btn" id="discBtn" onclick="discover()">Find companies</button></div>
+        </div>
+        <div class="msg" id="discMsg"></div>
+        <div id="discResults"></div>
+      </div>
+
+      <div class="card">
+        <h3>Or paste a list you already have</h3>
+        <p class="sub">One company per line. A web address on its own is fine, or a name and address separated by a comma.</p>
+        <div class="field">
+          <textarea id="addText" style="min-height:120px" placeholder="Northbank Capital, northbank-capital.co.uk
+harrowgate-legal.co.uk
+https://www.veritas-partners.com/about"></textarea>
+        </div>
+        <button class="btn" onclick="addPasted()">Add these</button>
+        <span class="msg" id="addMsg" style="display:inline-block;margin-left:12px"></span>
+      </div>
+
+      <div class="card">
+        <h3>Look up their contact desk</h3>
+        <p class="sub">Reads each company's own website for a published shared mailbox — <span class="mono">hello@</span>, <span class="mono">info@</span>, <span class="mono">careers@</span> and the like — and notes how they describe themselves, so you have something to open with.</p>
+        <div class="note warn"><b>Only shared mailboxes are collected.</b> A named individual's address is never taken, even when it is printed on the page. That is the difference between a list you can defend and one that generates a complaint.</div>
+        <button class="btn" id="enrichBtn" onclick="enrichAll()">Look them up</button>
+        <span class="msg" id="enrichMsg" style="display:inline-block;margin-left:12px"></span>
+        <div class="bar hide" id="enrichBar"><i></i></div>
+        <div id="enrichLog" class="ev" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- ----------------------------------------------------- 2. review -->
+    <div id="pane-review" class="hide">
+      <div class="card">
+        <h3>Write the opening line</h3>
+        <p class="sub">The tool gathers the evidence. You write the sentence — one true thing about them, in their words. A message with an empty line cannot be sent.</p>
+        <button class="btn dark sm" onclick="regenerate()">Rebuild all drafts from the template</button>
+        <span class="msg" id="draftMsg" style="display:inline-block;margin-left:12px"></span>
+      </div>
+      <div class="card" style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Company</th><th>Contact desk</th><th>What they say about themselves</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="reviewRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- 3. send -->
+    <div id="pane-send" class="hide">
+      <div class="card">
+        <h3>Send</h3>
+        <p class="sub">Nothing goes out until you press the confirm button, and even then it stops at the daily limit.</p>
+        <div id="sendState"></div>
+        <div class="row" style="margin-top:14px">
+          <div class="tight"><button class="btn dark" onclick="selectAllSendable()">Select everything ready</button></div>
+          <div class="tight"><button class="btn dark" onclick="selectNone()">Clear</button></div>
+          <div class="tight"><button class="btn dark" onclick="doSend(false,'first')">Preview — send nothing</button></div>
+          <div class="tight"><button class="btn" onclick="doSend(true,'first')">Send for real</button></div>
+          <div class="tight"><button class="btn dark" onclick="doSend(true,'followup')">Send follow-ups</button></div>
+        </div>
+        <div class="msg" id="sendMsg"></div>
+        <div id="sendReport"></div>
+      </div>
+      <div class="card" style="overflow-x:auto">
+        <table>
+          <thead><tr><th class="chk"></th><th>Company</th><th>To</th><th>Subject</th><th>Status</th><th></th></tr></thead>
+          <tbody id="sendRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------ message -->
+    <div id="pane-setup" class="hide">
+      <div class="card">
+        <h3>The message this campaign sends</h3>
+        <p class="sub">Anything in double braces is filled in per company. <span class="mono">{{company}}</span>, <span class="mono">{{domain}}</span>, <span class="mono">{{note}}</span> (your line), <span class="mono">{{title}}</span>. Add a question mark — <span class="mono">{{proof?}}</span> — to make it optional, so an empty one simply disappears instead of blocking the send.</p>
+        <div class="row">
+          <div class="field"><label>Campaign name</label><input id="cName"></div>
+          <div class="field"><label>From name</label><input id="cFrom"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Company</label><input id="cCompany"></div>
+          <div class="field"><label>Website shown in the signature</label><input id="cSite"></div>
+        </div>
+        <div class="field"><label>Subject</label><input id="cSubject"></div>
+        <div class="field"><label>Message</label><textarea id="cBody" style="min-height:200px"></textarea></div>
+        <div class="field"><label>Follow-up message</label><textarea id="cFollow" style="min-height:110px"></textarea></div>
+        <div class="field"><label>Proof — fill this in once you have a first customer</label>
+          <input id="cProof" placeholder="Twenty-three people at a London firm did it in an afternoon last month."></div>
+        <div class="row">
+          <div class="field"><label>Most emails per day</label><input id="cCap" type="number" min="1" max="200"></div>
+          <div class="field"><label>Days before a follow-up</label><input id="cDays" type="number" min="1" max="60"></div>
+        </div>
+        <button class="btn" onclick="saveCampaign()">Save</button>
+        <span class="msg" id="campMsg" style="display:inline-block;margin-left:12px"></span>
+        <div class="note warn" style="margin-top:16px"><b>Every message gets a footer automatically</b> — your name, your company, and a working way to say no. It is added after your template so it cannot be edited out by accident.</div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- do not contact -->
+    <div id="pane-nolist" class="hide">
+      <div class="card">
+        <h3>Do not contact</h3>
+        <p class="sub">Anyone here is skipped by every campaign, not just this one — somebody who has said no has said no. Enter one address, or <span class="mono">@company.com</span> for a whole company.</p>
+        <div class="row">
+          <div><input id="supKey" placeholder="hello@example.com  or  @example.com"></div>
+          <div><input id="supWhy" placeholder="Reason (optional)"></div>
+          <div class="tight"><button class="btn" onclick="addSuppress()">Add</button></div>
+        </div>
+        <div class="msg" id="supMsg"></div>
+      </div>
+      <div class="card" style="overflow-x:auto">
+        <table><thead><tr><th>Address</th><th>Reason</th><th>Added</th><th></th></tr></thead>
+        <tbody id="supRows"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SB_URL='https://qyixfqqkbgajqmclpnqr.supabase.co';
+const SB_PUB='sb_publishable_FX9-eaM-1hBzisTNm_YVhw_BoeTUAPs';
+const sb=window.supabase?window.supabase.createClient(SB_URL,SB_PUB):null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const show=(id,on)=>$(id).classList.toggle('hide',!on);
+
+let session=null, MFA='', DATA={campaigns:[],rows:[],suppressions:[]}, CAMP=null, TAB='find';
+let DISC=[];
+
+/* Every call carries the session token and the second-factor code. The server
+   checks both — hiding this page behind a code screen would leave the endpoint
+   answering a direct request made with nothing but a password. */
+async function api(payload){
+  const r=await fetch('/api/outreach',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:session?session.access_token:null,mfa:MFA,campaign_id:CAMP?CAMP.id:null,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&j.mfa){ MFA=''; show('login',true); show('desk',false); show('mfaWrap',true);
+    $('loginMsg').textContent='Enter your 6-digit code again.'; throw new Error('mfa'); }
+  return {ok:r.ok,status:r.status,...j};
+}
+
+async function doLogin(){
+  const m=$('loginMsg'); m.classList.remove('ok'); m.textContent='';
+  const email=($('email').value||'').trim().toLowerCase(), pw=$('pw').value;
+  MFA=($('mfa').value||'').trim();
+  if(!session){
+    const {data,error}=await sb.auth.signInWithPassword({email,password:pw});
+    if(error){ m.textContent=/invalid login/i.test(error.message||'')?'Wrong email or password.':error.message; return; }
+    session=data.session; $('pw').value='';
+  }
+  try{ await load(); }catch(e){ if(e.message!=='mfa') m.textContent='Could not load.'; }
+}
+async function signOut(){ await sb.auth.signOut(); session=null; MFA=''; location.reload(); }
+
+async function load(){
+  const d=await api({action:'load'});
+  if(!d.ok){ $('loginMsg').textContent=d.error||'Could not load.'; return; }
+  DATA=d; CAMP=(d.campaigns||[]).find(c=>c.id===d.campaign_id)||d.campaigns[0]||null;
+  show('login',false); show('desk',true); show('outBtn',true);
+  $('who').textContent=(session&&session.user&&session.user.email)||'';
+  render();
+}
+
+async function switchCampaign(id){
+  CAMP=DATA.campaigns.find(c=>c.id===id)||CAMP;
+  const d=await api({action:'load',campaign_id:id});
+  if(d.ok){ DATA=d; CAMP=(d.campaigns||[]).find(c=>c.id===d.campaign_id)||CAMP; render(); }
+}
+
+function tab(t){ TAB=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  ['find','review','send','setup','nolist'].forEach(p=>show('pane-'+p,p===t));
+  render();
+}
+
+/* ------------------------------------------------------------------ render */
+const READY=r=>r.email&&!r.needs_human&&!/<<[^<>]+>>/.test(r.body||'')&&r.body;
+const stageOf=r=>{
+  if(r.stage==='sent'||r.stage==='followed_up'||r.stage==='replied'||r.stage==='parked') return r.stage;
+  if(r.stage==='enriched'&&!r.email) return 'none';
+  if(READY(r)) return 'ready';
+  return r.stage;
+};
+const LABEL={sourced:'not looked up',enriched:'needs a line',drafted:'needs a line',ready:'ready to send',
+  sent:'sent',followed_up:'followed up',replied:'replied',parked:'parked',none:'no address published'};
+
+function render(){
+  $('campSel').innerHTML=(DATA.campaigns||[]).map(c=>
+    `<option value="${esc(c.id)}" ${CAMP&&c.id===CAMP.id?'selected':''}>${esc(c.name)}</option>`).join('');
+  const rows=DATA.rows||[];
+  const n=k=>rows.filter(r=>stageOf(r)===k).length;
+  const needLine=rows.filter(r=>r.email&&!READY(r)&&!['sent','followed_up','replied','parked'].includes(r.stage)).length;
+  const ready=n('ready');
+  $('steps').innerHTML=[
+    ['Companies',rows.length,rows.length>0],
+    ['Contact desk found',rows.filter(r=>r.email).length,rows.some(r=>r.email)],
+    ['Needs your line',needLine,needLine===0&&rows.length>0],
+    ['Ready to send',ready,ready>0],
+    ['Sent',n('sent')+n('followed_up'),n('sent')>0],
+  ].map(([l,v,done])=>`<div class="st ${done?'done':''}"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('nReview').textContent=needLine?`(${needLine})`:'';
+  $('nSend').textContent=ready?`(${ready})`:'';
+  $('nSup').textContent=(DATA.suppressions||[]).length?`(${DATA.suppressions.length})`:'';
+
+  if(TAB==='review') renderReview();
+  if(TAB==='send') renderSend();
+  if(TAB==='setup') fillCampaign();
+  if(TAB==='nolist') renderSup();
+}
+
+function renderReview(){
+  const rows=(DATA.rows||[]).filter(r=>!['sent','followed_up','replied'].includes(r.stage));
+  const tb=$('reviewRows');
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="empty">Nothing here yet — add some companies on the first tab.</td></tr>'; return; }
+  tb.innerHTML=rows.map(r=>{
+    const st=stageOf(r);
+    return `<tr>
+      <td><b>${esc(r.name)}</b><div class="ev mono">${esc(r.domain)}</div></td>
+      <td>${r.email?`<span class="mono">${esc(r.email)}</span>
+            <div class="ev">found on <a href="${esc(r.email_page)}" target="_blank" rel="noopener noreferrer">that page</a></div>`
+          :`<span class="ev">${esc(r.enrich_error||'not looked up yet')}</span>`}</td>
+      <td class="ev">${esc(r.site_summary||r.site_title||'—')}</td>
+      <td><span class="pill ${st}">${esc(LABEL[st]||st)}</span></td>
+      <td><button class="btn dark sm" onclick="toggleDet('${esc(r.id)}')">Open</button></td>
+    </tr>
+    <tr id="det-${esc(r.id)}" class="hide"><td colspan="5">
+      <div class="det">
+        <div class="field"><label>Your opening line about ${esc(r.name)}</label>
+          <textarea id="note-${esc(r.id)}" style="min-height:70px"
+            placeholder="One true sentence about them — look at their site first.">${esc(r.note)}</textarea></div>
+        <div class="field"><label>Subject</label><input id="subj-${esc(r.id)}" value="${esc(r.subject)}"></div>
+        <div class="field"><label>Message</label><textarea id="body-${esc(r.id)}" style="min-height:180px">${esc(r.body)}</textarea></div>
+        <div class="row">
+          <div class="tight"><button class="btn" onclick="saveRow('${esc(r.id)}')">Save</button></div>
+          <div class="tight"><button class="btn dark" onclick="applyNote('${esc(r.id)}')">Put my line into the message</button></div>
+          <div class="tight"><button class="btn danger" onclick="park('${esc(r.id)}')">Not interested in them</button></div>
+          <div class="tight"><span class="msg" id="rowMsg-${esc(r.id)}"></span></div>
+        </div>
+      </div></td></tr>`;
+  }).join('');
+}
+function toggleDet(id){ const el=$('det-'+id); el.classList.toggle('hide'); }
+
+async function saveRow(id){
+  const m=$('rowMsg-'+id); m.classList.remove('ok');
+  const d=await api({action:'save',id,note:$('note-'+id).value,subject:$('subj-'+id).value,body:$('body-'+id).value});
+  if(!d.ok){ m.textContent=d.error||'Could not save'; return; }
+  m.classList.add('ok'); m.textContent='Saved';
+  const i=DATA.rows.findIndex(r=>r.id===id); if(i>=0&&d.row) DATA.rows[i]=d.row;
+  render();
+}
+/* Puts the line the user just wrote into the message where the gap is, so they
+   do not have to hunt for the marker in the body text. */
+function applyNote(id){
+  const note=$('note-'+id).value.trim();
+  if(!note){ $('rowMsg-'+id).textContent='Write your line first'; return; }
+  const b=$('body-'+id);
+  b.value = /<<[^<>]+>>/.test(b.value) ? b.value.replace(/<<[^<>]+>>/g,note) : b.value;
+  saveRow(id);
+}
+async function park(id){ await api({action:'save',id,stage:'parked'}); await refresh(); }
+
+function renderSend(){
+  const cap=CAMP?CAMP.daily_cap:40;
+  $('sendState').innerHTML=`<div class="note ${DATA.sent_today>=cap?'bad':'ok'}">
+    <b>${DATA.sent_today} of ${cap}</b> sent today. ${DATA.sent_today>=cap?'The daily limit is reached — the rest wait until tomorrow.':'A new sending address that fires hundreds at once ends up in spam folders permanently, which is what the limit is for.'}</div>`;
+  const rows=(DATA.rows||[]).filter(r=>r.email&&!['parked','replied'].includes(r.stage));
+  const tb=$('sendRows');
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Nothing ready yet.</td></tr>'; return; }
+  tb.innerHTML=rows.map(r=>{
+    const st=stageOf(r), can=st==='ready';
+    return `<tr>
+      <td class="chk">${can?`<input type="checkbox" class="pick" value="${esc(r.id)}">`:''}</td>
+      <td><b>${esc(r.name)}</b></td>
+      <td class="mono">${esc(r.email)}</td>
+      <td class="ev">${esc(r.subject||'—')}</td>
+      <td><span class="pill ${st}">${esc(LABEL[st]||st)}</span></td>
+      <td><button class="btn dark sm" onclick="suppressRow('${esc(r.email)}')">Never contact</button></td>
+    </tr>`;
+  }).join('');
+}
+const picked=()=>[...document.querySelectorAll('.pick:checked')].map(x=>x.value);
+function selectAllSendable(){ document.querySelectorAll('.pick').forEach(c=>c.checked=true); }
+function selectNone(){ document.querySelectorAll('.pick').forEach(c=>c.checked=false); }
+
+async function doSend(confirm,kind){
+  const m=$('sendMsg'); m.classList.remove('ok'); $('sendReport').innerHTML='';
+  const ids=kind==='followup'
+    ? (DATA.rows||[]).filter(r=>r.stage==='sent').map(r=>r.id)
+    : picked();
+  if(!ids.length){ m.textContent=kind==='followup'?'Nobody is due a follow-up yet.':'Tick the ones you want to send.'; return; }
+  if(confirm&&!window.confirm(`Send ${ids.length} ${kind==='followup'?'follow-up':''} message${ids.length>1?'s':''} for real?`)) return;
+  const d=await api({action:'send',ids,confirm,kind});
+  if(!d.ok){ m.textContent=d.error||'Could not send'; return; }
+  m.classList.add('ok');
+  m.textContent=confirm?`${d.sent} sent.`:`${d.would.length} would go out. Nothing was sent.`;
+  const lines=[];
+  if(!confirm&&d.would.length) lines.push(`<div class="note ok"><b>Would send to:</b><br>${d.would.map(w=>esc(w.name)+' — '+esc(w.to)).join('<br>')}</div>`);
+  if(d.skipped.length){
+    const by={}; d.skipped.forEach(s=>(by[s.why] ||= []).push(s.name));
+    lines.push(`<div class="note warn"><b>Skipped:</b><br>${Object.entries(by).map(([w,who])=>`${esc(w)} — ${who.length} (${who.slice(0,4).map(esc).join(', ')}${who.length>4?'…':''})`).join('<br>')}</div>`);
+  }
+  $('sendReport').innerHTML=lines.join('');
+  await refresh();
+}
+
+async function suppressRow(email){
+  if(!window.confirm('Never contact '+email+' again?')) return;
+  await api({action:'suppress',key:email,reason:'asked'});
+  await refresh();
+}
+
+function renderSup(){
+  const rows=DATA.suppressions||[];
+  $('supRows').innerHTML=rows.length?rows.map(s=>`<tr>
+    <td class="mono">${esc(s.key)}</td><td class="ev">${esc(s.reason)}</td>
+    <td class="ev">${esc(String(s.at).slice(0,10))}</td>
+    <td><button class="btn dark sm" onclick="unsuppress('${esc(s.key)}')">Remove</button></td></tr>`).join('')
+    : '<tr><td colspan="4" class="empty">Nobody yet.</td></tr>';
+}
+async function addSuppress(){
+  const m=$('supMsg'); m.classList.remove('ok');
+  const key=($('supKey').value||'').trim();
+  if(!key){ m.textContent='Enter an address'; return; }
+  const d=await api({action:'suppress',key,reason:$('supWhy').value});
+  if(!d.ok){ m.textContent=d.error||'Could not save'; return; }
+  $('supKey').value=$('supWhy').value=''; m.classList.add('ok'); m.textContent='Added';
+  await refresh();
+}
+async function unsuppress(key){ await api({action:'unsuppress',key}); await refresh(); }
+
+/* ------------------------------------------------------------------- find */
+async function discover(){
+  const m=$('discMsg'); m.classList.remove('ok'); $('discResults').innerHTML='';
+  const url=($('discUrl').value||'').trim();
+  if(!url){ m.textContent='Paste a web address first'; return; }
+  $('discBtn').disabled=true; m.textContent='Reading that page…';
+  try{
+    const d=await api({action:'discover',url});
+    if(!d.ok){ m.textContent=d.error||'Could not read it'; return; }
+    DISC=d.found||[];
+    if(!DISC.length){ m.textContent='No company websites found on that page. Try a page that links out to member or client sites.'; return; }
+    m.classList.add('ok'); m.textContent=`Found ${DISC.length}. Untick anything that is not a real prospect.`;
+    $('discResults').innerHTML=`
+      <div class="row" style="margin:12px 0">
+        <div class="tight"><button class="btn dark sm" onclick="discAll(true)">Select all</button></div>
+        <div class="tight"><button class="btn dark sm" onclick="discAll(false)">Select none</button></div>
+        <div class="tight"><button class="btn" onclick="addDiscovered()">Add the ticked ones</button></div>
+      </div>
+      <div style="max-height:340px;overflow:auto"><table><tbody>${DISC.map((c,i)=>`
+        <tr><td class="chk"><input type="checkbox" class="disc" data-i="${i}" checked></td>
+        <td><b>${esc(c.name)}</b></td><td class="mono ev">${esc(c.domain)}</td></tr>`).join('')}</tbody></table></div>`;
+  } finally { $('discBtn').disabled=false; }
+}
+function discAll(on){ document.querySelectorAll('.disc').forEach(c=>c.checked=on); }
+async function addDiscovered(){
+  const rows=[...document.querySelectorAll('.disc:checked')].map(c=>DISC[+c.dataset.i]).filter(Boolean);
+  if(!rows.length){ $('discMsg').textContent='Tick at least one'; return; }
+  const d=await api({action:'add',rows,source:'directory',source_url:($('discUrl').value||'').trim()});
+  const m=$('discMsg');
+  if(!d.ok){ m.classList.remove('ok'); m.textContent=d.error||'Could not add'; return; }
+  m.classList.add('ok'); m.textContent=`${d.added} added. Now look up their contact desks below.`;
+  $('discResults').innerHTML='';
+  await refresh();
+}
+
+async function addPasted(){
+  const m=$('addMsg'); m.classList.remove('ok');
+  const text=$('addText').value||'';
+  const d=await api({action:'add',text,source:'pasted'});
+  if(!d.ok){ m.textContent=d.error||'Could not add'; return; }
+  m.classList.add('ok'); m.textContent=`${d.added} added.`;
+  $('addText').value='';
+  await refresh();
+}
+
+/* Looks a few up per request and loops, so a long list cannot outrun the
+   server's time limit — and so you can watch it happen. */
+async function enrichAll(){
+  const m=$('enrichMsg'), log=$('enrichLog');
+  m.classList.remove('ok'); log.innerHTML=''; show('enrichBar',true);
+  $('enrichBtn').disabled=true;
+  let total=(DATA.rows||[]).filter(r=>r.stage==='sourced').length, done=0;
+  try{
+    for(;;){
+      const d=await api({action:'enrich'});
+      if(!d.ok){ m.textContent=d.error||'Stopped'; break; }
+      if(!d.done) break;
+      done+=d.done;
+      (d.results||[]).forEach(r=>{
+        log.innerHTML=`<div>${esc(r.name)} — ${r.email?'<b>'+esc(r.email)+'</b>':esc(r.error||'nothing published')}</div>`+log.innerHTML;
+      });
+      $('enrichBar').querySelector('i').style.width=Math.round(done/Math.max(total,done+d.remaining)*100)+'%';
+      m.textContent=`${done} looked up, ${d.remaining} to go…`;
+      if(!d.remaining) break;
+    }
+    m.classList.add('ok'); m.textContent=`Done — ${done} looked up.`;
+    await refresh();
+    await api({action:'draft'});
+    await refresh();
+  } finally { $('enrichBtn').disabled=false; }
+}
+
+async function regenerate(){
+  const m=$('draftMsg'); m.classList.remove('ok');
+  const d=await api({action:'draft'});
+  if(!d.ok){ m.textContent=d.error||'Could not rebuild'; return; }
+  m.classList.add('ok');
+  m.textContent=`${d.drafted} rebuilt${d.blocked?`, ${d.blocked} still need your line`:''}.`;
+  await refresh();
+}
+
+/* --------------------------------------------------------------- campaign */
+function fillCampaign(){
+  if(!CAMP) return;
+  $('cName').value=CAMP.name||''; $('cFrom').value=CAMP.from_name||'';
+  $('cCompany').value=CAMP.company_name||''; $('cSite').value=CAMP.site||'';
+  $('cSubject').value=CAMP.subject_tpl||''; $('cBody').value=CAMP.body_tpl||'';
+  $('cFollow').value=CAMP.followup_tpl||''; $('cProof').value=CAMP.proof||'';
+  $('cCap').value=CAMP.daily_cap||40; $('cDays').value=CAMP.followup_days||7;
+}
+async function saveCampaign(){
+  const m=$('campMsg'); m.classList.remove('ok');
+  const d=await api({action:'save_campaign',campaign:{
+    id:CAMP?CAMP.id:null, name:$('cName').value, from_name:$('cFrom').value,
+    company_name:$('cCompany').value, site:$('cSite').value,
+    subject_tpl:$('cSubject').value, body_tpl:$('cBody').value,
+    followup_tpl:$('cFollow').value, proof:$('cProof').value,
+    daily_cap:$('cCap').value, followup_days:$('cDays').value }});
+  if(!d.ok){ m.textContent=d.error||'Could not save'; return; }
+  m.classList.add('ok'); m.textContent='Saved';
+  await refresh();
+}
+async function newCampaign(){
+  const name=window.prompt('Name for the new campaign?');
+  if(!name) return;
+  const d=await api({action:'save_campaign',campaign:{name,from_name:CAMP?CAMP.from_name:'',
+    subject_tpl:'A quick question about {{company}}',
+    body_tpl:'Hello,\n\n{{note}}\n\n{{proof?}}Would it be worth a short conversation?'}});
+  if(d.ok&&d.campaign){ CAMP=d.campaign; await switchCampaign(d.campaign.id); tab('setup'); }
+}
+
+async function refresh(){
+  const d=await api({action:'load',campaign_id:CAMP?CAMP.id:null});
+  if(d.ok){ DATA=d; CAMP=(d.campaigns||[]).find(c=>c.id===d.campaign_id)||CAMP; render(); }
+}
+
+/* Resume an existing session so a refresh does not throw you back to sign-in.
+   The second-factor code is deliberately NOT remembered. */
+(async()=>{
+  if(!sb) return;
+  const {data}=await sb.auth.getSession();
+  if(data&&data.session){ session=data.session; show('mfaWrap',true);
+    $('loginMsg').textContent='Signed in — enter your 6-digit code.'; }
+})();
+</script>
+</body>
+</html>

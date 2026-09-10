@@ -1834,6 +1834,11 @@ const THEMES = [
 const BACKGROUNDS = [];
 THEMES.forEach((t,ti)=>{ t.items.forEach((it,idx)=>{ BACKGROUNDS.push({ id:'bg-'+ti+'-'+idx, cat:t.cat, name:it[0], desc:it[1], best:it[2], image: enc(SCENES[t.fn](it[3])) }); }); });
 const CATEGORIES = THEMES.map(t=>t.cat);
+/* A company category can be appended to CATEGORIES at sign-in. catLabel maps a
+   category to translation key c1..cN BY POSITION, so the built-in count is
+   recorded here: appended categories fall outside it and are labelled with
+   their own name instead of borrowing 'Office & Boardroom's translation. */
+const BUILTIN_CATS = CATEGORIES.length;
 const bgById = id => BACKGROUNDS.find(b=>b.id===id);
 const bgIndex = id => BACKGROUNDS.findIndex(b=>b.id===id);
 
@@ -1916,15 +1921,42 @@ function applyOrgMode(){
      plan builder and the "more like this" row, so filtering the array itself
      covers all three — far safer than trying to find every read. */
   if(Array.isArray(ORG.scenes)&&ORG.scenes.length&&!ORG._filtered){
-    const allow=new Set(ORG.scenes);
+    /* /api/org now returns whole scenes rather than bare ids. Older shapes are
+       still accepted so a cached page during a deploy does not lose its list. */
+    const rows=ORG.scenes.map(s=>typeof s==='string'?{scene_id:s,prompt:''}:s)
+                         .filter(s=>s&&s.scene_id);
+    const allow=new Set(rows.map(s=>s.scene_id));
     const keep=BACKGROUNDS.filter(b=>allow.has(b.id));
-    if(keep.length){
-      BACKGROUNDS.length=0; keep.forEach(b=>BACKGROUNDS.push(b));
+
+    /* A background written for this company is not in the shared library, so it
+       is built here from what the portal stored. Same shape as a library entry,
+       which is what lets the picker, the plan builder and the "more like this"
+       row all treat it as an ordinary scene. */
+    const custom=rows.filter(s=>s.prompt).map(s=>({
+      id:s.scene_id, cat:ORG.name, name:s.name||s.scene_id, desc:s.prompt,
+      best:'', image:orgSwatch(s)
+    }));
+
+    if(keep.length||custom.length){
+      BACKGROUNDS.length=0;
+      custom.forEach(b=>BACKGROUNDS.push(b));   // the company's own first
+      keep.forEach(b=>BACKGROUNDS.push(b));
+      if(custom.length&&!CATEGORIES.includes(ORG.name)) CATEGORIES.push(ORG.name);
       ORG._filtered=true;
       try{ renderCatChecks(); }catch(e){}
       try{ renderSwatches(); }catch(e){}
     }
   }
+}
+
+/* Preview swatch for a company background: the same drawings the library uses,
+   in the client's own colours. Falls back to the library's office palette when
+   the portal has no colours stored, so a scene without them still previews. */
+function orgSwatch(s){
+  const fn=SCENES[s.art]||SCENES.office;
+  const c=Array.isArray(s.colors)?s.colors.filter(x=>/^#[0-9a-f]{6}$/i.test(x)):[];
+  const pal=[c[0]||'#dbe9f4', c[1]||'#b8cfe2', c[2]||'#7e93a8', c[3]||'#5c7185'];
+  try{ return enc(fn(pal)); }catch(e){ return enc(SCENES.office(pal)); }
 }
 
 async function loadProfile(){
@@ -3344,7 +3376,11 @@ const MAX_THEMES=6;
 /* No theme ticked on load either. studioCat stays as a harmless default for the
    scene-library strip; it does not mean the theme is selected. */
 let selectedCats=[];
-const catLabel=cat=>{ try{ return TX('c'+(CATEGORIES.indexOf(cat)+1))||cat; }catch(e){ return cat; } };
+const catLabel=cat=>{
+  const i=CATEGORIES.indexOf(cat);
+  if(i<0||i>=BUILTIN_CATS) return cat;          // a company's own category
+  try{ return TX('c'+(i+1))||cat; }catch(e){ return cat; }
+};
 function renderCatChecks(){
   const el=document.getElementById('catChecks'); if(!el) return;
   const T=(k,f)=>{ try{ return TX(k); }catch(e){ return f; } };
@@ -3571,7 +3607,7 @@ function makeCard(bg){
   card.className='bg-card'+(bg.id===selectedBg?' selected':'');
   card.dataset.id=bg.id;
   const gi=bgIndex(bg.id);
-  card.innerHTML=`<div class="bg-preview" style="background-image:url(&quot;${bg.image}&quot;)"><img class="ai-sample" loading="lazy" src="${aiSampleURL(bg,gi)}" onerror="retryImg(this)" alt=""><span class="cat-tag">${TX("c"+(CATEGORIES.indexOf(bg.cat)+1))}</span></div>
+  card.innerHTML=`<div class="bg-preview" style="background-image:url(&quot;${bg.image}&quot;)"><img class="ai-sample" loading="lazy" src="${aiSampleURL(bg,gi)}" onerror="retryImg(this)" alt=""><span class="cat-tag">${catLabel(bg.cat)}</span></div>
     <div class="bg-body"><h3>${bgName(bg)}<span class="check-badge">✓</span></h3><p>${bgDesc(bg)}</p><span class="best-for">${TX("bestfor")} ${bgBest(bg)}</span></div>`;
   card.onclick=()=>selectBg(bg.id,{scroll:true});
   return card;
@@ -4368,7 +4404,7 @@ function applyLang(code){
   QA('.copy-btn').forEach(b=>st(b,t.copy));
   st(Q('#paywall h3'), t.pw_h); st(Q('#paywall .btn-primary'), t.pw_btn);
   /* categories: pills + dropdown */
-  QA('.cat-pill').forEach(p=>{ if(p.dataset&&p.dataset.cat) p.textContent = p.dataset.cat==='All' ? TX('all') : TX('c'+(CATEGORIES.indexOf(p.dataset.cat)+1)); });
+  QA('.cat-pill').forEach(p=>{ if(p.dataset&&p.dataset.cat) p.textContent = p.dataset.cat==='All' ? TX('all') : catLabel(p.dataset.cat); });
   const cs=Q('#catSel'); if(cs) [...cs.options].forEach((o,i)=>o.textContent=TX('c'+(i+1)));
   /* looks */
   QA('#attireChips .chip').forEach(c=>{ const m=TX('lk'); if(m&&m[c.dataset.attire]) c.textContent=m[c.dataset.attire]; });

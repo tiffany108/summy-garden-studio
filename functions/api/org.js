@@ -165,14 +165,18 @@ export async function onRequest(context) {
     if (!org) return Response.json({ org: null }, { status: 200, headers });
 
     const bg = await getJson(await svc(env, `/rest/v1/org_backgrounds?org_id=eq.${org.id}` +
-      `&select=scene_id,is_primary,sort&order=sort.asc`)) || [];
+      `${SCENE_SELECT}`)) || [];
 
     return Response.json({
       // purge_days goes to the browser so the consent notice can state the real
       // window rather than a number hard-coded in the page.
       org: { name: org.name, slug: org.slug, status: org.status, bg_policy: org.bg_policy, logo: org.logo_path, purge_days: org.purge_days },
       member: { name: member.name, status: member.status, consented: !!member.consent_at },
-      scenes: bg.map((b) => b.scene_id),
+      /* Whole scenes now, not bare ids: a company-specific background carries
+         its own name, description and colours, and the studio has no other
+         source for those. Library scenes come back with an empty prompt and are
+         still matched against the built-in library by id, exactly as before. */
+      scenes: bg.map(publicScene),
       primary: (bg.find((b) => b.is_primary) || {}).scene_id || null,
     }, { status: 200, headers });
   }
@@ -265,7 +269,7 @@ export async function onRequest(context) {
       `&select=id,email,name,staff_ref,department,status,consent_at,invited_at,reminded_at,delivered_at` +
       `&order=invited_at.desc&limit=1000`)) || [];
     const bg = await getJson(await svc(env, `/rest/v1/org_backgrounds?org_id=eq.${orgId}` +
-      `&select=scene_id,is_primary,sort&order=sort.asc`)) || [];
+      `${SCENE_SELECT}`)) || [];
 
     const counts = {};
     for (const m of members) counts[m.status] = (counts[m.status] || 0) + 1;
@@ -346,14 +350,29 @@ export async function onRequest(context) {
        sends the full approved list, and a half-applied diff would leave staff
        able to shoot a scene HR had just removed. */
     if (Array.isArray(body.scenes)) {
+      let refused = null;
       const clean = body.scenes
-        .map((x, i) => ({
-          org_id: orgId,
-          scene_id: String(x?.scene_id || "").slice(0, 120),
-          is_primary: !!x?.is_primary,
-          sort: Number.isFinite(Number(x?.sort)) ? Number(x.sort) : i,
-        }))
-        .filter((x) => x.scene_id);
+        .map((x, i) => {
+          const prompt = cleanPrompt(x?.prompt);
+          if (prompt === REFUSED) { refused = String(x?.name || x?.scene_id || ""); return null; }
+          return {
+            org_id: orgId,
+            scene_id: String(x?.scene_id || "").slice(0, 120),
+            is_primary: !!x?.is_primary,
+            sort: Number.isFinite(Number(x?.sort)) ? Number(x.sort) : i,
+            name: String(x?.name || "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, 60),
+            prompt,
+            art: ART.has(String(x?.art)) ? String(x.art) : "office",
+            colors: cleanColors(x?.colors),
+          };
+        })
+        .filter((x) => x && x.scene_id);
+      if (refused) {
+        return Response.json({
+          error: `That background description cannot be used as written. Describe only the setting — the room, the light, the colours — and leave the person out of it.`,
+          scene: refused,
+        }, { status: 400, headers });
+      }
       if (clean.filter((x) => x.is_primary).length > 1) {
         return Response.json({ error: "only one background can be the primary" }, { status: 400, headers });
       }
@@ -370,5 +389,45 @@ export async function onRequest(context) {
 
   return Response.json({ error: "unknown action" }, { status: 400, headers });
 }
+
+const SCENE_SELECT = "&select=scene_id,is_primary,sort,name,prompt,art,colors&order=sort.asc";
+
+/* The swatch drawings the studio can render a preview with. Anything else is
+   coerced to 'office' rather than passed through to the page. */
+const ART = new Set(["office", "bizpark", "street", "park", "lake", "tennis", "cafe", "campus", "studio"]);
+
+const publicScene = (b) => ({
+  scene_id: b.scene_id,
+  is_primary: !!b.is_primary,
+  name: b.name || "",
+  prompt: b.prompt || "",
+  art: b.art || "office",
+  colors: Array.isArray(b.colors) ? b.colors : [],
+});
+
+const REFUSED = Symbol("refused");
+
+/* A custom description is written by a company's HR administrator and ends up
+   inside the prompt that re-photographs an EMPLOYEE'S FACE. That is a different
+   trust boundary from an admin picking a scene off a list, so the text is kept
+   to what it is for: a description of a place.
+   
+   This narrows the opening; it does not close it. A determined administrator
+   can still write something odd about a room. The real controls remain the
+   IDENTITY LOCK block in generate.js, the fact that staff consent for
+   themselves, and the audit trail — not this regex. */
+const BLOCKED = /\b(ignore|disregard|instead|override|overrides|instruction|instructions|prompt|system|you must|person|people|man|woman|child|children|body|bodies|face|faces|skin|nude|naked|undress|underwear|lingerie|bikini|swimsuit)\b/i;
+
+function cleanPrompt(v) {
+  const t = String(v ?? "").replace(/[\u0000-\u001f]/g, " ").replace(/\s{2,}/g, " ").trim();
+  if (!t) return "";
+  if (t.length > 300) return REFUSED;
+  if (BLOCKED.test(t)) return REFUSED;
+  return t;
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+const cleanColors = (v) =>
+  (Array.isArray(v) ? v : []).filter((c) => typeof c === "string" && HEX.test(c)).slice(0, 4);
 
 const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

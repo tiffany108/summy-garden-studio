@@ -54,16 +54,22 @@ async function resolveOrg(env, uid, sceneId) {
 
   /* The approved list is enforced here too. The staff studio only offers these
      scenes, but "only offers" is a UI fact, not a guarantee. */
+  let scenePrompt = "";
   if (sceneId) {
     const b = await sbService(env,
       `/rest/v1/org_backgrounds?org_id=eq.${encodeURIComponent(org.id)}` +
-      `&scene_id=eq.${encodeURIComponent(sceneId)}&select=scene_id&limit=1`);
+      `&scene_id=eq.${encodeURIComponent(sceneId)}&select=scene_id,prompt&limit=1`);
     const bg = b.ok ? await b.json().catch(() => []) : [];
     if (!Array.isArray(bg) || !bg.length) {
       return { error: "scene not approved by your organisation", status: 400 };
     }
+    /* A company-specific background carries its own description. Take it from
+       the database rather than from the browser: the company approved a LOOK,
+       not a scene id, and a staff member editing the request should not be able
+       to keep the approved id while sending a different description. */
+    scenePrompt = String(bg[0].prompt || "");
   }
-  return { org, member };
+  return { org, member, scenePrompt };
 }
 
 async function purgeExpiredPhotos(env, uid) {
@@ -375,10 +381,12 @@ export async function onRequest(context) {
   let genId = null;          // the generations row opened alongside it
 
   let orgId = null;
+  let orgScene = null;      // the description the company approved, when it has one
   if (wantOrg) {
     const res = await resolveOrg(env, authUser.id, scene_id);
     if (res.error) return Response.json({ error: res.error }, { status: res.status, headers });
     orgId = res.org.id;
+    orgScene = res.scenePrompt || null;
 
     /* No credit is spent, so the only thing standing between one employee and
        an unbounded API bill is this cap. Counted per member per day. */
@@ -477,7 +485,7 @@ export async function onRequest(context) {
      and described as "the Summy Garden Studio brand gradient" — the model was being
      asked for that text and painted it across the picture. A customer choosing that
      scene would have had it written into a photo they paid for. */
-  const sceneClean = String(scene || "a modern office")
+  const sceneClean = String(orgScene || scene || "a modern office")
     .replace(/the Summy Garden Studio|the Summy Garden|the Summy/gi, "a")
     .replace(/Summy Garden Studio|Summy Garden|Summy/gi, "")
     .replace(/\s{2,}/g, " ").trim() || "a modern office";

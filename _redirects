@@ -17,6 +17,13 @@
 /hr                 /enterprise   301
 /business           /enterprise   301
 
+# --- Outreach desk ---
+/outreach.html      /outreach     301
+/outreach.htm       /outreach     301
+/outreach/          /outreach     301
+/sales              /outreach     301
+/prospects          /outreach     301
+
 # --- Partner portal ---
 /partner.html       /partner      301
 /partner.htm        /partner      301
